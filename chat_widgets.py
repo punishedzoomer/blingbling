@@ -98,7 +98,7 @@ def render_markdown_html(text):
         extension_configs={
             'codehilite': {
                 'noclasses': True,
-                'style': 'monokai'
+                'pygments_style': 'monokai'
             }
         }
     )

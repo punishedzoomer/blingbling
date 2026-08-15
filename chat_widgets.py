@@ -68,7 +68,12 @@ class MessageWidget(QFrame):
         self.reasoning_text.setObjectName("ReasoningText")
         self.reasoning_text.setOpenExternalLinks(True)
         self.reasoning_text.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
+        self.reasoning_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.reasoning_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.reasoning_text.setVisible(False)
+        self.reasoning_text.document().documentLayout().documentSizeChanged.connect(
+            lambda _: self.adjust_height(self.reasoning_text)
+        )
         self.reasoning_layout.addWidget(self.reasoning_text)
         
         self.layout.addWidget(self.reasoning_container)
@@ -78,6 +83,11 @@ class MessageWidget(QFrame):
         self.main_text.setObjectName("MainMessageText")
         self.main_text.setOpenExternalLinks(True)
         self.main_text.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
+        self.main_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.main_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.main_text.document().documentLayout().documentSizeChanged.connect(
+            lambda _: self.adjust_height(self.main_text)
+        )
         self.layout.addWidget(self.main_text)
         
         # Set initial content
@@ -91,6 +101,11 @@ class MessageWidget(QFrame):
     def toggle_reasoning(self, checked):
         self.reasoning_text.setVisible(checked)
         self.reasoning_btn.setText("💭 Hide Reasoning" if checked else "💭 Show Reasoning")
+        
+    def adjust_height(self, widget):
+        # Dynamically resize the QTextBrowser to fit its content exactly
+        doc_height = widget.document().size().height()
+        widget.setFixedHeight(int(doc_height) + 10) # 10px padding for safety
         
     def append_reasoning(self, text):
         self.reasoning_markdown += text

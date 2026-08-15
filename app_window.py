@@ -101,14 +101,23 @@ class AssistantOverlay(QWidget):
         ocr_label = QLabel("OCR Model:")
         self.ocr_combo = QComboBox()
         self.ocr_combo.setItemDelegate(QStyledItemDelegate())
-        for m in config.OCR_MODELS:
+        saved_ocr = self.settings.value("ocr_model", config.OCR_MODELS[0], type=str)
+        for i, m in enumerate(config.OCR_MODELS):
             self.ocr_combo.addItem(format_model_name(m), m)
+            if m == saved_ocr:
+                self.ocr_combo.setCurrentIndex(i)
         
         reasoning_label = QLabel("Reasoning Model:")
         self.reasoning_combo = QComboBox()
         self.reasoning_combo.setItemDelegate(QStyledItemDelegate())
-        for m in config.REASONING_MODELS:
+        saved_reasoning = self.settings.value("reasoning_model", config.REASONING_MODELS[0], type=str)
+        for i, m in enumerate(config.REASONING_MODELS):
             self.reasoning_combo.addItem(format_model_name(m), m)
+            if m == saved_reasoning:
+                self.reasoning_combo.setCurrentIndex(i)
+                
+        self.ocr_combo.currentIndexChanged.connect(lambda: self.settings.setValue("ocr_model", self.ocr_combo.currentData()))
+        self.reasoning_combo.currentIndexChanged.connect(lambda: self.settings.setValue("reasoning_model", self.reasoning_combo.currentData()))
         
         settings_layout.addWidget(settings_title)
         settings_layout.addSpacing(10)

@@ -380,10 +380,7 @@ class AssistantOverlay(QWidget):
                 widget = MessageWidget("assistant", content=msg.get("content", ""), reasoning=msg.get("reasoning", ""))
                 self.chat_layout.addWidget(widget)
                 
-        # Scroll to bottom
-        QApplication.processEvents()
-        scrollbar = self.chat_scroll.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        self.scroll_to_bottom(force=True)
 
     def restore_window(self):
         saved_opacity = self.settings.value("window_opacity", config.WINDOW_OPACITY, type=float)
@@ -511,9 +508,20 @@ class AssistantOverlay(QWidget):
             self.current_assistant_widget.append_reasoning(text)
             self.scroll_to_bottom()
 
-    def scroll_to_bottom(self):
+    def scroll_to_bottom(self, force=False):
         scrollbar = self.chat_scroll.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        # If the user has scrolled up to read history, don't yank them down!
+        is_at_bottom = force or (scrollbar.value() >= scrollbar.maximum() - 100)
+        
+        def do_scroll():
+            if is_at_bottom:
+                scrollbar.setValue(scrollbar.maximum())
+                
+        # We must delay the scroll by a tiny fraction of a second.
+        # When text is appended, the widget requests a resize, but the layout hasn't 
+        # actually updated the scrollbar.maximum() yet! Delaying lets the layout catch up.
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(50, do_scroll)
 
     def on_finished(self):
         self.snip_count_label.setText(f"{len(self.snipped_images)} Snips added")

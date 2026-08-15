@@ -385,8 +385,17 @@ class AssistantOverlay(QWidget):
         scrollbar = self.chat_scroll.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
+    def restore_window(self):
+        saved_opacity = self.settings.value("window_opacity", config.WINDOW_OPACITY, type=float)
+        self.setWindowOpacity(saved_opacity)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+        self.show()
+
     def add_snip_clicked(self):
-        self.hide()
+        # self.hide() causes macOS to switch spaces because we are the active window.
+        # Instead we drop opacity to 0 so we stay active but are completely invisible!
+        self.setWindowOpacity(0.0)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         QApplication.processEvents()
         time.sleep(0.1)
         
@@ -409,14 +418,14 @@ class AssistantOverlay(QWidget):
         mac_force_spaces_and_level(self.snipper.winId())
         
         self.snipper.snip_completed.connect(self.on_snip_completed)
-        self.snipper.snip_cancelled.connect(self.show)
+        self.snipper.snip_cancelled.connect(self.restore_window)
         self.snipper.show()
 
     def on_snip_completed(self, image_bytes):
         self.snipped_images.append(image_bytes)
         self.snip_count_label.setText(f"{len(self.snipped_images)} Snips added")
         self.undo_snip_btn.setVisible(True)
-        self.show()
+        self.restore_window()
 
     def undo_snip_clicked(self):
         if self.snipped_images:

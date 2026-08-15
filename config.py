@@ -5,7 +5,7 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 OPENROUTER_HEADERS = {
-    "HTTP-Referer": "https://github.com/my-project",
+    "HTTP-Referer": "https://github.com/punishedzoomer/blingbling",
     "X-Title": "BlingBling Assistant",
 }
 

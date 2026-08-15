@@ -51,7 +51,7 @@ class LLMWorker(QThread):
             if self.images_list:
                 self.chunk_received.emit(f"*(Extracting context from {len(self.images_list)} snip(s) with {self.ocr_model}...)*\n\n")
                 
-                content = [{"type": "text", "text": "Extract all text, code, and relevant context from these images exactly as they appear. They are sequential screenshots of a single problem."}]
+                content = [{"type": "text", "text": "You are a raw OCR engine. Your ONLY job is to transcribe the text, code, and math exactly as it appears in the images. DO NOT solve the problem. DO NOT answer any questions. DO NOT explain anything. ONLY output the raw extracted text verbatim."}]
                 
                 for img_bytes in self.images_list:
                     base64_image = base64.b64encode(img_bytes).decode('utf-8')

@@ -19,6 +19,25 @@ def capture_screen_bytes():
         img.save(buffer, format="JPEG", quality=85)
         return buffer.getvalue()
 
+import sys
+import os
+
+def get_prompt_path(filename):
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, 'prompts', filename)
+
+def load_prompt(filename, default=""):
+    path = get_prompt_path(filename)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except Exception as e:
+        print(f"Warning: Could not load prompt {filename}, using default. Error: {e}")
+        return default
+
 class LLMWorker(QThread):
     chunk_received = Signal(str)
     reasoning_chunk = Signal(str)
@@ -51,7 +70,8 @@ class LLMWorker(QThread):
             if self.images_list:
                 self.chunk_received.emit(f"*(Extracting context from {len(self.images_list)} snip(s) with {self.ocr_model}...)*\n\n")
                 
-                content = [{"type": "text", "text": "You are a raw OCR engine. Your ONLY job is to transcribe the text, code, and math exactly as it appears in the images. DO NOT solve the problem. DO NOT answer any questions. DO NOT explain anything. ONLY output the raw extracted text verbatim."}]
+                ocr_prompt = load_prompt("ocr_prompt.txt", "You are a raw OCR engine. Your ONLY job is to transcribe the text, code, and math exactly as it appears in the images. DO NOT solve the problem. DO NOT answer any questions. DO NOT explain anything. ONLY output the raw extracted text verbatim.")
+                content = [{"type": "text", "text": ocr_prompt}]
                 
                 for img_bytes in self.images_list:
                     base64_image = base64.b64encode(img_bytes).decode('utf-8')
@@ -76,8 +96,18 @@ class LLMWorker(QThread):
             
             # Construct the new user message
             if extracted_context:
-                prompt_instruction = f"User Question/Instruction: {self.user_prompt}" if self.user_prompt.strip() else "Please solve the problem or answer the implied question based on this context. Be extremely concise and provide the optimal solution."
-                new_message_content = f"Here is the context extracted from screen captures:\n\n{extracted_context}\n\n{prompt_instruction}"
+                if self.user_prompt.strip():
+                    prompt_instruction = f"User Question/Instruction: {self.user_prompt}"
+                else:
+                    prompt_instruction = load_prompt("reasoning_default_instruction.txt", "Please solve the problem or answer the implied question based on this context. Be extremely concise and provide the optimal solution.")
+                    
+                wrapper_template = load_prompt("reasoning_wrapper.txt", "Here is the context extracted from screen captures:\n\n{extracted_context}\n\n{prompt_instruction}")
+                
+                # Format the wrapper
+                new_message_content = wrapper_template.format(
+                    extracted_context=extracted_context, 
+                    prompt_instruction=prompt_instruction
+                )
             else:
                 new_message_content = self.user_prompt
             

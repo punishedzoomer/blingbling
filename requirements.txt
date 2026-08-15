@@ -3,3 +3,5 @@ mss
 pillow
 openai
 pyinstaller
+markdown
+pygments

@@ -132,6 +132,7 @@ class LLMWorker(QThread):
                 model=self.reasoning_model,
                 messages=self.conversation_history,
                 stream=True,
+                max_tokens=8000,
                 extra_body={"include_reasoning": True}
             )
             

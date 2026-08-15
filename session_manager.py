@@ -58,33 +58,37 @@ def save_session(session_id, history, title=None):
         for msg in history:
             if msg["role"] == "user":
                 content = msg["content"]
-                if isinstance(content, str):
-                    clean_content = ""
-                    if "User Question/Instruction: " in content:
-                        user_q = content.split("User Question/Instruction: ")[-1].strip()
-                        if user_q:
-                            clean_content = user_q
-                            
-                    if not clean_content and "Here is the context extracted from screen captures:\n\n" in content:
-                        context_block = content.split("Here is the context extracted from screen captures:\n\n")[-1]
-                        # Remove the trailing instructions from backend.py
-                        context_block = context_block.split("\n\nUser Question/Instruction:")[0]
-                        context_block = context_block.split("\n\nPlease solve the problem")[0]
+                
+                content_str = ""
+                if isinstance(content, list):
+                    text_parts = [item.get("text", "") for item in content if item.get("type") == "text"]
+                    content_str = " ".join(text_parts)
+                elif isinstance(content, str):
+                    content_str = content
+                    
+                clean_content = ""
+                if "User Question/Instruction: " in content_str:
+                    user_q = content_str.split("User Question/Instruction: ")[-1].strip()
+                    if user_q:
+                        clean_content = user_q
                         
-                        # Find the first line with actual words in it
-                        lines = [line.strip() for line in context_block.split('\n') if line.strip()]
-                        if lines:
-                            clean_content = lines[0]
-                        else:
-                            clean_content = "Image Query"
-                            
-                    if not clean_content:
-                        clean_content = content
+                if not clean_content and "Here is the context extracted from screen captures:\n\n" in content_str:
+                    context_block = content_str.split("Here is the context extracted from screen captures:\n\n")[-1]
+                    context_block = context_block.split("\n\nUser Question/Instruction:")[0]
+                    context_block = context_block.split("\n\nPlease solve the problem")[0]
+                    
+                    lines = [line.strip() for line in context_block.split('\n') if line.strip()]
+                    if lines:
+                        clean_content = lines[0]
                         
-                    clean_content = clean_content.strip().split("\n")[0]
-                    title = clean_content[:40] + ("..." if len(clean_content) > 40 else "")
-                elif isinstance(content, list):
-                    title = "Image Query"
+                if not clean_content:
+                    clean_content = content_str
+                    
+                if not clean_content.strip():
+                    clean_content = "Image Query"
+                    
+                clean_content = clean_content.strip().split("\n")[0]
+                title = clean_content[:40] + ("..." if len(clean_content) > 40 else "")
                 break
                 
     if not title.strip():

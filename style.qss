@@ -1,0 +1,249 @@
+#MainContainer {
+    background-color: rgba(24, 24, 28, 240);
+    border: 1px solid rgba(255, 255, 255, 30);
+    border-radius: 12px;
+}
+
+QLabel {
+    color: #A0A0B0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QPushButton {
+    background-color: rgba(255, 255, 255, 20);
+    color: #F0F0F0;
+    border: 1px solid rgba(255, 255, 255, 30);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: rgba(255, 255, 255, 40);
+    border: 1px solid rgba(255, 255, 255, 50);
+}
+
+QPushButton:pressed {
+    background-color: rgba(255, 255, 255, 15);
+}
+
+#ActionBtn {
+    /* Inherit from QPushButton but can be styled specifically if needed */
+}
+
+#SendBtn {
+    background-color: rgba(94, 92, 230, 200); /* Premium purple/blue */
+    border: 1px solid rgba(94, 92, 230, 255);
+    color: white;
+}
+#SendBtn:hover {
+    background-color: rgba(114, 112, 255, 230);
+}
+#SendBtn:pressed {
+    background-color: rgba(74, 72, 210, 255);
+}
+
+#CloseBtn {
+    background-color: transparent;
+    border: none;
+    border-radius: 14px; /* perfectly round */
+    padding: 4px;
+}
+#CloseBtn:hover {
+    background-color: rgba(255, 59, 48, 150); /* Apple red */
+}
+
+#NewSessionBtn {
+    background-color: rgba(255, 255, 255, 15);
+    border: 1px solid rgba(255, 255, 255, 20);
+    border-radius: 6px;
+    padding: 2px;
+}
+#NewSessionBtn:hover {
+    background-color: rgba(255, 255, 255, 35);
+}
+
+QTextBrowser {
+    background-color: transparent;
+    color: #E0E0E0;
+    border: none;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Input Fields */
+#PromptInput {
+    background-color: rgba(255, 255, 255, 10);
+    border: 1px solid rgba(255, 255, 255, 20);
+    border-radius: 8px;
+    padding: 2px 8px;
+    color: white;
+    font-size: 13px;
+}
+
+#PromptInput:focus {
+    border: 1px solid rgba(94, 92, 230, 255);
+    background-color: rgba(255, 255, 255, 15);
+}
+
+QComboBox {
+    background-color: rgba(255, 255, 255, 15);
+    color: #F0F0F0;
+    border: 1px solid rgba(255, 255, 255, 30);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+QComboBox:hover {
+    background-color: rgba(255, 255, 255, 25);
+    border: 1px solid rgba(255, 255, 255, 40);
+}
+
+QComboBox:focus {
+    border: 1px solid rgba(94, 92, 230, 200);
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    /* Optional: custom arrow here, but standard is usually fine if border is gone */
+}
+
+QComboBox QAbstractItemView {
+    background-color: rgba(34, 34, 38, 250);
+    border: 1px solid rgba(255, 255, 255, 20);
+    border-radius: 6px;
+    color: #E0E0E0;
+    padding: 4px;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 2px;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: rgba(94, 92, 230, 255);
+    color: white;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: rgba(94, 92, 230, 150);
+}
+
+/* Slider Styling */
+QSlider::groove:horizontal {
+    border: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 30);
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 50);
+    width: 14px;
+    height: 14px;
+    margin: -5px 0;
+    border-radius: 7px;
+}
+
+QSlider::sub-page:horizontal {
+    background: #5E5CE6;
+    border-radius: 2px;
+}
+
+#HistoryBtn {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+}
+#HistoryBtn:hover {
+    background-color: rgba(255, 255, 255, 20);
+}
+
+#Sidebar {
+    background-color: rgba(18, 18, 22, 150);
+    border-right: 1px solid rgba(255, 255, 255, 20);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+
+#HistoryList {
+    background-color: transparent;
+    border: none;
+    color: #E0E0E0;
+    outline: none;
+}
+
+#HistoryList::item {
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+}
+
+#HistoryList::item:selected {
+    background-color: rgba(94, 92, 230, 255);
+    color: white;
+}
+
+#HistoryList::item:hover:!selected {
+    background-color: rgba(255, 255, 255, 20);
+}
+
+/* Chat Message Widgets */
+#ReasoningBtn {
+    background-color: rgba(255, 255, 255, 10);
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #A0A0B0;
+    font-size: 11px;
+}
+
+#ReasoningBtn:hover {
+    background-color: rgba(255, 255, 255, 20);
+    color: #E0E0E0;
+}
+
+#ReasoningText {
+    background-color: transparent;
+    border: none;
+    color: #888888;
+    font-size: 13px;
+    padding-left: 8px;
+    border-left: 2px solid #5E5CE6;
+}
+
+#MainMessageText {
+    background-color: transparent;
+    border: none;
+    color: #E0E0E0;
+    font-size: 14px;
+}
+
+/* Scrollbar styling */
+QScrollBar:vertical {
+    border: none;
+    background: rgba(0, 0, 0, 0);
+    width: 8px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(255, 255, 255, 40);
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}

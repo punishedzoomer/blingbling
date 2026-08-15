@@ -11,6 +11,7 @@ OPENROUTER_HEADERS = {
 
 # Models for Stage 1: Optical Character Recognition (Vision)
 OCR_MODELS = [
+    "None (Direct Vision)",
     "qwen/qwen3-vl-32b-instruct",
     "google/gemini-3.7-flash",
 ]

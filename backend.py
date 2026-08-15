@@ -65,37 +65,52 @@ class LLMWorker(QThread):
             )
             
             extracted_context = ""
+            direct_vision_content = None
             
             # --- STAGE 1: OCR (Only if there are new images) ---
             if self.images_list:
-                self.chunk_received.emit(f"*(Extracting context from {len(self.images_list)} snip(s) with {self.ocr_model}...)*\n\n")
-                
-                ocr_prompt = load_prompt("ocr_prompt.md", "You are a raw OCR engine. Your ONLY job is to transcribe the text, code, and math exactly as it appears in the images. DO NOT solve the problem. DO NOT answer any questions. DO NOT explain anything. ONLY output the raw extracted text verbatim.")
-                content = [{"type": "text", "text": ocr_prompt}]
-                
-                for img_bytes in self.images_list:
-                    base64_image = base64.b64encode(img_bytes).decode('utf-8')
-                    content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
-                
-                ocr_response = client.chat.completions.create(
-                    model=self.ocr_model,
-                    messages=[{"role": "user", "content": content}],
-                    stream=True,
-                )
-                
-                for chunk in ocr_response:
-                    if chunk.choices[0].delta.content is not None:
-                        text = chunk.choices[0].delta.content
-                        extracted_context += text
-                        self.chunk_received.emit(text)
-                
-                self.chunk_received.emit(f"\n\n---\n\n")
+                if self.ocr_model == "None (Direct Vision)":
+                    direct_vision_content = []
+                    if self.user_prompt.strip():
+                        direct_vision_content.append({"type": "text", "text": self.user_prompt})
+                    else:
+                        instruction = load_prompt("reasoning_default_instruction.md", "Please solve the problem or answer the implied question based on this context. Be extremely concise and provide the optimal solution.")
+                        direct_vision_content.append({"type": "text", "text": instruction})
+                        
+                    for img_bytes in self.images_list:
+                        base64_image = base64.b64encode(img_bytes).decode('utf-8')
+                        direct_vision_content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
+                else:
+                    self.chunk_received.emit(f"*(Extracting context from {len(self.images_list)} snip(s) with {self.ocr_model}...)*\n\n")
+                    
+                    ocr_prompt = load_prompt("ocr_prompt.md", "You are a raw OCR engine. Your ONLY job is to transcribe the text, code, and math exactly as it appears in the images. DO NOT solve the problem. DO NOT answer any questions. DO NOT explain anything. ONLY output the raw extracted text verbatim.")
+                    content = [{"type": "text", "text": ocr_prompt}]
+                    
+                    for img_bytes in self.images_list:
+                        base64_image = base64.b64encode(img_bytes).decode('utf-8')
+                        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
+                    
+                    ocr_response = client.chat.completions.create(
+                        model=self.ocr_model,
+                        messages=[{"role": "user", "content": content}],
+                        stream=True,
+                    )
+                    
+                    for chunk in ocr_response:
+                        if chunk.choices[0].delta.content is not None:
+                            text = chunk.choices[0].delta.content
+                            extracted_context += text
+                            self.chunk_received.emit(text)
+                    
+                    self.chunk_received.emit(f"\n\n---\n\n")
             
             # --- STAGE 2: Reasoning ---
             self.chunk_received.emit(f"*(Reasoning with {self.reasoning_model}...)*\n\n")
             
             # Construct the new user message
-            if extracted_context:
+            if direct_vision_content:
+                new_message_content = direct_vision_content
+            elif extracted_context:
                 if self.user_prompt.strip():
                     prompt_instruction = f"User Question/Instruction: {self.user_prompt}"
                 else:

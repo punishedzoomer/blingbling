@@ -87,9 +87,14 @@ def preprocess_math(text):
 
 def render_markdown_html(text):
     text = preprocess_math(text)
+    
+    # Auto-close fenced code blocks during streaming so they format correctly live
+    if text.count("```") % 2 != 0:
+        text += "\n```"
+        
     html = markdown.markdown(
         text, 
-        extensions=['fenced_code', 'codehilite', 'tables'],
+        extensions=['fenced_code', 'codehilite', 'tables', 'nl2br'],
         extension_configs={
             'codehilite': {
                 'noclasses': True,

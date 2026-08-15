@@ -25,6 +25,7 @@ REASONING_MODELS = [
     "meta-llama/llama-3.3-70b-instruct",
     "x-ai/grok-2",
     "google/gemini-3.1-pro-preview",
+    "google/gemini-3.7-flash",
 ]
 
 # UI Configuration

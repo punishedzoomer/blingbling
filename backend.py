@@ -27,20 +27,21 @@ class LLMWorker(QThread):
 
     history_updated = Signal(list)
 
-    def __init__(self, images_list, ocr_model, reasoning_model, user_prompt, conversation_history):
+    def __init__(self, images_list, ocr_model, reasoning_model, user_prompt, conversation_history, api_key):
         super().__init__()
         self.images_list = images_list
         self.ocr_model = ocr_model
         self.reasoning_model = reasoning_model
         self.user_prompt = user_prompt
         self.conversation_history = conversation_history
+        self.api_key = api_key
 
     def run(self):
         try:
             # Initialize client pointing to OpenRouter API using config
             client = OpenAI(
                 base_url=config.OPENROUTER_BASE_URL,
-                api_key=config.OPENROUTER_API_KEY,
+                api_key=self.api_key,
                 default_headers=config.OPENROUTER_HEADERS
             )
             

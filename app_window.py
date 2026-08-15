@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QPoint, QSettings
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel, QFrame, 
     QComboBox, QSizeGrip, QStyledItemDelegate, QListWidget, 
-    QListWidgetItem, QStackedWidget, QScrollArea, QSlider, QApplication
+    QListWidgetItem, QStackedWidget, QScrollArea, QSlider, QApplication, QLineEdit
 )
 from PySide6.QtGui import QIcon, QPixmap
 
@@ -128,6 +128,18 @@ class AssistantOverlay(QWidget):
         self.opacity_slider.setSingleStep(5)
         
         self.opacity_slider.valueChanged.connect(self.on_opacity_changed)
+        
+        api_key_label = QLabel("API Key:")
+        self.api_key_input = QLineEdit()
+        self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.api_key_input.setPlaceholderText("sk-or-v1-...")
+        saved_key = self.settings.value("api_key", "", type=str)
+        self.api_key_input.setText(saved_key)
+        self.api_key_input.textChanged.connect(self.on_api_key_changed)
+        
+        settings_layout.addWidget(api_key_label)
+        settings_layout.addWidget(self.api_key_input)
+        settings_layout.addSpacing(10)
         
         settings_layout.addWidget(opacity_label)
         settings_layout.addWidget(self.opacity_slider)
@@ -277,6 +289,9 @@ class AssistantOverlay(QWidget):
         self.setWindowOpacity(opacity)
         self.settings.setValue("window_opacity", opacity)
 
+    def on_api_key_changed(self, text):
+        self.settings.setValue("api_key", text)
+
     def hide_window(self):
         # Close the application completely for this prototype
         QApplication.quit()
@@ -389,6 +404,10 @@ class AssistantOverlay(QWidget):
             rect = rect.united(s.geometry())
         self.snipper.setGeometry(rect)
         
+        # Force the snipping widget to also follow spaces so macOS doesn't yank us out!
+        from mac_utils import mac_force_spaces_and_level
+        mac_force_spaces_and_level(self.snipper.winId())
+        
         self.snipper.snip_completed.connect(self.on_snip_completed)
         self.snipper.snip_cancelled.connect(self.show)
         self.snipper.show()
@@ -430,13 +449,20 @@ class AssistantOverlay(QWidget):
             ocr_model = self.ocr_combo.currentData()
             reasoning_model = self.reasoning_combo.currentData()
             
-            # Pass everything to backend (we will update LLMWorker next)
+            api_key = self.settings.value("api_key", "", type=str) or config.OPENROUTER_API_KEY
+            if not api_key:
+                self.append_text("**Error:** OpenRouter API Key is missing. Please add it in Settings.")
+                self.on_finished()
+                return
+            
+            # Pass everything to backend
             self.worker = LLMWorker(
                 self.snipped_images.copy(), 
                 ocr_model, 
                 reasoning_model, 
                 user_prompt,
-                self.conversation_history
+                self.conversation_history,
+                api_key
             )
             self.worker.chunk_received.connect(self.append_text)
             self.worker.reasoning_chunk.connect(self.append_reasoning)

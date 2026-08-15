@@ -392,34 +392,41 @@ class AssistantOverlay(QWidget):
         self.show()
 
     def add_snip_clicked(self):
-        # self.hide() causes macOS to switch spaces because we are the active window.
-        # Instead we drop opacity to 0 so we stay active but are completely invisible!
+        # We drop opacity to 0 so we stay active but are completely invisible!
         self.setWindowOpacity(0.0)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         QApplication.processEvents()
         time.sleep(0.1)
         
-        # Grab full screen as background
-        img_bytes = capture_screen_bytes()
-        pixmap = QPixmap()
-        pixmap.loadFromData(img_bytes)
+        import subprocess
+        import tempfile
+        import os
+        from PIL import Image
+        import io
         
-        self.snipper = SnippingWidget(pixmap)
+        fd, temp_path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
         
-        # Span all screens
-        app = QApplication.instance()
-        rect = app.primaryScreen().geometry()
-        for s in app.screens():
-            rect = rect.united(s.geometry())
-        self.snipper.setGeometry(rect)
+        # Use native macOS interactive screen capture (bypasses all space/window manager issues)
+        subprocess.run(["screencapture", "-i", "-x", temp_path])
         
-        # Force the snipping widget to also follow spaces so macOS doesn't yank us out!
-        from mac_utils import mac_force_spaces_and_level
-        mac_force_spaces_and_level(self.snipper.winId())
-        
-        self.snipper.snip_completed.connect(self.on_snip_completed)
-        self.snipper.snip_cancelled.connect(self.restore_window)
-        self.snipper.show()
+        if os.path.exists(temp_path) and os.path.getsize(temp_path) > 0:
+            try:
+                img = Image.open(temp_path)
+                buffer = io.BytesIO()
+                img.convert("RGB").save(buffer, format="JPEG", quality=85)
+                img_bytes = buffer.getvalue()
+                self.on_snip_completed(img_bytes)
+            except Exception as e:
+                print("Error processing snip:", e)
+                self.restore_window()
+            finally:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+        else:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            self.restore_window()
 
     def on_snip_completed(self, image_bytes):
         self.snipped_images.append(image_bytes)

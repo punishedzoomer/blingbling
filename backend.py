@@ -41,6 +41,7 @@ def load_prompt(filename, default=""):
 class LLMWorker(QThread):
     chunk_received = Signal(str)
     reasoning_chunk = Signal(str)
+    history_updated = Signal(list)
     finished = Signal()
     error_occurred = Signal(str)
 

@@ -91,7 +91,8 @@ def inject_copy_links(text):
     def replacer(match):
         code = match.group(2)
         b64_code = base64.b64encode(code.encode('utf-8')).decode('utf-8')
-        link = f'\n<div style="text-align: right; margin-bottom: -10px;"><a href="copy://{b64_code}" style="color: #66d9ef; text-decoration: none; font-size: 12px; font-weight: bold;">📋 Copy</a></div>\n'
+        icon_b64 = "PHN2ZyBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgMTYgMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00LjUgM0MzLjY3MTU3IDMgMyAzLjY3MTU3IDMgNC41VjEzLjVDMyAxNC4zMjg0IDMuNjcxNTcgMTUgNC41IDE1SDEwLjVDMTEuMzI4NCAxNSAxMiAxNC4zMjg0IDEyIDEzLjVWMTIuNUgxMC41VjEzLjVINC41VjQuNUg1LjVWM0g0LjVaTTcuNSAxQzYuNjcxNTcgMSA2IDEuNjcxNTcgNiAyLjVWMTAuNUM2IDExLjMyODQgNi42NzE1NyAxMiA3LjUgMTJIMTMuNUMxNC4zMjg0IDEyIDE1IDExLjMyODQgMTUgMTAuNVYyLjVDMTUgMS42NzE1NyAxNC4zMjg0IDEgMTMuNSAxSDcuNVpNNy41IDIuNVYxMC41SDEzLjVWMi41SDcuNVoiIGZpbGw9IiNEMEQwRDAiLz4KPC9zdmc+"
+        link = f'\n<div style="text-align: right; margin-bottom: -15px; position: relative; z-index: 10;"><a href="copy://{b64_code}" style="color: #D0D0D0; text-decoration: none; font-size: 11px; font-weight: bold; background: #3c3d38; padding: 4px 8px; border-radius: 4px; display: inline-block;"><img src="data:image/svg+xml;base64,{icon_b64}" width="12" height="12" style="vertical-align: -2px; margin-right: 4px;">Copy</a></div>\n'
         return link + match.group(0)
         
     return re.sub(r'```(\w*)\n(.*?)```', replacer, text, flags=re.DOTALL)

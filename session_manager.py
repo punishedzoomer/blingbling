@@ -2,8 +2,16 @@ import os
 import json
 import uuid
 import datetime
+import sys
 
-SESSIONS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions")
+def get_app_data_dir():
+    home = os.path.expanduser("~")
+    if sys.platform == "darwin":
+        return os.path.join(home, "Library", "Application Support", "BlingBling")
+    else:
+        return os.path.join(home, ".blingbling")
+
+SESSIONS_DIR = os.path.join(get_app_data_dir(), "sessions")
 
 if not os.path.exists(SESSIONS_DIR):
     os.makedirs(SESSIONS_DIR)

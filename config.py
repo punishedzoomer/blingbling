@@ -18,14 +18,12 @@ OCR_MODELS = [
 
 # Models for Stage 2: Problem Solving & Coding (Reasoning)
 REASONING_MODELS = [
-    "deepseek/deepseek-v4-pro",
-    "moonshotai/kimi-k3",
-    "openai/o3-pro",
-    "openai/o3-mini-high",
-    "meta-llama/llama-3.3-70b-instruct",
-    "x-ai/grok-2",
-    "google/gemini-3.1-pro-preview",
-    "google/gemini-3.7-flash",
+    "anthropic/claude-3.5-sonnet",  # The gold standard for coding. Pricier, but worth it for hard problems.
+    "deepseek/deepseek-reasoner",   # Incredible reasoning capability, insanely cheap ($0.14/M tokens)
+    "deepseek/deepseek-chat",       # Fast and extremely cheap
+    "moonshotai/kimi-k3",           # High tier, very affordable
+    "meta-llama/llama-3.3-70b-instruct", # Very cheap open-source powerhouse
+    "google/gemini-3.7-flash",      # Extremely cheap, your current baseline
 ]
 
 # UI Configuration

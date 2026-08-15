@@ -70,7 +70,7 @@ class LLMWorker(QThread):
             if self.images_list:
                 self.chunk_received.emit(f"*(Extracting context from {len(self.images_list)} snip(s) with {self.ocr_model}...)*\n\n")
                 
-                ocr_prompt = load_prompt("ocr_prompt.txt", "You are a raw OCR engine. Your ONLY job is to transcribe the text, code, and math exactly as it appears in the images. DO NOT solve the problem. DO NOT answer any questions. DO NOT explain anything. ONLY output the raw extracted text verbatim.")
+                ocr_prompt = load_prompt("ocr_prompt.md", "You are a raw OCR engine. Your ONLY job is to transcribe the text, code, and math exactly as it appears in the images. DO NOT solve the problem. DO NOT answer any questions. DO NOT explain anything. ONLY output the raw extracted text verbatim.")
                 content = [{"type": "text", "text": ocr_prompt}]
                 
                 for img_bytes in self.images_list:
@@ -99,9 +99,9 @@ class LLMWorker(QThread):
                 if self.user_prompt.strip():
                     prompt_instruction = f"User Question/Instruction: {self.user_prompt}"
                 else:
-                    prompt_instruction = load_prompt("reasoning_default_instruction.txt", "Please solve the problem or answer the implied question based on this context. Be extremely concise and provide the optimal solution.")
+                    prompt_instruction = load_prompt("reasoning_default_instruction.md", "Please solve the problem or answer the implied question based on this context. Be extremely concise and provide the optimal solution.")
                     
-                wrapper_template = load_prompt("reasoning_wrapper.txt", "Here is the context extracted from screen captures:\n\n{extracted_context}\n\n{prompt_instruction}")
+                wrapper_template = load_prompt("reasoning_wrapper.md", "Here is the context extracted from screen captures:\n\n{extracted_context}\n\n{prompt_instruction}")
                 
                 # Format the wrapper
                 new_message_content = wrapper_template.format(

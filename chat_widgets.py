@@ -85,8 +85,20 @@ def preprocess_math(text):
         
     return text
 
+import base64
+
+def inject_copy_links(text):
+    def replacer(match):
+        code = match.group(2)
+        b64_code = base64.b64encode(code.encode('utf-8')).decode('utf-8')
+        link = f'\n<div style="text-align: right; margin-bottom: -10px;"><a href="copy://{b64_code}" style="color: #66d9ef; text-decoration: none; font-size: 12px; font-weight: bold;">📋 Copy</a></div>\n'
+        return link + match.group(0)
+        
+    return re.sub(r'```(\w*)\n(.*?)```', replacer, text, flags=re.DOTALL)
+
 def render_markdown_html(text):
     text = preprocess_math(text)
+    text = inject_copy_links(text)
     
     # Auto-close fenced code blocks during streaming so they format correctly live
     if text.count("```") % 2 != 0:
@@ -102,6 +114,10 @@ def render_markdown_html(text):
             }
         }
     )
+    
+    # QTextBrowser has issues with Pygments' line-height: 125%, causing large gaps.
+    html = html.replace('style="line-height: 125%;"', '')
+    
     return CUSTOM_CSS + html
 
 
@@ -138,7 +154,8 @@ class MessageWidget(QFrame):
         
         self.reasoning_text = QTextBrowser()
         self.reasoning_text.setObjectName("ReasoningText")
-        self.reasoning_text.setOpenExternalLinks(True)
+        self.reasoning_text.setOpenExternalLinks(False)
+        self.reasoning_text.anchorClicked.connect(self.handle_link_click)
         self.reasoning_text.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
         self.reasoning_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.reasoning_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -153,7 +170,8 @@ class MessageWidget(QFrame):
         # Main Content
         self.main_text = QTextBrowser()
         self.main_text.setObjectName("MainMessageText")
-        self.main_text.setOpenExternalLinks(True)
+        self.main_text.setOpenExternalLinks(False)
+        self.main_text.anchorClicked.connect(self.handle_link_click)
         self.main_text.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
         self.main_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.main_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -175,6 +193,22 @@ class MessageWidget(QFrame):
             self.append_reasoning(reasoning)
         if content:
             self.append_content(content)
+            
+    def handle_link_click(self, url):
+        url_str = url.toString()
+        if url_str.startswith("copy://"):
+            import base64
+            from PySide6.QtGui import QGuiApplication
+            b64_code = url_str.replace("copy://", "")
+            try:
+                code = base64.b64decode(b64_code).decode('utf-8')
+                clipboard = QGuiApplication.clipboard()
+                clipboard.setText(code)
+            except Exception as e:
+                print("Failed to copy:", e)
+        else:
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(url)
             
     def toggle_reasoning(self, checked):
         self.reasoning_text.setVisible(checked)

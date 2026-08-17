@@ -100,8 +100,8 @@ pub fn show_panel(label: String, app: AppHandle) {
     {
         use tauri::Manager;
         if let Some(window) = app.get_webview_window(&label) {
-            window.show().unwrap();
-            window.set_focus().unwrap();
+            let _ = window.show();
+            let _ = window.set_focus();
         }
     }
 }
@@ -119,7 +119,7 @@ pub fn hide_panel(label: String, app: AppHandle) {
                         panel.order_out(None);
                     }
                 } else {
-                    window.hide().unwrap();
+                    let _ = window.hide();
                 }
             });
         }
@@ -128,7 +128,7 @@ pub fn hide_panel(label: String, app: AppHandle) {
     {
         use tauri::Manager;
         if let Some(window) = app.get_webview_window(&label) {
-            window.hide().unwrap();
+            let _ = window.hide();
         }
     }
 }

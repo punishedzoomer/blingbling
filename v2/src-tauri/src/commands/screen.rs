@@ -57,8 +57,8 @@ pub fn start_interactive_snip(app: tauri::AppHandle) -> Result<(), String> {
             let size = monitor.size();
             let pos = monitor.position();
             
-            window.set_size(*size).unwrap();
-            window.set_position(*pos).unwrap();
+            window.set_size(*size).map_err(|e| e.to_string())?;
+            window.set_position(*pos).map_err(|e| e.to_string())?;
             
             if let Ok(panel) = window.to_panel() {
                 let ns_window_ptr = window.ns_window().unwrap() as usize;

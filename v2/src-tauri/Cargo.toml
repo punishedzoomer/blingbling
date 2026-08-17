@@ -26,7 +26,6 @@ window-vibrancy = "0.8.0"
 cocoa = "0.26.1"
 objc = "0.2.7"
 tauri-plugin-global-shortcut = "2.3.2"
-xcap = "0.9.8"
 image = "0.25.10"
 base64 = "0.23.1"
 reqwest = { version = "0.13.4", features = ["stream", "json"] }

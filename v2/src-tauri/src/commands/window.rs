@@ -74,14 +74,16 @@ pub fn show_panel(label: String, app: AppHandle) {
         if let Some(window) = app.get_webview_window(&label) {
             let _ = window.center();
             if let Ok(panel) = window.to_panel() {
-                panel.show();
-                let ns_window = window.ns_window().unwrap() as cocoa::base::id;
-                unsafe {
-                    use objc::{sel, sel_impl, class};
-                    let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
-                    let ns_app: cocoa::base::id = objc::msg_send![class!(NSApplication), sharedApplication];
-                    let _: () = objc::msg_send![ns_app, activateIgnoringOtherApps: true];
-                }
+                let _ = app.run_on_main_thread(move || {
+                    panel.show();
+                    let ns_window = window.ns_window().unwrap() as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl, class};
+                        let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
+                        let ns_app: cocoa::base::id = objc::msg_send![class!(NSApplication), sharedApplication];
+                        let _: () = objc::msg_send![ns_app, activateIgnoringOtherApps: true];
+                    }
+                });
             }
         }
     }

@@ -89,7 +89,8 @@ pub fn show_panel(label: String, app: AppHandle) {
                         use objc::{sel, sel_impl, class};
                         let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
                         let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
-                        let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
+                        let options: cocoa::foundation::NSUInteger = 2;
+                        let _: bool = objc::msg_send![ns_app, activateWithOptions: options];
                     }
                 });
             }
@@ -162,7 +163,8 @@ pub fn unfocus_panel(app: AppHandle) {
             unsafe {
                 let workspace: cocoa::base::id = objc::msg_send![class!(NSWorkspace), sharedWorkspace];
                 let front_app: cocoa::base::id = objc::msg_send![workspace, frontmostApplication];
-                let _: bool = objc::msg_send![front_app, activateWithOptions:0];
+                let options: cocoa::foundation::NSUInteger = 0;
+                let _: bool = objc::msg_send![front_app, activateWithOptions: options];
                 
                 let ns_app: cocoa::base::id = objc::msg_send![class!(NSApplication), sharedApplication];
                 let _: () = objc::msg_send![ns_app, deactivate];

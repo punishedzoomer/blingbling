@@ -53,7 +53,7 @@ pub fn start_interactive_snip(app: tauri::AppHandle) -> Result<(), String> {
         use tauri_nspanel::WebviewWindowExt;
         
         if let Some(window) = app.get_webview_window("snip") {
-            let monitor = window.primary_monitor().unwrap().unwrap();
+            let monitor = window.primary_monitor().map_err(|e| e.to_string())?.ok_or("No monitor found")?;
             let size = monitor.size();
             let pos = monitor.position();
             
@@ -82,7 +82,7 @@ pub fn process_snip(x: f32, y: f32, width: f32, height: f32, app: tauri::AppHand
     use std::sync::mpsc;
     let (tx, rx) = mpsc::channel();
     
-    let scale_factor = app.primary_monitor().unwrap().unwrap().scale_factor();
+    let scale_factor = app.primary_monitor().map_err(|e| e.to_string())?.ok_or("No monitor found")?.scale_factor();
     
     let _ = app.run_on_main_thread(move || {
         let result = (|| -> Result<String, String> {

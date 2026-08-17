@@ -4,3 +4,4 @@ __pycache__/
 .DS_Store
 sessions/
 mac_overlay.dylib
+v1/

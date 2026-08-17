@@ -1,7 +1,0 @@
-PySide6
-mss
-pillow
-openai
-pyinstaller
-markdown
-pygments

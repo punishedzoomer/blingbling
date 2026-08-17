@@ -90,9 +90,23 @@ pub fn show_panel(label: String, app: AppHandle) {
 
 #[tauri::command]
 pub fn hide_panel(label: String, app: AppHandle) {
-    use tauri::Manager;
-    if let Some(window) = app.get_webview_window(&label) {
-        window.hide().unwrap();
+    #[cfg(target_os = "macos")]
+    {
+        use tauri_nspanel::WebviewWindowExt;
+        if let Some(window) = app.get_webview_window(&label) {
+            if let Ok(panel) = window.to_panel() {
+                panel.order_out(None);
+            } else {
+                window.hide().unwrap();
+            }
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        use tauri::Manager;
+        if let Some(window) = app.get_webview_window(&label) {
+            window.hide().unwrap();
+        }
     }
 }
 

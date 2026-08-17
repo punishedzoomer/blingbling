@@ -12,6 +12,9 @@ void mac_force_overlay(long win_id) {
     if (window) {
         window.level = NSScreenSaverWindowLevel; 
         
+        // Make the window invisible to screenshots and screen recordings
+        window.sharingType = NSWindowSharingNone;
+        
         NSWindowCollectionBehavior behavior = window.collectionBehavior;
         behavior &= ~NSWindowCollectionBehaviorMoveToActiveSpace;
         behavior |= NSWindowCollectionBehaviorCanJoinAllSpaces;

@@ -61,9 +61,10 @@ pub fn start_interactive_snip(app: tauri::AppHandle) -> Result<(), String> {
             window.set_position(*pos).unwrap();
             
             if let Ok(panel) = window.to_panel() {
+                let ns_window_ptr = window.ns_window().unwrap() as usize;
                 let _ = app.run_on_main_thread(move || {
                     panel.show();
-                    let ns_window = window.ns_window().unwrap() as cocoa::base::id;
+                    let ns_window = ns_window_ptr as cocoa::base::id;
                     unsafe {
                         use objc::{sel, sel_impl};
                         let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];

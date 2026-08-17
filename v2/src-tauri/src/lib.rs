@@ -13,7 +13,8 @@ pub fn run() {
         .plugin(tauri_nspanel::init())
         .invoke_handler(tauri::generate_handler![
             commands::screen::capture_screen, 
-            commands::screen::capture_screen_interactive,
+            commands::screen::start_interactive_snip,
+            commands::screen::process_snip,
             commands::ai::stream_ai_response,
             commands::session::save_session,
             commands::session::load_sessions,

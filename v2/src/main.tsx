@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import App from "./App";
 import { SettingsApp } from "./SettingsApp";
 import { HistoryApp } from "./HistoryApp";
+import { SnipApp } from "./SnipApp";
 
 function Router() {
   const [label, setLabel] = useState<string | null>(null);
@@ -18,6 +19,8 @@ function Router() {
     return <SettingsApp />;
   } else if (label === "history") {
     return <HistoryApp />;
+  } else if (label === "snip") {
+    return <SnipApp />;
   }
   
   return <App />;

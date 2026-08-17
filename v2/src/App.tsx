@@ -181,7 +181,22 @@ function App() {
         await new Promise(r => setTimeout(r, 100));
       }
 
-      const base64Img = await invoke<string>(interactive ? "capture_screen_interactive" : "capture_screen");
+      let base64Img = "";
+      if (interactive) {
+        await invoke("start_interactive_snip");
+        const { listen } = await import("@tauri-apps/api/event");
+        base64Img = await new Promise<string>((resolve) => {
+          const unlisten = listen<string>("snip_finished", (event) => {
+            unlisten.then(f => f());
+            resolve(event.payload);
+          });
+        });
+        if (!base64Img) {
+          throw new Error("Capture cancelled");
+        }
+      } else {
+        base64Img = await invoke<string>("capture_screen");
+      }
       setPendingSnips((prev) => [...prev, base64Img]);
     } catch (captureErr) {
       console.error("Capture failed:", captureErr);

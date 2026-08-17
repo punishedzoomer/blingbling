@@ -47,6 +47,19 @@
         "alwaysOnTop": true,
         "visibleOnAllWorkspaces": true,
         "visible": false
+      },
+      {
+        "title": "Snip",
+        "label": "snip",
+        "width": 1920,
+        "height": 1080,
+        "transparent": true,
+        "decorations": false,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
+        "visible": false,
+        "skipTaskbar": true
       }
     ],
     "security": {

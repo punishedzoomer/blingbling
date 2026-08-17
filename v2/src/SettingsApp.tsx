@@ -140,7 +140,7 @@ export function SettingsApp() {
   };
 
   return (
-    <div id="settings-window" className="glass" style={{ width: "fit-content", height: "fit-content", display: "flex", flexDirection: "column", padding: "16px", boxSizing: "border-box" }}>
+    <div id="settings-window" className="glass" style={{ width: "480px", height: "fit-content", display: "flex", flexDirection: "column", padding: "16px", boxSizing: "border-box" }}>
       {/* Drag handle for the whole window */}
       <div 
         data-tauri-drag-region 

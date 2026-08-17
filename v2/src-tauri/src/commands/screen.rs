@@ -72,12 +72,26 @@ pub fn process_snip(x: f32, y: f32, width: f32, height: f32, app: tauri::AppHand
     
     let scale_factor = app.primary_monitor().unwrap().unwrap().scale_factor();
     
-    let x_phys = (x * scale_factor as f32).round() as u32;
-    let y_phys = (y * scale_factor as f32).round() as u32;
-    let w_phys = (width * scale_factor as f32).round() as u32;
-    let h_phys = (height * scale_factor as f32).round() as u32;
+    let mut x_phys = (x * scale_factor as f32).round() as u32;
+    let mut y_phys = (y * scale_factor as f32).round() as u32;
+    let mut w_phys = (width * scale_factor as f32).round() as u32;
+    let mut h_phys = (height * scale_factor as f32).round() as u32;
     
     let mut raw_image = monitor.capture_image().map_err(|e| e.to_string())?;
+    
+    // Clamp to prevent out-of-bounds panics in imageops::crop
+    let img_w = raw_image.width();
+    let img_h = raw_image.height();
+    
+    if x_phys >= img_w { x_phys = img_w.saturating_sub(1); }
+    if y_phys >= img_h { y_phys = img_h.saturating_sub(1); }
+    if x_phys + w_phys > img_w { w_phys = img_w - x_phys; }
+    if y_phys + h_phys > img_h { h_phys = img_h - y_phys; }
+    
+    if w_phys == 0 || h_phys == 0 {
+        return Err("Invalid selection area".into());
+    }
+    
     let cropped = image::imageops::crop(&mut raw_image, x_phys, y_phys, w_phys, h_phys).to_image();
     
     let max_width = 1920;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -10,11 +10,11 @@ import "katex/dist/katex.min.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useDynamicBounds } from "./useDynamicBounds";
-import {
-  ChevronDown, Square, X, MessageCircle, Wand,
-  Zap, Settings, History, ArrowUp, Scissors, Monitor, Sparkles, Flame, Plus
-} from "lucide-react";
+import { ChevronDown, Square, X, 
+  Zap, Settings, History, ArrowUp, Scissors, Monitor, Sparkles, Flame, Plus } from "lucide-react";
 import "./App.css";
+import { ActionButtons } from "./components/ActionButtons";
+import { InputArea } from "./components/InputArea";
 
 const LogoIcon = ({ size = 16 }: { size?: number }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -125,41 +125,10 @@ function App() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [sessionId, setSessionId] = useState(() => Date.now().toString());
   const [input, setInput] = useState("");
-  const [workflows, setWorkflows] = useState<any[]>(() => {
-    const saved = localStorage.getItem("customWorkflows");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
-  const [showWorkflowDropdown, setShowWorkflowDropdown] = useState(false);
-  const [buttons, setButtons] = useState(() => {
-    const saved = localStorage.getItem("buttonConfigs");
-    return saved ? JSON.parse(saved) : [
-      { label: "Solve", prompt: "Solve this problem" },
-      { label: "Explain", prompt: "Explain this problem" },
-      { label: "Optimize", prompt: "Optimize this code" },
-      { label: "Debug", prompt: "Find bugs in this code" }
-    ];
-  });
 
-  const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
-  const activeColor = activeWorkflow ? activeWorkflow.color : "#3c83f5";
 
-  useEffect(() => {
-    document.documentElement.style.setProperty('--accent', activeColor);
-  }, [activeColor]);
 
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "buttonConfigs" && e.newValue) {
-        setButtons(JSON.parse(e.newValue));
-      }
-      if (e.key === "customWorkflows" && e.newValue) {
-        setWorkflows(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+
   const [pendingSnips, setPendingSnips] = useState<string[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -429,11 +398,7 @@ function App() {
   return (
     <div id="app">
       {/* Dedicated drag handle / top bar */}
-      <div id="toolbar" className="drag-handle" onMouseDown={(e) => {
-        if (e.buttons === 1 && !(e.target as HTMLElement).closest('button')) {
-          getCurrentWindow().startDragging();
-        }
-      }}>
+      <div id="toolbar" className="drag-handle" data-tauri-drag-region>
         <div className="drag-pill" title="Drag to move window">
           <span className="drag-dots" aria-hidden="true"></span>
           <span className="drag-label">Drag</span>
@@ -492,101 +457,10 @@ function App() {
                 )}
               </div>
 
-              <div id="action-row" style={{ opacity: isStreaming ? 0.5 : 1, pointerEvents: isStreaming ? 'none' : 'auto' }}>
-                {buttons.map((btn: any, i: number) => (
-                  <Fragment key={i}>
-                    <button className={`act ${i === 0 ? 'act-primary' : i === 1 ? 'act-secondary' : ''}`} disabled={isStreaming} onClick={() => sendPreset(btn.prompt)}>
-                      <span className="ic">
-                        {i === 0 ? <Wand size={14} /> : i === 1 ? <MessageCircle size={14} /> : i === 2 ? <Zap size={14} /> : <Monitor size={14} />}
-                      </span>
-                      <span>{btn.label}</span>
-                    </button>
-                    {i < buttons.length - 1 && <span className="sep">•</span>}
-                  </Fragment>
-                ))}
-              </div>
+              <ActionButtons isStreaming={isStreaming} sendPreset={sendPreset} />
 
               <div id="composer" style={{ opacity: isStreaming ? 0.6 : 1 }}>
-                <div id="input-area" style={{ display: "flex", alignItems: "flex-start", gap: "10px", position: "relative" }}>
-                  
-                  {/* Workflow Switcher Pill */}
-                  <div style={{ position: "relative", zIndex: 10, paddingTop: "2px" }}>
-                    <button 
-                      onClick={() => setShowWorkflowDropdown(!showWorkflowDropdown)}
-                      style={{ 
-                        display: "flex", alignItems: "center", gap: "6px", 
-                        padding: "4px 8px", background: "rgba(0,0,0,0.3)", 
-                        border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", 
-                        color: "var(--tx-1)", fontSize: "11px", fontWeight: 500, cursor: "pointer",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
-                      }}
-                      title="Select Workflow"
-                    >
-                      <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: activeColor, boxShadow: `0 0 8px ${activeColor}` }} />
-                      <span style={{ opacity: 0.9 }}># {activeWorkflow ? activeWorkflow.name : "General"}</span>
-                    </button>
-
-                    {showWorkflowDropdown && (
-                      <>
-                        <div 
-                          style={{ position: "fixed", inset: 0, zIndex: 90 }} 
-                          onClick={() => setShowWorkflowDropdown(false)}
-                        />
-                        <div style={{ 
-                          position: "absolute", bottom: "calc(100% + 12px)", left: 0, zIndex: 100,
-                          background: "rgba(20,20,20,0.85)", backdropFilter: "blur(20px)",
-                          border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px",
-                          padding: "6px", display: "flex", flexDirection: "column", gap: "2px",
-                          minWidth: "160px", boxShadow: "0 12px 40px rgba(0,0,0,0.6)"
-                        }}>
-                          <div 
-                            onClick={() => { setActiveWorkflowId(null); setShowWorkflowDropdown(false); }}
-                            style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", borderRadius: "8px", cursor: "pointer", background: !activeWorkflowId ? "rgba(255,255,255,0.1)" : "transparent" }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = !activeWorkflowId ? "rgba(255,255,255,0.1)" : "transparent"}
-                          >
-                            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3c83f5" }} />
-                            <span style={{ fontSize: "13px", color: "var(--tx-1)", flex: 1 }}>General</span>
-                          </div>
-                          
-                          {workflows.length > 0 && <div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />}
-                          
-                          {workflows.map(wf => (
-                            <div 
-                              key={wf.id}
-                              onClick={() => { setActiveWorkflowId(wf.id); setShowWorkflowDropdown(false); }}
-                              style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", borderRadius: "8px", cursor: "pointer", background: activeWorkflowId === wf.id ? "rgba(255,255,255,0.1)" : "transparent" }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                              onMouseLeave={(e) => e.currentTarget.style.background = activeWorkflowId === wf.id ? "rgba(255,255,255,0.1)" : "transparent"}
-                            >
-                              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: wf.color }} />
-                              <span style={{ fontSize: "13px", color: "var(--tx-1)", flex: 1 }}>{wf.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div style={{ flex: 1, position: "relative" }}>
-                    {input === "" && <div id="placeholder">Ask about your screen or conversation...</div>}
-                    <textarea
-                      ref={textareaRef}
-                      id="input"
-                      rows={1}
-                      spellCheck="false"
-                      value={input}
-                      disabled={isStreaming}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSend();
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
+                <InputArea input={input} setInput={setInput} isStreaming={isStreaming} textareaRef={textareaRef} handleSend={handleSend} />
                 <div id="composer-bottom">
                   <div style={{ position: "relative" }}>
                     <button
@@ -632,7 +506,7 @@ function App() {
                       </>
                     )}
                   </div>
-                  <button id="snip-interactive-btn" className="smart-pill" title="Snip Region" onClick={() => handleSnip(true)} disabled={isCapturing || isStreaming} style={{ marginLeft: '8px', color: pendingSnips.length > 0 ? 'var(--accent, #3b82f6)' : undefined, borderColor: pendingSnips.length > 0 ? 'rgba(59, 130, 246, 0.3)' : undefined }}>
+                  <button id="snip-interactive-btn" className="smart-pill" title="Snip Region" onClick={() => handleSnip(true)} disabled={isCapturing || isStreaming} style={{ marginLeft: '8px', color: pendingSnips.length > 0 ? 'var(--accent)' : undefined, borderColor: pendingSnips.length > 0 ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : undefined }}>
                     <span className="ic"><Scissors size={14} /></span>
                     <span>{pendingSnips.length > 0 ? `${pendingSnips.length} Snip${pendingSnips.length > 1 ? 's' : ''}` : 'Snip'}</span>
                   </button>

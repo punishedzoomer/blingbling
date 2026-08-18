@@ -74,49 +74,59 @@ pub fn set_debug_mode(debug: bool, app: AppHandle) {
 
 #[tauri::command]
 pub fn show_panel(label: String, app: AppHandle) {
-    #[cfg(target_os = "macos")]
-    {
-        use tauri::Manager;
-        use tauri_nspanel::WebviewWindowExt;
-        if let Some(window) = app.get_webview_window(&label) {
-            let _ = window.center();
-            if let Ok(panel) = window.to_panel() {
-                let ns_window_ptr = window.ns_window().unwrap() as usize;
-                let _ = app.run_on_main_thread(move || {
-                    panel.show();
+    if let Some(window) = app.get_webview_window(&label) {
+        #[cfg(target_os = "macos")]
+        {
+            let is_main = label == "main";
+            let ns_window_ptr = window.ns_window().unwrap() as usize;
+            
+            let _ = app.run_on_main_thread(move || {
+                if is_main {
                     let ns_window = ns_window_ptr as cocoa::base::id;
                     unsafe {
                         use objc::{sel, sel_impl, class};
-                        let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
+                        let _: () = objc::msg_send![ns_window, setAlphaValue: 1.0f64];
+                        let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::NO];
+                        
                         let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
-                        let options: cocoa::foundation::NSUInteger = 2;
-                        let _: bool = objc::msg_send![ns_app, activateWithOptions: options];
+                        let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
                     }
-                });
-            }
-        }
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        use tauri::Manager;
-        if let Some(window) = app.get_webview_window(&label) {
-            let _ = window.show();
-            let _ = window.set_focus();
+                } else {
+                    use tauri_nspanel::WebviewWindowExt;
+                    if let Ok(panel) = window.to_panel() {
+                        panel.show();
+                        let ns_window = ns_window_ptr as cocoa::base::id;
+                        unsafe {
+                            use objc::{sel, sel_impl, class};
+                            let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
+                            let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
+                            let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
+                        }
+                    } else {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+            });
         }
     }
 }
 
 #[tauri::command]
 pub fn hide_panel(label: String, app: AppHandle) {
-    #[cfg(target_os = "macos")]
-    {
-        use tauri_nspanel::WebviewWindowExt;
-        if let Some(window) = app.get_webview_window(&label) {
-            let is_panel = window.to_panel().is_ok();
+    if let Some(window) = app.get_webview_window(&label) {
+        #[cfg(target_os = "macos")]
+        {
+            let is_main = label == "main";
+            let ns_window_ptr = window.ns_window().unwrap() as usize;
+            
             let _ = app.run_on_main_thread(move || {
-                if is_panel {
-                    if let Ok(panel) = window.to_panel() {
-                        panel.order_out(None);
+                if is_main {
+                    let ns_window = ns_window_ptr as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl};
+                        let _: () = objc::msg_send![ns_window, setAlphaValue: 0.0f64];
+                        let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::YES];
                     }
                 } else {
                     let _ = window.hide();
@@ -124,14 +134,9 @@ pub fn hide_panel(label: String, app: AppHandle) {
             });
         }
     }
-    #[cfg(not(target_os = "macos"))]
-    {
-        use tauri::Manager;
-        if let Some(window) = app.get_webview_window(&label) {
-            let _ = window.hide();
-        }
-    }
 }
+
+
 
 #[tauri::command]
 pub fn focus_panel(label: String, app: AppHandle) {

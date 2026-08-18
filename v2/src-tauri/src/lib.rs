@@ -2,20 +2,27 @@
 #![allow(unexpected_cfgs)]
 
 mod commands;
+mod websocket;
 
 use tauri::Manager;
+use std::sync::atomic::AtomicBool;
+
+pub struct AiState {
+    pub cancel_flag: AtomicBool,
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_nspanel::init())
         .invoke_handler(tauri::generate_handler![
             commands::screen::capture_screen, 
-            commands::screen::start_interactive_snip,
-            commands::screen::process_snip,
+            commands::screen::capture_screen_interactive,
             commands::ai::stream_ai_response,
+            commands::ai::cancel_ai_response,
             commands::session::save_session,
             commands::session::load_sessions,
             commands::window::hide_window,
@@ -28,6 +35,11 @@ pub fn run() {
             commands::window::unfocus_panel
         ])
         .setup(|app| {
+            let ws_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                websocket::start_server(ws_handle).await;
+            });
+            
             #[cfg(target_os = "macos")]
             {
                 use objc::{sel, sel_impl};

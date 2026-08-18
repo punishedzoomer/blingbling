@@ -198,12 +198,13 @@ button:focus { outline: none; }
   font-size: 15px; font-weight: 500; line-height: 1.35;
   box-shadow: 0 2px 8px rgba(60,131,245,0.35);
   animation: fadeUp 200ms ease both;
+  -webkit-user-select: text; user-select: text; cursor: text;
 }
 .ai-text {
   color: var(--tx-1);
   font-size: 20px; font-weight: 400; line-height: 1.5; letter-spacing: -0.01em;
   text-align: left; margin: 14px 0 2px;
-  -webkit-user-select: text; user-select: text;
+  -webkit-user-select: text; user-select: text; cursor: text;
 }
 .ai-text.small { font-size: 16px; line-height: 1.55; }
 .ai-text .w { display: inline; opacity: 0; animation: fadeUp 180ms ease forwards; }
@@ -914,3 +915,7 @@ button:focus { outline: none; }
   color: #fff;
 }
 
+/* KaTeX math rendering - dark theme overrides */
+.katex { color: var(--tx-1, #e8e8e8); font-size: 1em; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 8px 0; }
+.katex-display > .katex { text-align: left; }

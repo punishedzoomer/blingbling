@@ -1,14 +1,14 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import "./App.css";
 
 export function HistoryApp() {
   const [sessions, setSessions] = useState<{id: string, data: any}[]>([]);
 
   const loadSessions = () => {
-    import("@tauri-apps/api/core").then(({ invoke }) => {
-      invoke("load_sessions").then((data: any) => {
+    invoke("load_sessions").then((data: any) => {
         const sorted = data.sort((a: any, b: any) => {
           const getTime = (s: any) => {
             if (!isNaN(parseInt(s.id)) && s.id.length > 10) return parseInt(s.id);
@@ -19,7 +19,6 @@ export function HistoryApp() {
         });
         setSessions(sorted);
       }).catch(console.error);
-    });
   };
 
   useEffect(() => {
@@ -36,11 +35,8 @@ export function HistoryApp() {
       id="history-window" 
       style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column" }}
       onMouseEnter={() => { 
-        import("@tauri-apps/api/core").then(({ invoke }) => invoke("focus_panel", { label: "history" }).catch(console.error)) 
+        invoke("focus_panel", { label: "history" }).catch(console.error)
       }} 
-      onMouseLeave={() => { 
-        import("@tauri-apps/api/core").then(({ invoke }) => invoke("unfocus_panel").catch(console.error)) 
-      }}
     >
       {/* Drag handle for the whole window */}
       <div 
@@ -56,8 +52,7 @@ export function HistoryApp() {
         <div className="ts-header" style={{ paddingTop: "14px", zIndex: 101 }}>
           <span className="ts-title">Conversations</span>
           <button className="ts-close-btn" id="close-sidebar-btn" onClick={async () => {
-            const { invoke } = await import("@tauri-apps/api/core");
-            await invoke("hide_panel", { label: "history" });
+                        await invoke("hide_panel", { label: "history" });
           }} title="Close history">✕</button>
         </div>
         <div id="ts-list" className="ts-list" style={{ flex: 1, overflowY: "auto", zIndex: 101 }}>
@@ -87,9 +82,7 @@ export function HistoryApp() {
                 className="tc-turn" 
                 style={{ cursor: "pointer", display: "flex", flexDirection: "column", padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
                 onClick={async () => {
-                  const { emit } = await import("@tauri-apps/api/event");
-                  const { invoke } = await import("@tauri-apps/api/core");
-                  await emit("restore-session", { id: session.id, data: messages });
+                                                      await emit("restore-session", { id: session.id, data: messages });
                   await invoke("hide_panel", { label: "history" });
                 }}
               >
@@ -103,8 +96,7 @@ export function HistoryApp() {
         </div>
         <div className="ts-footer" style={{ zIndex: 101 }}>
           <button className="ts-clear-btn" id="clear-transcript-btn" onClick={async () => {
-            const { emit } = await import("@tauri-apps/api/event");
-            await emit("clear-history");
+                        await emit("clear-history");
           }}>Clear Current Chat</button>
         </div>
       </div>

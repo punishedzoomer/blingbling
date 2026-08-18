@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useDynamicBounds } from "./useDynamicBounds";
 import {
-  ChevronDown, Square, X, MessageCircle, Wand, RefreshCw,
-  MessageSquareText, Zap, Settings, History, ArrowUp, Scissors, Monitor, Sparkles, Flame, Plus
+  ChevronDown, Square, X, MessageCircle, Wand,
+  Zap, Settings, History, ArrowUp, Scissors, Monitor, Sparkles, Flame, Plus
 } from "lucide-react";
 import "./App.css";
 
@@ -58,6 +61,66 @@ const CodeBlock = ({ inline, className, children, ...props }: any) => {
   return <code className="bg-black/10 rounded px-1 py-0.5 text-sm" {...props}>{children}</code>;
 };
 
+const SYSTEM_PROMPT = `You are an elite competitive programming and LeetCode assistant.
+Your goal is to solve coding puzzles optimally and provide flawless implementations.
+When given a problem:
+1. Carefully read and adhere to all constraints.
+2. If the user asks you to solve it, immediately present the most optimal algorithm. Do not give partial hints or go in circles unless explicitly asked to do so.
+3. Provide the time and space complexity of your solution.
+4. Ensure your code is clean, well-documented, and production-ready.
+5. If the provided code has bugs, pinpoint them exactly and provide the fix.`;
+
+const MessageRenderer = ({ content }: { content: string }) => {
+  const thinkStartIndex = content.indexOf('<think>');
+  
+  if (thinkStartIndex !== -1) {
+    const thinkEndIndex = content.indexOf('</think>', thinkStartIndex);
+    const beforeThink = content.substring(0, thinkStartIndex);
+    let thinkContent = '';
+    let afterThink = '';
+    
+    if (thinkEndIndex !== -1) {
+      thinkContent = content.substring(thinkStartIndex + 7, thinkEndIndex).trim();
+      afterThink = content.substring(thinkEndIndex + 8).trim();
+    } else {
+      thinkContent = content.substring(thinkStartIndex + 7).trim();
+    }
+    
+    return (
+      <>
+        {beforeThink && (
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
+            {beforeThink}
+          </ReactMarkdown>
+        )}
+        <details className="mb-4" open={thinkEndIndex === -1}>
+          <summary className="cursor-pointer text-xs font-semibold text-[#8b949e] mb-2 select-none hover:text-[#c9d1d9] transition-colors outline-none list-none flex items-center gap-2">
+            {thinkEndIndex === -1 ? (
+              <span className="flex items-center gap-2"><Sparkles size={12} className="animate-pulse text-[#d2a8ff]" /> Reasoning...</span>
+            ) : (
+              <span className="flex items-center gap-2"><Sparkles size={12} className="text-[#8b949e]" /> View Reasoning</span>
+            )}
+          </summary>
+          <div className="pl-3 border-l-2 border-[#30363d] text-[#8b949e] text-[13px] leading-relaxed italic mb-4 whitespace-pre-wrap font-sans">
+            {thinkContent}
+          </div>
+        </details>
+        {afterThink && (
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
+            {afterThink}
+          </ReactMarkdown>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
+      {content}
+    </ReactMarkdown>
+  );
+};
+
 function App() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [sessionId, setSessionId] = useState(() => Date.now().toString());
@@ -80,20 +143,15 @@ function App() {
   // Sync messages to History window and save to backend whenever they change
   useEffect(() => {
     if (messages.length > 0) {
-      import("@tauri-apps/api/core").then(({ invoke }) => {
-        invoke("save_session", { sessionId, data: messages }).catch(console.error);
-      });
+      invoke("save_session", { sessionId, data: messages }).catch(console.error);
     }
-    import("@tauri-apps/api/event").then(({ emit }) => {
-      emit("history-sync", messages);
-    });
+    emit("history-sync", messages);
   }, [messages, sessionId]);
 
   // Listen for actions from other windows
   useEffect(() => {
     let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any;
-    import("@tauri-apps/api/event").then(({ listen }) => {
-      listen("clear-history", () => setMessages([])).then(f => unlistenClear = f);
+    listen("clear-history", () => setMessages([])).then(f => unlistenClear = f);
       listen("add-message", (e: any) => setMessages(prev => [...prev, e.payload])).then(f => unlistenAddMsg = f);
       listen("restore-session", (e: any) => {
         const { id, data } = e.payload;
@@ -114,7 +172,6 @@ function App() {
           });
         }
       }).then(f => unlistenSimulate = f);
-    });
 
     return () => {
       if (unlistenClear) unlistenClear();
@@ -165,7 +222,15 @@ function App() {
       });
     });
 
-    return () => { unlisten.then((f) => f()); };
+    const unlistenSnip = listen<string>("extension-snip-received", (event) => {
+      setPendingSnips((prev) => [...prev, event.payload]);
+      invoke("show_panel", { label: "main" });
+    });
+
+    return () => { 
+      unlisten.then((f) => f()); 
+      unlistenSnip.then((f) => f());
+    };
   }, []);
 
   const handleSnip = async (interactive: boolean = false) => {
@@ -183,17 +248,7 @@ function App() {
 
       let base64Img = "";
       if (interactive) {
-        await invoke("start_interactive_snip");
-        const { listen } = await import("@tauri-apps/api/event");
-        base64Img = await new Promise<string>((resolve) => {
-          const unlisten = listen<string>("snip_finished", (event) => {
-            unlisten.then(f => f());
-            resolve(event.payload);
-          });
-        });
-        if (!base64Img) {
-          throw new Error("Capture cancelled");
-        }
+        base64Img = await invoke<string>("capture_screen_interactive");
       } else {
         base64Img = await invoke<string>("capture_screen");
       }
@@ -235,16 +290,19 @@ function App() {
         contentArray.push({ type: "image_url", image_url: { url: snip } });
       }
 
-      const messagesPayload = contentArray.length > 0 && typeof contentArray[0] === 'object' ? [
-        {
-          role: "user",
-          content: contentArray
-        }
-      ] : [
-        {
-          role: "user",
-          content: userMsg
-        }
+      const previousMessages = messages.map(m => ({ role: m.role, content: m.content }));
+      const currentMessage = contentArray.length > 0 && typeof contentArray[0] === 'object' ? {
+        role: "user",
+        content: contentArray
+      } : {
+        role: "user",
+        content: userMsg
+      };
+
+      const messagesPayload = [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...previousMessages, 
+        currentMessage
       ];
 
       await invoke("stream_ai_response", {
@@ -270,6 +328,7 @@ function App() {
 
   const sendPreset = async (msg: string) => {
     if (isStreaming) return;
+    const previousMessages = messages;
     setMessages((prev) => [...prev, { role: "user", content: msg }]);
 
     let snipsToSend = [...pendingSnips];
@@ -295,16 +354,18 @@ function App() {
         contentArray.push({ type: "image_url", image_url: { url: snip } });
       }
 
-      const messagesPayload = snipsToSend.length > 0 ? [
-        {
-          role: "user",
-          content: contentArray
-        }
-      ] : [
-        {
-          role: "user",
-          content: msg
-        }
+      const currentMessage = snipsToSend.length > 0 ? {
+        role: "user",
+        content: contentArray
+      } : {
+        role: "user",
+        content: msg
+      };
+
+      const messagesPayload = [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...previousMessages, 
+        currentMessage
       ];
 
       await invoke("stream_ai_response", {
@@ -341,8 +402,7 @@ function App() {
           <span className="drag-label">Drag</span>
         </div>
         <button className="tb-logo" id="logo-btn" title="Settings" onClick={async () => {
-          const { invoke } = await import("@tauri-apps/api/core");
-          await invoke("show_panel", { label: "settings" }).catch(() => {
+                    await invoke("show_panel", { label: "settings" }).catch(() => {
             alert("Could not open Settings window. Please restart the app for the multi-window update to take effect!");
           });
         }}>
@@ -354,7 +414,9 @@ function App() {
           <span>{isCollapsed ? "Show" : "Hide"}</span>
         </button>
         <div className="tb-divider"></div>
-        <button className="tb-stop" id="stop-btn" title="Start / stop listening">
+        <button className="tb-stop" id="stop-btn" title="Stop AI" onClick={async () => {
+                      await invoke("cancel_ai_response");
+        }}>
           <Square size={14} />
         </button>
         <div className="tb-divider"></div>
@@ -382,9 +444,7 @@ function App() {
                     {msg.role === "user" ? (
                       <div>{msg.content}</div>
                     ) : (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
-                        {msg.content}
-                      </ReactMarkdown>
+                      <MessageRenderer content={msg.content} />
                     )}
                   </div>
                 ))}
@@ -396,20 +456,20 @@ function App() {
               </div>
 
               <div id="action-row" style={{ opacity: isStreaming ? 0.5 : 1, pointerEvents: isStreaming ? 'none' : 'auto' }}>
-                <button className="act act-primary" data-mode="say" disabled={isStreaming} onClick={() => sendPreset("What should I say right now?")}>
-                  <span className="ic"><MessageCircle size={14} /></span><span>What should I say?</span>
+                <button className="act act-primary" data-mode="say" disabled={isStreaming} onClick={() => sendPreset("Solve this problem")}>
+                  <span className="ic"><Wand size={14} /></span><span>Solve</span>
                 </button>
                 <span className="sep">•</span>
-                <button className="act act-secondary" data-mode="assist" disabled={isStreaming} onClick={() => sendPreset("Help me with what's on my screen")}>
-                  <span className="ic"><Wand size={14} /></span><span>Assist</span>
+                <button className="act act-secondary" data-mode="assist" disabled={isStreaming} onClick={() => sendPreset("Explain this problem")}>
+                  <span className="ic"><MessageCircle size={14} /></span><span>Explain</span>
                 </button>
                 <span className="sep">•</span>
-                <button className="act" data-mode="followup" disabled={isStreaming} onClick={() => sendPreset("Can you expand on that?")}>
-                  <span className="ic"><RefreshCw size={14} /></span><span>Follow-up</span>
+                <button className="act" data-mode="followup" disabled={isStreaming} onClick={() => sendPreset("Optimize this code")}>
+                  <span className="ic"><Zap size={14} /></span><span>Optimize</span>
                 </button>
                 <span className="sep">•</span>
-                <button className="act" data-mode="recap" disabled={isStreaming} onClick={() => sendPreset("Summarize the conversation so far")}>
-                  <span className="ic"><MessageSquareText size={14} /></span><span>Recap</span>
+                <button className="act" data-mode="recap" disabled={isStreaming} onClick={() => sendPreset("Find bugs in this code")}>
+                  <span className="ic"><Monitor size={14} /></span><span>Debug</span>
                 </button>
               </div>
 
@@ -485,8 +545,7 @@ function App() {
                     <span className="ic"><Monitor size={14} /></span>
                   </button>
                   <button id="history-btn" className="history-btn" title="View conversation history" disabled={isStreaming} onClick={async () => {
-                    const { invoke } = await import("@tauri-apps/api/core");
-                    await invoke("show_panel", { label: "history" }).catch(() => {
+                                        await invoke("show_panel", { label: "history" }).catch(() => {
                       alert("Could not open History window. Please restart the app for the multi-window update to take effect!");
                     });
                   }}>
@@ -499,16 +558,22 @@ function App() {
                     <span className="ic"><Plus size={16} /></span>
                   </button>
                   <button id="more-btn" className="more-btn" title="Settings" disabled={isStreaming} onClick={async () => {
-                    const { invoke } = await import("@tauri-apps/api/core");
-                    await invoke("show_panel", { label: "settings" }).catch(() => {
+                                        await invoke("show_panel", { label: "settings" }).catch(() => {
                       alert("Could not open Settings window. Please restart the app!");
                     });
                   }}>
                     <span className="ic"><Settings size={16} /></span>
                   </button>
                   <div className="spacer"></div>
-                  <button id="send-btn" title="Send" onClick={handleSend} disabled={isStreaming}>
-                    <ArrowUp size={16} />
+                  <button 
+                    id="send-btn" 
+                    title={isStreaming ? "Stop" : "Send"} 
+                    onClick={isStreaming ? async () => {
+                                            await invoke("cancel_ai_response");
+                    } : handleSend} 
+                    disabled={!isStreaming && (!input.trim() && pendingSnips.length === 0)}
+                  >
+                    {isStreaming ? <Square size={14} fill="currentColor" /> : <ArrowUp size={16} />}
                   </button>
                 </div>
               </div>

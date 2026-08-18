@@ -63,7 +63,16 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "schemes": ["blingbling"]
     }
   },
   "bundle": {

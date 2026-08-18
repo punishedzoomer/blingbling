@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { emit } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
+import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Settings, Zap, Sparkles, Flame } from "lucide-react";
+import { Settings, Zap, Sparkles, Flame, ChevronDown, Search } from "lucide-react";
 import "./App.css";
 import { useDynamicBounds } from "./useDynamicBounds";
 
@@ -13,18 +15,111 @@ interface OpenRouterModel {
   };
 }
 
+function ModelSelect({ value, onChange, models, disabled }: { value: string, onChange: (v: string) => void, models: OpenRouterModel[], disabled: boolean }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedModel = models.find(m => m.id === value);
+  const filteredModels = models.filter(m => 
+    m.name.toLowerCase().includes(search.toLowerCase()) || 
+    m.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div ref={dropdownRef} style={{ position: "relative", width: "100%" }}>
+      <button
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        style={{
+          width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", 
+          border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", 
+          color: "var(--tx-1)", display: "flex", justifyContent: "space-between", alignItems: "center",
+          cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, textAlign: "left"
+        }}
+      >
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {selectedModel ? selectedModel.name : (value || "Select a model...")}
+        </span>
+        <ChevronDown size={14} style={{ flexShrink: 0, opacity: 0.5 }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: "absolute", top: "100%", left: 0, right: 0, marginTop: "4px",
+          background: "rgba(30,30,30,0.95)", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: "var(--r-8)", backdropFilter: "blur(12px)", zIndex: 1000,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column",
+          maxHeight: "260px", overflow: "hidden"
+        }}>
+          <div style={{ padding: "8px", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Search size={14} style={{ color: "var(--tx-mut)" }} />
+            <input 
+              autoFocus
+              type="text" 
+              placeholder="Search models..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: "100%", background: "transparent", border: "none", color: "var(--tx-1)", outline: "none", fontSize: "13px" }}
+            />
+          </div>
+          <div style={{ overflowY: "auto", padding: "4px" }}>
+            {filteredModels.length === 0 ? (
+              <div style={{ padding: "8px 12px", color: "var(--tx-mut)", fontSize: "12px", textAlign: "center" }}>No models found</div>
+            ) : (
+              filteredModels.map(m => {
+                const price = (parseFloat(m.pricing?.prompt || "0") * 1000000).toFixed(2);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => { onChange(m.id); setIsOpen(false); setSearch(""); }}
+                    style={{
+                      width: "100%", padding: "6px 8px", textAlign: "left", background: "transparent",
+                      border: "none", borderRadius: "var(--r-4)", cursor: "pointer",
+                      display: "flex", flexDirection: "column", gap: "2px"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <div style={{ color: "var(--tx-1)", fontSize: "13px" }}>{m.name}</div>
+                    <div style={{ color: "var(--tx-mut)", fontSize: "11px", display: "flex", justifyContent: "space-between" }}>
+                      <span>{m.id.split('/')[0]}</span>
+                      <span>${price}/1M tokens</span>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SettingsApp() {
   useDynamicBounds("settings");
 
   const [openRouterKey, setOpenRouterKey] = useState("");
+  const [keyUsage, setKeyUsage] = useState<number | null>(null);
+  const [keyLimit, setKeyLimit] = useState<number | null>(null);
+  const [isFetchingUsage, setIsFetchingUsage] = useState(false);
   const [modelQuick, setModelQuick] = useState("");
   const [modelSmart, setModelSmart] = useState("");
   const [modelUltra, setModelUltra] = useState("");
   const [allowSystemScreenshots, setAllowSystemScreenshots] = useState(false);
 
-  const [quickModels, setQuickModels] = useState<OpenRouterModel[]>([]);
-  const [smartModels, setSmartModels] = useState<OpenRouterModel[]>([]);
-  const [ultraModels, setUltraModels] = useState<OpenRouterModel[]>([]);
+  const [allModels, setAllModels] = useState<OpenRouterModel[]>([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
   useEffect(() => {
@@ -39,62 +134,23 @@ export function SettingsApp() {
       .then(data => {
         const allModels: OpenRouterModel[] = data.data;
         
-        const quick: OpenRouterModel[] = [];
-        const smart: OpenRouterModel[] = [];
-        const ultra: OpenRouterModel[] = [];
-
-        // Sort models by name initially
-        allModels.sort((a, b) => a.name.localeCompare(b.name));
-
         const majorProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'deepseek/', 'x-ai/', 'mistralai/', 'cohere/', 'moonshotai/'];
 
-        allModels.forEach(model => {
-          if (!model.pricing || !model.pricing.prompt) return;
-          // Exclude gemini-2.0 as requested
-          if (model.id.includes("gemini-2.0")) return;
-          // Filter out :free models to reduce clutter
-          if (model.id.endsWith(":free")) return;
-          // Filter out batch models to reduce clutter
-          if (model.id.endsWith(":batch")) return;
-          
-          const promptPrice = parseFloat(model.pricing.prompt);
-          const pricePer1M = promptPrice * 1000000;
-          
-          const isUltraKeyword = /reasoner|o1|o3|opus/i.test(model.id);
-          
-          if (isUltraKeyword || pricePer1M > 4.0) {
-            ultra.push(model);
-          } else if (pricePer1M >= 1.0) {
-            smart.push(model);
-          } else {
-            quick.push(model);
-          }
+        const filtered = allModels.filter(model => {
+          if (!model.pricing || !model.pricing.prompt) return false;
+          if (model.id.includes("gemini-2.0")) return false;
+          if (model.id.endsWith(":free")) return false;
+          if (model.id.endsWith(":batch")) return false;
+          return true;
+        }).sort((a, b) => {
+          const aMajor = majorProviders.some(p => a.id.startsWith(p));
+          const bMajor = majorProviders.some(p => b.id.startsWith(p));
+          if (aMajor && !bMajor) return -1;
+          if (!aMajor && bMajor) return 1;
+          return a.name.localeCompare(b.name);
         });
 
-        // Function to sort prioritizing coding capability and major providers
-        const limitAndSort = (models: any[]) => {
-          return models
-            .sort((a, b) => {
-              const aCode = a.benchmarks?.artificial_analysis?.coding_index || 0;
-              const bCode = b.benchmarks?.artificial_analysis?.coding_index || 0;
-              
-              if (aCode !== bCode) {
-                return bCode - aCode; // Highest coding index first
-              }
-
-              const aMajor = majorProviders.some(p => a.id.startsWith(p));
-              const bMajor = majorProviders.some(p => b.id.startsWith(p));
-              if (aMajor && !bMajor) return -1;
-              if (!aMajor && bMajor) return 1;
-              
-              return 0; // maintain alphabetical order
-            })
-            .slice(0, 30); // Limit to top 30 per category
-        };
-
-        setQuickModels(limitAndSort(quick));
-        setSmartModels(limitAndSort(smart));
-        setUltraModels(limitAndSort(ultra));
+        setAllModels(filtered);
         setModelsLoaded(true);
       })
       .catch(err => {
@@ -111,24 +167,40 @@ export function SettingsApp() {
     localStorage.setItem("allowSystemScreenshots", allowSystemScreenshots.toString());
     
     // Tell the backend to toggle screenshot visibility
-    import("@tauri-apps/api/core").then(({ invoke }) => {
       invoke("set_debug_mode", { debug: allowSystemScreenshots }).catch(console.error);
-    });
   }, [openRouterKey, modelQuick, modelSmart, modelUltra, allowSystemScreenshots]);
+
+  useEffect(() => {
+    if (!openRouterKey || !openRouterKey.startsWith("sk-or-v1-")) {
+      setKeyUsage(null);
+      setKeyLimit(null);
+      return;
+    }
+
+    setIsFetchingUsage(true);
+    fetch("https://openrouter.ai/api/v1/auth/key", {
+      headers: { "Authorization": `Bearer ${openRouterKey}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.data) {
+          setKeyUsage(data.data.usage);
+          setKeyLimit(data.data.limit);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setIsFetchingUsage(false));
+  }, [openRouterKey]);
 
   const simulateLLMResponse = async () => {
     // We emit an event to the main window to simulate a response
-    const { emit } = await import("@tauri-apps/api/event");
-    await emit("simulate-llm");
-    const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("hide_panel", { label: "settings" });
+        await emit("simulate-llm");
+        await invoke("hide_panel", { label: "settings" });
   };
 
   const testCaptureScreen = async () => {
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const { emit } = await import("@tauri-apps/api/event");
-      const base64Img = await invoke<string>("capture_screen");
+                  const base64Img = await invoke<string>("capture_screen");
       await emit("add-message", { 
         role: "assistant", 
         content: `**Screenshot Captured!**\n\n![Screenshot](${base64Img})` 
@@ -153,19 +225,15 @@ export function SettingsApp() {
       />
       <div 
         id="settings" 
-        style={{ border: "none", boxShadow: "none", width: "fit-content", height: "fit-content", paddingTop: "30px", margin: 0, padding: 0 }}
+        style={{ border: "none", boxShadow: "none", width: "100%", height: "fit-content", paddingTop: "30px", margin: 0, padding: 0 }}
         onMouseEnter={() => { 
-          import("@tauri-apps/api/core").then(({ invoke }) => invoke("focus_panel", { label: "settings" }).catch(console.error)) 
+          invoke("focus_panel", { label: "settings" }).catch(console.error)
         }} 
-        onMouseLeave={() => { 
-          import("@tauri-apps/api/core").then(({ invoke }) => invoke("unfocus_panel").catch(console.error)) 
-        }}
       >
         <div className="s-head">
           <div className="s-title">Settings</div>
           <button id="s-close" className="s-close" onClick={async () => {
-            const { invoke } = await import("@tauri-apps/api/core");
-            await invoke("hide_panel", { label: "settings" });
+                        await invoke("hide_panel", { label: "settings" });
           }} style={{ zIndex: 101 }}>Done</button>
         </div>
         <div className="s-tabs">
@@ -176,66 +244,63 @@ export function SettingsApp() {
         <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "12px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101 }}>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>OpenRouter API Key</label>
-              <input 
-                type="password" 
-                value={openRouterKey}
-                onChange={(e) => setOpenRouterKey(e.target.value)}
-                placeholder="sk-or-v1-..." 
-                style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", color: "var(--tx-1)" }}
-              />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>OpenRouter API Key</label>
+                {openRouterKey && openRouterKey.startsWith("sk-or-v1-") && (
+                  <span style={{ fontSize: "11px", color: "var(--tx-2)", background: "rgba(255,255,255,0.05)", padding: "2px 6px", borderRadius: "var(--r-4)" }}>
+                    {isFetchingUsage ? "..." : `Used: $${(keyUsage || 0).toFixed(2)}${keyLimit ? ` / $${keyLimit.toFixed(2)}` : ""}`}
+                  </span>
+                )}
+              </div>
+              <div style={{ position: "relative" }}>
+                <input 
+                  type="password" 
+                  value={openRouterKey}
+                  onChange={(e) => setOpenRouterKey(e.target.value)}
+                  placeholder="sk-or-v1-..." 
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", color: "var(--tx-1)" }}
+                />
+                {keyLimit && keyLimit > 0 && !isFetchingUsage && (
+                  <div style={{ position: "absolute", bottom: "1px", left: "1px", right: "1px", height: "2px", background: "rgba(255,255,255,0.05)", borderBottomLeftRadius: "var(--r-8)", borderBottomRightRadius: "var(--r-8)", overflow: "hidden" }}>
+                    <div style={{ 
+                      width: `${Math.min(100, Math.max(0, ((keyUsage || 0) / keyLimit) * 100))}%`, 
+                      height: "100%", 
+                      background: "var(--accent)", 
+                      transition: "width 0.3s ease" 
+                    }} />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Zap size={14} /> Quick Model</label>
-              <select 
+              <ModelSelect
                 value={modelQuick}
-                onChange={(e) => setModelQuick(e.target.value)}
+                onChange={setModelQuick}
+                models={allModels}
                 disabled={!modelsLoaded}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", color: "var(--tx-1)" }}
-              >
-                {!modelsLoaded ? <option>Loading models...</option> : quickModels.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-                {/* Fallback if list is empty or doesn't have the selected model */}
-                {modelsLoaded && !quickModels.some(m => m.id === modelQuick) && modelQuick && (
-                  <option value={modelQuick}>{modelQuick} (Current)</option>
-                )}
-              </select>
+              />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Sparkles size={14} /> Smart Model</label>
-              <select 
+              <ModelSelect
                 value={modelSmart}
-                onChange={(e) => setModelSmart(e.target.value)}
+                onChange={setModelSmart}
+                models={allModels}
                 disabled={!modelsLoaded}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", color: "var(--tx-1)" }}
-              >
-                {!modelsLoaded ? <option>Loading models...</option> : smartModels.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-                {modelsLoaded && !smartModels.some(m => m.id === modelSmart) && modelSmart && (
-                  <option value={modelSmart}>{modelSmart} (Current)</option>
-                )}
-              </select>
+              />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Flame size={14} /> Ultra Model</label>
-              <select 
+              <ModelSelect
                 value={modelUltra}
-                onChange={(e) => setModelUltra(e.target.value)}
+                onChange={setModelUltra}
+                models={allModels}
                 disabled={!modelsLoaded}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", color: "var(--tx-1)" }}
-              >
-                {!modelsLoaded ? <option>Loading models...</option> : ultraModels.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-                {modelsLoaded && !ultraModels.some(m => m.id === modelUltra) && modelUltra && (
-                  <option value={modelUltra}>{modelUltra} (Current)</option>
-                )}
-              </select>
+              />
             </div>
 
             <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "8px 0" }}/>

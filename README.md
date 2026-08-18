@@ -1,41 +1,55 @@
-# Bling Bling Assistant
+<div align="center">
+  <img src="v2/src-tauri/icons/icon.png" width="128" alt="Bling Bling Logo">
+  <h1>Bling Bling Assistant</h1>
+  <p>A sleek, AI-powered desktop assistant rebuilt from the ground up with Tauri 2.0 and React.</p>
+</div>
 
-Bling Bling is a sleek, AI-powered desktop assistant for macOS. Rebuilt from the ground up in V2, it abandons the old PyQt5 foundation in favor of a lightning-fast **Tauri 2.0 + React** stack. It is designed to act as a seamless system accessory—invisible in your Dock, but instantly available via global shortcuts.
+---
 
-## Features
+<!-- [INSERT DEMO VIDEO PLACEHOLDER HERE] -->
+<!-- e.g. <img src="demo.gif" alt="Bling Bling Demo"> -->
 
-- **True Accessory Mode:** Bling Bling runs as a macOS accessory process. It doesn't clutter your Dock or app switcher.
+Bling Bling is designed to act as a seamless system accessory—invisible in your Dock, but instantly available via global shortcuts. 
+
+<!-- [INSERT SCREENSHOT PLACEHOLDER HERE] -->
+<!-- e.g. <img src="screenshot.png" alt="Bling Bling Screenshot"> -->
+
+## ✨ Features
+
+- **True Accessory Mode:** Runs as a native macOS accessory process. It doesn't clutter your Dock or app switcher.
 - **Glassmorphism Design:** A beautiful, transparent, auto-resizing overlay that blends smoothly into your macOS environment.
 - **Instant Screen Capture:** Native macOS screen snipping using Rust, allowing you to seamlessly provide visual context to the AI.
-- **Multi-Model Intelligence:** Powered by OpenRouter, allowing you to easily switch between advanced reasoning models (like Claude 3.5 Sonnet, Kimi K3, and Gemini 3.7) and lightweight models depending on your needs.
+- **Multi-Model Intelligence:** Powered by OpenRouter, switch between reasoning models (Claude 3.5 Sonnet, Gemini 1.5 Pro) and lightning-fast local models based on your needs.
 - **Persistent History:** Your conversations are automatically saved locally and can be browsed or restored at any time.
 
-## Project Architecture
+## 🍎 Installation (macOS)
 
-The codebase is split into a modern web frontend and a robust Rust backend:
+You can install Bling Bling on macOS in two ways:
 
-### 1. The Rust Backend (`v2/src-tauri/`)
-- **`lib.rs` / `main.rs`:** The core entry points. Configures the Tauri application, registers system-wide shortcuts, and swizzles Tauri webviews into native `NSPanel` objects using Objective-C bindings so the app can float above fullscreen windows.
-- **`commands/ai.rs`:** Handles communication with the OpenRouter API, including streaming server-sent events (SSE) back to the frontend.
-- **`commands/screen.rs`:** Uses `xcap` and native macOS commands to trigger the interactive screen capture tool (`screencapture -i`) and process the resulting images.
-- **`commands/session.rs`:** Manages the filesystem, allowing conversations to be seamlessly serialized to JSON and saved in the macOS Application Support directory.
-- **`commands/window.rs`:** The bridge to macOS native window management. Handles dynamic resizing, focusing, hiding, and centering the `NSPanel` interfaces.
+### Option 1: Download the `.dmg`
+1. Go to the [Releases](../../releases) page of this repository.
+2. Download the latest `Bling Bling.dmg` file.
+3. Open the `.dmg` and drag the **Bling Bling** app into your `Applications` folder.
+4. Launch the app (you may need to right-click and select "Open" the first time due to macOS security).
 
-### 2. The React Frontend (`v2/src/`)
-- **`App.tsx`:** The main chat overlay interface. Handles the auto-resizing text area, markdown rendering, and the conversational state machine.
-- **`SettingsApp.tsx`:** The settings panel for configuring your OpenRouter API key, selecting default models, and toggling development features.
-- **`HistoryApp.tsx`:** The sidebar interface that parses local JSON session files, sorts them chronologically, and allows you to jump back into previous chats.
-- **`useDynamicBounds.ts`:** A custom React hook that uses `ResizeObserver` to constantly sync the HTML document's dimensions with the native macOS window frame, ensuring the transparent window perfectly wraps your content.
-- **`App.css`:** The design system. Relies heavily on flexbox, CSS variables, and `-webkit-backdrop-filter` for the frosted glass effects.
-
-## Building for Production
-
-To compile a native macOS `.app` bundle:
+### Option 2: Build from source
+If you prefer to compile the app yourself:
 ```bash
+# Ensure you have Node.js and Rust installed
 cd v2
 npm install
-npm run tauri build
+npm run tauri build -- --bundles dmg
 ```
-The finished application will be located at `v2/src-tauri/target/release/bundle/macos/Bling Bling.app`.
+Your compiled `.dmg` and `.app` will be located in `v2/src-tauri/target/release/bundle/macos/`.
 
-*(Note: The V1 Python/PyQt5 source code has been moved to the `v1/` directory for historical reference.)*
+## 🤝 Help Wanted: Linux & Windows Ports
+
+Currently, Bling Bling heavily relies on macOS-specific native APIs (like `NSPanel` for floating windows and `screencapture` for snipping) to achieve its seamless, accessory-style behavior.
+
+**We are actively looking for contributors to help port these native features to Linux and Windows!** 
+
+If you have experience with Windows APIs (e.g. `Win32`, `WS_EX_TOOLWINDOW`) or Linux window managers (X11/Wayland layer shells), we would love your help adapting the `.setup()` hooks in `v2/src-tauri/src/lib.rs` to make Bling Bling completely cross-platform.
+
+---
+
+*(Note: The legacy V1 Python/PyQt5 source code has been moved to the `v1/` directory for historical reference.)*

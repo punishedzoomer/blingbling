@@ -132,6 +132,7 @@ pub async fn stream_ai_response(
 #[tauri::command]
 pub async fn generate_title(
     api_key: String,
+    model: String,
     messages: Vec<Value>,
 ) -> Result<String, String> {
     let client = Client::new();
@@ -149,7 +150,7 @@ pub async fn generate_title(
     }
 
     let payload = json!({
-        "model": "google/gemini-2.0-flash", // Use a fast default model for title generation
+        "model": model, // Use a fast default model for title generation
         "messages": [
             { "role": "system", "content": "You are a title generator. Generate a very short, concise, 3 to 5 word title that summarizes the following conversation. Do NOT use quotes, punctuation, or any introductory text. Just the title." },
             { "role": "user", "content": context_text }

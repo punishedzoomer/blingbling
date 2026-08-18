@@ -176,7 +176,8 @@ function App() {
         try {
           const apiKey = localStorage.getItem("openRouterKey");
           if (!apiKey) return;
-          const title = await invoke("generate_title", { apiKey, messages });
+          const model = localStorage.getItem("modelQuick") || "openai/gpt-4o-mini";
+          const title = await invoke("generate_title", { apiKey, model, messages });
           setSessionTitle(title as string);
         } catch (e) {
           console.error("Failed to generate title", e);
@@ -354,7 +355,7 @@ function App() {
             aiMode === "smart" ? "modelSmart" :
               "modelUltra"
         ) || (
-            aiMode === "quick" ? "google/gemini-2.0-flash" :
+            aiMode === "quick" ? "openai/gpt-4o-mini" :
               aiMode === "smart" ? "anthropic/claude-3.5-sonnet" :
                 "deepseek/deepseek-reasoner"
           ),
@@ -417,7 +418,7 @@ function App() {
             aiMode === "smart" ? "modelSmart" :
               "modelUltra"
         ) || (
-            aiMode === "quick" ? "google/gemini-2.0-flash" :
+            aiMode === "quick" ? "openai/gpt-4o-mini" :
               aiMode === "smart" ? "anthropic/claude-3.5-sonnet" :
                 "deepseek/deepseek-reasoner"
           ),

@@ -398,7 +398,12 @@ function App() {
   return (
     <div id="app">
       {/* Dedicated drag handle / top bar */}
-      <div id="toolbar" className="drag-handle" data-tauri-drag-region>
+      <div id="toolbar" className="drag-handle" onPointerDown={(e) => {
+        if (e.buttons === 1 && !(e.target as HTMLElement).closest('button')) {
+          e.preventDefault();
+          getCurrentWindow().startDragging();
+        }
+      }}>
         <div className="drag-pill" title="Drag to move window">
           <span className="drag-dots" aria-hidden="true"></span>
           <span className="drag-label">Drag</span>

@@ -2,7 +2,7 @@ import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Settings, Zap, Sparkles, Flame, ChevronDown, Search } from "lucide-react";
+import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Plus, Trash2, ArrowLeft, Layers, Paperclip } from "lucide-react";
 import "./App.css";
 import { useDynamicBounds } from "./useDynamicBounds";
 
@@ -108,6 +108,35 @@ function ModelSelect({ value, onChange, models, disabled }: { value: string, onC
 }
 
 export function SettingsApp() {
+
+  const [activeTab, setActiveTab] = useState("general");
+  const [buttons, setButtons] = useState(() => {
+    const saved = localStorage.getItem("buttonConfigs");
+    return saved ? JSON.parse(saved) : [
+      { label: "Solve", prompt: "Solve this problem" },
+      { label: "Explain", prompt: "Explain this problem" },
+      { label: "Optimize", prompt: "Optimize this code" },
+      { label: "Debug", prompt: "Find bugs in this code" }
+    ];
+  });
+
+  const saveButtons = (newButtons: any) => {
+    setButtons(newButtons);
+    localStorage.setItem("buttonConfigs", JSON.stringify(newButtons));
+  };
+
+  const [workflows, setWorkflows] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customWorkflows");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [editingWorkflowId, setEditingWorkflowId] = useState<string | null>(null);
+
+  const saveWorkflows = (newWorkflows: any[]) => {
+    setWorkflows(newWorkflows);
+    localStorage.setItem("customWorkflows", JSON.stringify(newWorkflows));
+  };
+
+
   useDynamicBounds("settings");
 
   const [openRouterKey, setOpenRouterKey] = useState("");
@@ -212,7 +241,7 @@ export function SettingsApp() {
   };
 
   return (
-    <div id="settings-window" className="glass" style={{ width: "480px", height: "fit-content", display: "flex", flexDirection: "column", padding: "16px", boxSizing: "border-box" }}>
+    <div id="settings-window" className="glass" style={{ width: "480px", height: "fit-content", minHeight: "400px", display: "flex", flexDirection: "column", padding: "16px", boxSizing: "border-box" }}>
       {/* Drag handle for the whole window */}
       <div 
         data-tauri-drag-region 
@@ -236,76 +265,258 @@ export function SettingsApp() {
                         await invoke("hide_panel", { label: "settings" });
           }} style={{ zIndex: 101 }}>Done</button>
         </div>
-        <div className="s-tabs">
-            <button className="s-tab on" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+
+        <div className="s-tabs" style={{ zIndex: 101, position: "relative" }}>
+            <button className={`s-tab ${activeTab === 'general' ? 'on' : ''}`} onClick={() => setActiveTab('general')} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               <Settings size={14} style={{ marginRight: "6px" }} /> General
             </button>
+            <button className={`s-tab ${activeTab === 'prompts' ? 'on' : ''}`} onClick={() => setActiveTab('prompts')} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <MessageCircle size={14} style={{ marginRight: "6px" }} /> Prompts
+            </button>
+            <button className={`s-tab ${activeTab === 'advanced' ? 'on' : ''}`} onClick={() => { setActiveTab('advanced'); setEditingWorkflowId(null); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <Layers size={14} style={{ marginRight: "6px" }} /> Workflows
+            </button>
+            {import.meta.env.DEV && (
+              <button className={`s-tab ${activeTab === 'dev' ? 'on' : ''}`} onClick={() => setActiveTab('dev')} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <Terminal size={14} style={{ marginRight: "6px" }} /> Dev
+              </button>
+            )}
         </div>
+
         <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "12px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101 }}>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>OpenRouter API Key</label>
-                {openRouterKey && openRouterKey.startsWith("sk-or-v1-") && (
-                  <span style={{ fontSize: "11px", color: "var(--tx-2)", background: "rgba(255,255,255,0.05)", padding: "2px 6px", borderRadius: "var(--r-4)" }}>
-                    {isFetchingUsage ? "..." : `Used: $${(keyUsage || 0).toFixed(2)}${keyLimit ? ` / $${keyLimit.toFixed(2)}` : ""}`}
-                  </span>
-                )}
-              </div>
-              <div style={{ position: "relative" }}>
-                <input 
-                  type="password" 
-                  value={openRouterKey}
-                  onChange={(e) => setOpenRouterKey(e.target.value)}
-                  placeholder="sk-or-v1-..." 
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", color: "var(--tx-1)" }}
-                />
-                {keyLimit && keyLimit > 0 && !isFetchingUsage && (
-                  <div style={{ position: "absolute", bottom: "1px", left: "1px", right: "1px", height: "2px", background: "rgba(255,255,255,0.05)", borderBottomLeftRadius: "var(--r-8)", borderBottomRightRadius: "var(--r-8)", overflow: "hidden" }}>
-                    <div style={{ 
-                      width: `${Math.min(100, Math.max(0, ((keyUsage || 0) / keyLimit) * 100))}%`, 
-                      height: "100%", 
-                      background: "var(--accent)", 
-                      transition: "width 0.3s ease" 
-                    }} />
+            {activeTab === 'general' && (
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>OpenRouter API Key</label>
+                    {openRouterKey && openRouterKey.startsWith("sk-or-v1-") && (
+                      <span style={{ fontSize: "11px", color: "var(--tx-2)", background: "rgba(255,255,255,0.05)", padding: "2px 6px", borderRadius: "var(--r-4)" }}>
+                        {isFetchingUsage ? "..." : `Used: $${(keyUsage || 0).toFixed(2)}${keyLimit ? ` / $${keyLimit.toFixed(2)}` : ""}`}
+                      </span>
+                    )}
                   </div>
-                )}
+                  <div style={{ position: "relative" }}>
+                    <input 
+                      type="password" 
+                      value={openRouterKey}
+                      onChange={(e) => setOpenRouterKey(e.target.value)}
+                      placeholder="sk-or-v1-..." 
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.14)", background: "rgba(0,0,0,0.25)", color: "var(--tx-1)" }}
+                    />
+                    {keyLimit && keyLimit > 0 && !isFetchingUsage && (
+                      <div style={{ position: "absolute", bottom: "1px", left: "1px", right: "1px", height: "2px", background: "rgba(255,255,255,0.05)", borderBottomLeftRadius: "var(--r-8)", borderBottomRightRadius: "var(--r-8)", overflow: "hidden" }}>
+                        <div style={{ 
+                          width: `${Math.min(100, Math.max(0, ((keyUsage || 0) / keyLimit) * 100))}%`, 
+                          height: "100%", 
+                          background: "var(--accent)", 
+                          transition: "width 0.3s ease" 
+                        }} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Zap size={14} /> Quick Model</label>
+                  <ModelSelect
+                    value={modelQuick}
+                    onChange={setModelQuick}
+                    models={allModels}
+                    disabled={!modelsLoaded}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Sparkles size={14} /> Smart Model</label>
+                  <ModelSelect
+                    value={modelSmart}
+                    onChange={setModelSmart}
+                    models={allModels}
+                    disabled={!modelsLoaded}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Flame size={14} /> Ultra Model</label>
+                  <ModelSelect
+                    value={modelUltra}
+                    onChange={setModelUltra}
+                    models={allModels}
+                    disabled={!modelsLoaded}
+                  />
+                </div>
+              </>
+            )}
+
+            {activeTab === 'prompts' && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ fontSize: "12px", color: "var(--tx-2)", lineHeight: "1.5" }}>
+                  Customize the behavior of the 4 quick action buttons below the chat.
+                </div>
+                {buttons.map((btn: any, i: number) => (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", gap: "6px", background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px" }}>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <div style={{ flex: 1 }}>
+                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>Button Label</label>
+                        <input 
+                          type="text" 
+                          value={btn.label}
+                          onChange={(e) => {
+                            const newBtns = [...buttons];
+                            newBtns[i].label = e.target.value;
+                            saveButtons(newBtns);
+                          }}
+                          style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "12px" }}
+                        />
+                      </div>
+                      <div style={{ flex: 2 }}>
+                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>System Prompt</label>
+                        <input 
+                          type="text" 
+                          value={btn.prompt}
+                          onChange={(e) => {
+                            const newBtns = [...buttons];
+                            newBtns[i].prompt = e.target.value;
+                            saveButtons(newBtns);
+                          }}
+                          style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "12px" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Zap size={14} /> Quick Model</label>
-              <ModelSelect
-                value={modelQuick}
-                onChange={setModelQuick}
-                models={allModels}
-                disabled={!modelsLoaded}
-              />
-            </div>
+            {activeTab === 'advanced' && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
+                {!editingWorkflowId ? (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontSize: "12px", color: "var(--tx-2)", lineHeight: "1.5" }}>
+                        Create custom color-coded workflows.
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const newId = Date.now().toString();
+                          const newWf = { id: newId, name: "New Workflow", color: "#3c83f5", prompt: "", attachments: [] };
+                          saveWorkflows([...workflows, newWf]);
+                          setEditingWorkflowId(newId);
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "var(--accent)", color: "#fff", borderRadius: "8px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}
+                      >
+                        <Plus size={14} /> Create
+                      </button>
+                    </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Sparkles size={14} /> Smart Model</label>
-              <ModelSelect
-                value={modelSmart}
-                onChange={setModelSmart}
-                models={allModels}
-                disabled={!modelsLoaded}
-              />
-            </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1 }}>
+                      {workflows.length === 0 && (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100px", color: "var(--tx-mut)", fontSize: "13px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px dashed rgba(255,255,255,0.1)" }}>
+                          No workflows created yet.
+                        </div>
+                      )}
+                      {workflows.map(wf => (
+                        <div 
+                          key={wf.id} 
+                          onClick={() => setEditingWorkflowId(wf.id)}
+                          style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: "rgba(255,255,255,0.04)", borderRadius: "8px", cursor: "pointer", borderLeft: `4px solid ${wf.color}` }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+                        >
+                          <span style={{ fontSize: "14px", color: "var(--tx-1)", fontWeight: 500, flex: 1 }}>{wf.name}</span>
+                          <span style={{ fontSize: "12px", color: "var(--tx-mut)" }}>Edit</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (() => {
+                  const wf = workflows.find(w => w.id === editingWorkflowId);
+                  if (!wf) return null;
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <button 
+                          onClick={() => setEditingWorkflowId(null)}
+                          style={{ background: "transparent", border: "none", color: "var(--tx-mut)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", borderRadius: "6px" }}
+                        >
+                          <ArrowLeft size={16} />
+                        </button>
+                        <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--tx-1)", flex: 1 }}>Edit Workflow</div>
+                        <button 
+                          onClick={() => {
+                            saveWorkflows(workflows.filter(w => w.id !== editingWorkflowId));
+                            setEditingWorkflowId(null);
+                          }}
+                          style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "6px", borderRadius: "6px" }}
+                          title="Delete Workflow"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-mut)" }}><Flame size={14} /> Ultra Model</label>
-              <ModelSelect
-                value={modelUltra}
-                onChange={setModelUltra}
-                models={allModels}
-                disabled={!modelsLoaded}
-              />
-            </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>Workflow Name</label>
+                        <input 
+                          type="text" 
+                          value={wf.name}
+                          onChange={(e) => {
+                            const newWf = [...workflows];
+                            const idx = newWf.findIndex(w => w.id === editingWorkflowId);
+                            newWf[idx].name = e.target.value;
+                            saveWorkflows(newWf);
+                          }}
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "13px" }}
+                        />
+                      </div>
 
-            <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "8px 0" }}/>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>Accent Color</label>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          {['#3c83f5', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'].map(color => (
+                            <div 
+                              key={color}
+                              onClick={() => {
+                                const newWf = [...workflows];
+                                const idx = newWf.findIndex(w => w.id === editingWorkflowId);
+                                newWf[idx].color = color;
+                                saveWorkflows(newWf);
+                              }}
+                              style={{ width: "24px", height: "24px", borderRadius: "50%", background: color, cursor: "pointer", border: wf.color === color ? "2px solid #fff" : "2px solid transparent", transition: "all 0.2s" }}
+                            />
+                          ))}
+                        </div>
+                      </div>
 
-            {import.meta.env.DEV && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>System Prompt</label>
+                        <textarea 
+                          value={wf.prompt}
+                          onChange={(e) => {
+                            const newWf = [...workflows];
+                            const idx = newWf.findIndex(w => w.id === editingWorkflowId);
+                            newWf[idx].prompt = e.target.value;
+                            saveWorkflows(newWf);
+                          }}
+                          placeholder="e.g. You are an expert coding assistant..."
+                          style={{ width: "100%", flex: 1, minHeight: "80px", padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "13px", resize: "none" }}
+                        />
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>Custom Attachments</label>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "16px", borderRadius: "8px", background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)", color: "var(--tx-mut)", fontSize: "12px", cursor: "pointer" }}>
+                          <Paperclip size={14} /> Add File/Vault (Coming Soon)
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTab === 'dev' && import.meta.env.DEV && (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>Debugging</label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.05)", padding: "10px", borderRadius: "var(--r-8)" }}>

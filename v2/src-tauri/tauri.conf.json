@@ -60,19 +60,35 @@
         "visibleOnAllWorkspaces": true,
         "visible": false,
         "skipTaskbar": true
+      },
+      {
+        "title": "Tutorial",
+        "label": "tutorial",
+        "width": 500,
+        "height": 400,
+        "transparent": true,
+        "decorations": false,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
+        "visible": false
       }
     ],
     "security": {
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },
   "plugins": {
     "deep-link": {
-      "schemes": ["blingbling"]
+      "schemes": [
+        "blingbling"
+      ]
     }
   },
   "bundle": {

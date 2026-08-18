@@ -5,6 +5,7 @@ import App from "./App";
 import { SettingsApp } from "./SettingsApp";
 import { HistoryApp } from "./HistoryApp";
 import { SnipApp } from "./SnipApp";
+import { TutorialApp } from "./TutorialApp";
 
 function Router() {
   const [label, setLabel] = useState<string | null>(null);
@@ -21,6 +22,8 @@ function Router() {
     return <HistoryApp />;
   } else if (label === "snip") {
     return <SnipApp />;
+  } else if (label === "tutorial") {
+    return <TutorialApp />;
   }
   
   return <App />;

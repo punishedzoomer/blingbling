@@ -403,9 +403,9 @@ function App() {
           <span className="drag-dots" aria-hidden="true"></span>
           <span className="drag-label">Drag</span>
         </div>
-        <button className="tb-logo" id="logo-btn" title="Settings" onClick={async () => {
-                    await invoke("show_panel", { label: "settings" }).catch(() => {
-            alert("Could not open Settings window. Please restart the app for the multi-window update to take effect!");
+        <button className="tb-logo" id="logo-btn" title="Tutorial" onClick={async () => {
+                    await invoke("show_panel", { label: "tutorial" }).catch(() => {
+            alert("Could not open Tutorial window. Please restart the app for the multi-window update to take effect!");
           });
         }}>
           <LogoIcon size={16} />

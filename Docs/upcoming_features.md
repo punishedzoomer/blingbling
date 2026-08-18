@@ -16,9 +16,9 @@ This document tracks upcoming features, ideas, and works in progress for the Cra
 
 
 ### Settings Window & Workflows
-- [ ] **Workflow Limits & Color Coding (Medium)**: Hard limit of 8 custom workflows to prevent UI/UX bloat. Enforce exactly 8 major color themes (one being the default app accent). The entire app's accent color dynamically shifts based on the active workflow.
-- [ ] **Main UI Workflow Switcher (Medium)**: A clean, non-intrusive UI element on the main chat window that allows the user to select the active workflow right before starting a new conversation.
-- [ ] **History Window Workflow Grouping (Medium)**: History sessions will be color-coded and partitioned into accordion-style lists (hamburger/collapsible items) based on which workflow they belong to, rather than using tabs or a flat list.
+- [x] **Workflow Limits & Color Coding (Medium)**: Hard limit of 8 custom workflows to prevent UI/UX bloat. Enforce exactly 8 major color themes (one being the default app accent). The entire app's accent color dynamically shifts based on the active workflow.
+- [x] **Main UI Workflow Switcher (Medium)**: A clean, non-intrusive UI element on the main chat window that allows the user to select the active workflow right before starting a new conversation.
+- [x] **History Window Workflow Grouping (Medium)**: History sessions will be color-coded and partitioned into accordion-style lists (hamburger/collapsible items) based on which workflow they belong to, rather than using tabs or a flat list.
 - [ ] **Workflow Context Tracking (Hard)**: Equip each customized workflow with its own dedicated system prompt, progress tracking, and context memory feature.
 - [ ] **Obsidian Vault Integration (Extreme)**: Connect the app directly to an Obsidian vault for seamless bi-directional data flow and deep knowledge retrieval.
 

@@ -5,3 +5,11 @@ __pycache__/
 sessions/
 mac_overlay.dylib
 v1/
+
+# Extension builds
+extension.zip
+extension.xpi
+
+# IDE and Agents
+.vscode/
+.agents/

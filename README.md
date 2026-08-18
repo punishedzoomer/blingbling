@@ -14,7 +14,7 @@ Bling Bling is designed to act as a seamless system accessory—invisible in you
 <!-- [INSERT SCREENSHOT PLACEHOLDER HERE] -->
 <!-- e.g. <img src="screenshot.png" alt="Bling Bling Screenshot"> -->
 
-## ✨ Features
+## Features
 
 - **True Accessory Mode:** Runs as a native macOS accessory process. It doesn't clutter your Dock or app switcher.
 - **Glassmorphism Design:** A beautiful, transparent, auto-resizing overlay that blends smoothly into your macOS environment.
@@ -22,7 +22,7 @@ Bling Bling is designed to act as a seamless system accessory—invisible in you
 - **Multi-Model Intelligence:** Powered by OpenRouter, switch between reasoning models (Claude 3.5 Sonnet, Gemini 1.5 Pro) and lightning-fast local models based on your needs.
 - **Persistent History:** Your conversations are automatically saved locally and can be browsed or restored at any time.
 
-## 🍎 Installation (macOS)
+## Installation (macOS)
 
 You can install Bling Bling on macOS in two ways:
 
@@ -42,7 +42,7 @@ npm run tauri build -- --bundles dmg
 ```
 Your compiled `.dmg` and `.app` will be located in `v2/src-tauri/target/release/bundle/macos/`.
 
-## 🤝 Help Wanted: Linux & Windows Ports
+## Help Wanted: Linux & Windows Ports
 
 Currently, Bling Bling heavily relies on macOS-specific native APIs (like `NSPanel` for floating windows and `screencapture` for snipping) to achieve its seamless, accessory-style behavior.
 

@@ -55,6 +55,7 @@ export function HistoryApp() {
     }
 
     const firstUserMsg = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
+    const displayTitle = session.data?.title || String(firstUserMsg).replace(/\n/g, ' ');
     
     let dateStr = "Past Session";
     if (!isNaN(parseInt(session.id)) && session.id.length > 10) {
@@ -72,13 +73,13 @@ export function HistoryApp() {
         <div 
           style={{ flex: 1, cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden" }}
           onClick={async () => {
-            await emit("restore-session", { id: session.id, data: messages, workflowId: session.data.workflowId });
+            await emit("restore-session", { id: session.id, data: messages, workflowId: session.data.workflowId, title: session.data.title });
             await invoke("hide_panel", { label: "history" });
           }}
         >
           <span style={{ fontSize: "11px", color: "var(--tx-mut)", marginBottom: "4px" }}>{dateStr}</span>
           <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {String(firstUserMsg).replace(/\n/g, ' ')}
+            {displayTitle}
           </span>
         </div>
         <button 

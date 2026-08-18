@@ -128,3 +128,55 @@ pub async fn stream_ai_response(
     app.emit_to("main", "ai-response", "[DONE]").unwrap();
     Ok(())
 }
+
+#[tauri::command]
+pub async fn generate_title(
+    api_key: String,
+    messages: Vec<Value>,
+) -> Result<String, String> {
+    let client = Client::new();
+    
+    // We construct a simple prompt asking for a summary.
+    // We take the first user message and first assistant message to generate a title.
+    let mut context_text = String::new();
+    for msg in messages.iter().take(3) {
+        if let Some(role) = msg.get("role").and_then(|r| r.as_str()) {
+            if role == "system" { continue; }
+            if let Some(content) = msg.get("content").and_then(|c| c.as_str()) {
+                context_text.push_str(&format!("{}: {}\n", role, content));
+            }
+        }
+    }
+
+    let payload = json!({
+        "model": "google/gemini-2.0-flash", // Use a fast default model for title generation
+        "messages": [
+            { "role": "system", "content": "You are a title generator. Generate a very short, concise, 3 to 5 word title that summarizes the following conversation. Do NOT use quotes, punctuation, or any introductory text. Just the title." },
+            { "role": "user", "content": context_text }
+        ],
+        "stream": false,
+    });
+
+    let res = client
+        .post("https://openrouter.ai/api/v1/chat/completions")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let error_body = res.text().await.unwrap_or_default();
+        return Err(format!("API Error {}: {}", status, error_body));
+    }
+
+    let json_res: Value = res.json().await.map_err(|e| e.to_string())?;
+    
+    if let Some(title) = json_res["choices"][0]["message"]["content"].as_str() {
+        return Ok(title.trim().trim_matches('"').to_string());
+    }
+
+    Err("Failed to parse title from response".to_string())
+}

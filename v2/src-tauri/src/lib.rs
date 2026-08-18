@@ -25,6 +25,7 @@ pub fn run() {
             commands::screen::capture_screen_interactive,
             commands::ai::stream_ai_response,
             commands::ai::cancel_ai_response,
+            commands::ai::generate_title,
             commands::session::save_session,
             commands::session::delete_session,
             commands::session::load_sessions,

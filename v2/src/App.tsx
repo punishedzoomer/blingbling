@@ -158,26 +158,45 @@ function App() {
   }, [aiMode]);
   const [isThinking, setIsThinking] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [sessionTitle, setSessionTitle] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Sync messages to History window and save to backend whenever they change
   useEffect(() => {
     if (messages.length > 0) {
-      invoke("save_session", { sessionId, data: { history: messages, workflowId: activeWorkflowId } }).catch(console.error);
+      invoke("save_session", { sessionId, data: { history: messages, workflowId: activeWorkflowId, title: sessionTitle } }).catch(console.error);
     }
     emit("history-sync", messages);
-  }, [messages, sessionId]);
+  }, [messages, sessionId, sessionTitle]);
+
+  // Auto-generate session title after first response
+  useEffect(() => {
+    if (!isStreaming && messages.length >= 2 && !sessionTitle) {
+      const generate = async () => {
+        try {
+          const apiKey = localStorage.getItem("openRouterKey");
+          if (!apiKey) return;
+          const title = await invoke("generate_title", { apiKey, messages });
+          setSessionTitle(title as string);
+        } catch (e) {
+          console.error("Failed to generate title", e);
+        }
+      };
+      generate();
+    }
+  }, [isStreaming, messages.length, sessionTitle]);
 
   // Listen for actions from other windows
   useEffect(() => {
     let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any;
-    listen("clear-history", () => { setMessages([]); setActiveWorkflowId(null); }).then(f => unlistenClear = f);
+    listen("clear-history", () => { setMessages([]); setActiveWorkflowId(null); setSessionTitle(null); }).then(f => unlistenClear = f);
       listen("add-message", (e: any) => setMessages(prev => [...prev, e.payload])).then(f => unlistenAddMsg = f);
       listen("restore-session", (e: any) => {
-        const { id, data, workflowId } = e.payload;
+        const { id, data, workflowId, title } = e.payload;
         setSessionId(id);
         setMessages(data);
         setActiveWorkflowId(workflowId || null);
+        setSessionTitle(title || null);
       }).then(f => unlistenRestore = f);
       listen("simulate-llm", async () => {
         const mockResponse = `### LLM Mock Response\nHere is a test of **Markdown parsing**:\n1. It supports lists\n2. It supports \`inline code\`\n\nAnd code blocks:\n\`\`\`rust\nfn main() {\n    println!("Hello, BlingBling!");\n}\n\`\`\`\nIt looks solid!`;

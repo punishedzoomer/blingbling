@@ -210,6 +210,8 @@ function App() {
       setIsThinking(false);
       setIsStreaming(true);
 
+
+
       setMessages((prev) => {
         const newMessages = [...prev];
         const lastMsg = newMessages[newMessages.length - 1];
@@ -320,7 +322,7 @@ function App() {
       });
     } catch (e) {
       console.error(e);
-      alert("AI Request Failed: " + e);
+      setMessages((prev) => [...prev, { role: "assistant", content: "**Error:** " + e }]);
       setIsThinking(false);
       setIsStreaming(false);
     }
@@ -383,7 +385,7 @@ function App() {
       });
     } catch (e) {
       console.error(e);
-      alert("AI Request Failed: " + e);
+      setMessages((prev) => [...prev, { role: "assistant", content: "**Error:** " + e }]);
       setIsThinking(false);
       setIsStreaming(false);
     }

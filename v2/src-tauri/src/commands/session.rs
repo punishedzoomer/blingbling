@@ -47,3 +47,12 @@ pub fn load_sessions() -> Result<Vec<Value>, String> {
     
     Ok(sessions)
 }
+
+#[tauri::command]
+pub fn delete_session(session_id: String) -> Result<(), String> {
+    let file_path = get_sessions_dir().join(format!("{}.json", session_id));
+    if file_path.exists() {
+        std::fs::remove_file(file_path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}

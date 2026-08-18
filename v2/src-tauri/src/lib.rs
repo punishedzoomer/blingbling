@@ -18,12 +18,15 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_nspanel::init())
+        .manage(AiState { cancel_flag: AtomicBool::new(false) })
+
         .invoke_handler(tauri::generate_handler![
             commands::screen::capture_screen, 
             commands::screen::capture_screen_interactive,
             commands::ai::stream_ai_response,
             commands::ai::cancel_ai_response,
             commands::session::save_session,
+            commands::session::delete_session,
             commands::session::load_sessions,
             commands::window::hide_window,
             commands::window::quit_app,
@@ -83,6 +86,29 @@ pub fn run() {
             }
 
             Ok(())
+        })
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                if window.label() != "main" {
+                    api.prevent_close();
+                    #[cfg(target_os = "macos")]
+                    {
+                        if let Some(webview_window) = window.app_handle().get_webview_window(window.label()) {
+                            use tauri_nspanel::WebviewWindowExt;
+                            if let Ok(panel) = webview_window.to_panel() {
+                                panel.order_out(None);
+                            }
+                        }
+                    }
+                    #[cfg(not(target_os = "macos"))]
+                    {
+                        let _ = window.hide();
+                    }
+                } else {
+                    std::process::exit(0);
+                }
+            }
+            _ => {}
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

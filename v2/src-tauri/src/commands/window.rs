@@ -74,6 +74,9 @@ pub fn set_debug_mode(debug: bool, app: AppHandle) {
 
 #[tauri::command]
 pub fn show_panel(label: String, app: AppHandle) {
+    if label != "main" {
+        hide_panel("main".to_string(), app.clone());
+    }
     if let Some(window) = app.get_webview_window(&label) {
         #[cfg(target_os = "macos")]
         {
@@ -92,19 +95,12 @@ pub fn show_panel(label: String, app: AppHandle) {
                         let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
                     }
                 } else {
-                    use tauri_nspanel::WebviewWindowExt;
-                    if let Ok(panel) = window.to_panel() {
-                        panel.show();
-                        let ns_window = ns_window_ptr as cocoa::base::id;
-                        unsafe {
-                            use objc::{sel, sel_impl, class};
-                            let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
-                            let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
-                            let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
-                        }
-                    } else {
-                        let _ = window.show();
-                        let _ = window.set_focus();
+                    let ns_window = ns_window_ptr as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl, class};
+                        let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
+                        let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
+                        let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
                     }
                 }
             });
@@ -114,6 +110,9 @@ pub fn show_panel(label: String, app: AppHandle) {
 
 #[tauri::command]
 pub fn hide_panel(label: String, app: AppHandle) {
+    if label != "main" {
+        show_panel("main".to_string(), app.clone());
+    }
     if let Some(window) = app.get_webview_window(&label) {
         #[cfg(target_os = "macos")]
         {
@@ -129,7 +128,11 @@ pub fn hide_panel(label: String, app: AppHandle) {
                         let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::YES];
                     }
                 } else {
-                    let _ = window.hide();
+                    let ns_window = ns_window_ptr as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl};
+                        let _: () = objc::msg_send![ns_window, orderOut: cocoa::base::nil];
+                    }
                 }
             });
         }

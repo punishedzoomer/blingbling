@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { emit, listen } from "@tauri-apps/api/event";
+import { Trash2 } from "lucide-react";
 import "./App.css";
 
 export function HistoryApp() {
@@ -49,11 +50,11 @@ export function HistoryApp() {
         }}
       />
       <div id="transcript-sidebar" className="transcript-sidebar" style={{ position: "relative", top: 0, right: 0, width: "300px", minHeight: "400px", maxHeight: "80vh", margin: 0, display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
-        <div className="ts-header" style={{ paddingTop: "14px", zIndex: 101 }}>
-          <span className="ts-title">Conversations</span>
-          <button className="ts-close-btn" id="close-sidebar-btn" onClick={async () => {
+        <div className="s-head" style={{ paddingTop: "16px", paddingBottom: "10px", paddingRight: "16px", paddingLeft: "16px", borderBottom: "1px solid rgba(255,255,255,0.05)", zIndex: 101 }}>
+          <div className="s-title">Conversations</div>
+          <button className="s-close" id="close-sidebar-btn" onClick={async () => {
                         await invoke("hide_panel", { label: "history" });
-          }} title="Close history">✕</button>
+          }} style={{ zIndex: 101 }}>Done</button>
         </div>
         <div id="ts-list" className="ts-list" style={{ flex: 1, overflowY: "auto", zIndex: 101 }}>
           {sessions.length === 0 && (
@@ -80,25 +81,37 @@ export function HistoryApp() {
               <div 
                 key={session.id} 
                 className="tc-turn" 
-                style={{ cursor: "pointer", display: "flex", flexDirection: "column", padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-                onClick={async () => {
-                                                      await emit("restore-session", { id: session.id, data: messages });
-                  await invoke("hide_panel", { label: "history" });
-                }}
+                style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
               >
-                <span style={{ fontSize: "11px", color: "var(--tx-mut)", marginBottom: "4px" }}>{dateStr}</span>
-                <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {String(firstUserMsg).replace(/\n/g, ' ')}
-                </span>
+                <div 
+                  style={{ flex: 1, cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                  onClick={async () => {
+                    await emit("restore-session", { id: session.id, data: messages });
+                    await invoke("hide_panel", { label: "history" });
+                  }}
+                >
+                  <span style={{ fontSize: "11px", color: "var(--tx-mut)", marginBottom: "4px" }}>{dateStr}</span>
+                  <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {String(firstUserMsg).replace(/\n/g, ' ')}
+                  </span>
+                </div>
+                <button 
+                  className="history-del-btn" 
+                  style={{ background: "transparent", border: "none", color: "var(--tx-mut)", cursor: "pointer", padding: "4px", marginLeft: "8px" }}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await invoke("delete_session", { sessionId: session.id });
+                    loadSessions();
+                  }}
+                  title="Delete Session"
+                >
+                  <Trash2 size={14} className="hover:text-red-400 transition-colors" />
+                </button>
               </div>
             );
           })}
         </div>
-        <div className="ts-footer" style={{ zIndex: 101 }}>
-          <button className="ts-clear-btn" id="clear-transcript-btn" onClick={async () => {
-                        await emit("clear-history");
-          }}>Clear Current Chat</button>
-        </div>
+
       </div>
     </div>
   );

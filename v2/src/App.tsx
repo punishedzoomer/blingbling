@@ -123,6 +123,22 @@ const MessageRenderer = ({ content }: { content: string }) => {
 
 function App() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [workflows, setWorkflows] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customWorkflows");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "customWorkflows" && e.newValue) {
+        setWorkflows(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const [sessionId, setSessionId] = useState(() => Date.now().toString());
   const [input, setInput] = useState("");
 
@@ -147,7 +163,7 @@ function App() {
   // Sync messages to History window and save to backend whenever they change
   useEffect(() => {
     if (messages.length > 0) {
-      invoke("save_session", { sessionId, data: messages }).catch(console.error);
+      invoke("save_session", { sessionId, data: { history: messages, workflowId: activeWorkflowId } }).catch(console.error);
     }
     emit("history-sync", messages);
   }, [messages, sessionId]);
@@ -155,12 +171,13 @@ function App() {
   // Listen for actions from other windows
   useEffect(() => {
     let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any;
-    listen("clear-history", () => setMessages([])).then(f => unlistenClear = f);
+    listen("clear-history", () => { setMessages([]); setActiveWorkflowId(null); }).then(f => unlistenClear = f);
       listen("add-message", (e: any) => setMessages(prev => [...prev, e.payload])).then(f => unlistenAddMsg = f);
       listen("restore-session", (e: any) => {
-        const { id, data } = e.payload;
+        const { id, data, workflowId } = e.payload;
         setSessionId(id);
         setMessages(data);
+        setActiveWorkflowId(workflowId || null);
       }).then(f => unlistenRestore = f);
       listen("simulate-llm", async () => {
         const mockResponse = `### LLM Mock Response\nHere is a test of **Markdown parsing**:\n1. It supports lists\n2. It supports \`inline code\`\n\nAnd code blocks:\n\`\`\`rust\nfn main() {\n    println!("Hello, BlingBling!");\n}\n\`\`\`\nIt looks solid!`;
@@ -465,7 +482,17 @@ function App() {
               <ActionButtons isStreaming={isStreaming} sendPreset={sendPreset} />
 
               <div id="composer" style={{ opacity: isStreaming ? 0.6 : 1 }}>
-                <InputArea input={input} setInput={setInput} isStreaming={isStreaming} textareaRef={textareaRef} handleSend={handleSend} />
+                <InputArea
+            input={input}
+            setInput={setInput}
+            isStreaming={isStreaming}
+            textareaRef={textareaRef}
+            handleSend={handleSend}
+            workflows={workflows}
+            activeWorkflowId={activeWorkflowId}
+            setActiveWorkflowId={setActiveWorkflowId}
+            isLocked={messages.length > 0}
+          />
                 <div id="composer-bottom">
                   <div style={{ position: "relative" }}>
                     <button

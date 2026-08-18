@@ -7,6 +7,20 @@ import "./App.css";
 
 export function HistoryApp() {
   const [sessions, setSessions] = useState<{id: string, data: any}[]>([]);
+  const [workflows, setWorkflows] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customWorkflows");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "customWorkflows" && e.newValue) {
+        setWorkflows(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const loadSessions = () => {
     invoke("load_sessions").then((data: any) => {
@@ -30,6 +44,65 @@ export function HistoryApp() {
 
     return () => { unlisten.then((f) => f()); };
   }, []);
+
+
+  const renderSession = (session: any) => {
+    let messages: any[] = [];
+    if (Array.isArray(session.data)) {
+      messages = session.data;
+    } else if (session.data && Array.isArray(session.data.history)) {
+      messages = session.data.history;
+    }
+
+    const firstUserMsg = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
+    
+    let dateStr = "Past Session";
+    if (!isNaN(parseInt(session.id)) && session.id.length > 10) {
+      dateStr = new Date(parseInt(session.id)).toLocaleString();
+    } else if (session.data && session.data.updated_at) {
+      dateStr = new Date(session.data.updated_at).toLocaleString();
+    }
+
+    return (
+      <div 
+        key={session.id} 
+        className="tc-turn" 
+        style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+      >
+        <div 
+          style={{ flex: 1, cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden" }}
+          onClick={async () => {
+            await emit("restore-session", { id: session.id, data: messages, workflowId: session.data.workflowId });
+            await invoke("hide_panel", { label: "history" });
+          }}
+        >
+          <span style={{ fontSize: "11px", color: "var(--tx-mut)", marginBottom: "4px" }}>{dateStr}</span>
+          <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {String(firstUserMsg).replace(/\n/g, ' ')}
+          </span>
+        </div>
+        <button 
+          className="history-del-btn" 
+          style={{ background: "transparent", border: "none", color: "var(--tx-mut)", cursor: "pointer", padding: "4px", marginLeft: "8px" }}
+          onClick={async (e) => {
+            e.stopPropagation();
+            await invoke("delete_session", { sessionId: session.id });
+            loadSessions();
+          }}
+          title="Delete Session"
+        >
+          <Trash2 size={14} className="hover:text-red-400 transition-colors" />
+        </button>
+      </div>
+    );
+  };
+
+  const groupedSessions = workflows.map(wf => ({
+    ...wf,
+    sessions: sessions.filter(s => s.data && s.data.workflowId === wf.id)
+  }));
+
+  const defaultSessions = sessions.filter(s => !s.data || !s.data.workflowId || !workflows.find(w => w.id === s.data.workflowId));
 
   return (
     <div 
@@ -56,60 +129,41 @@ export function HistoryApp() {
                         await invoke("hide_panel", { label: "history" });
           }} style={{ zIndex: 101 }}>Done</button>
         </div>
-        <div id="ts-list" className="ts-list" style={{ flex: 1, overflowY: "auto", zIndex: 101 }}>
+        <div id="ts-list" className="ts-list" style={{ flex: 1, overflowY: "auto", zIndex: 101, paddingBottom: "20px" }}>
+          <style>{`
+            .history-accordion summary::-webkit-details-marker { display: none; }
+            .history-accordion summary { list-style: none; }
+            .history-accordion summary:hover { background: rgba(255,255,255,0.03); }
+          `}</style>
           {sessions.length === 0 && (
-            <div className="ts-placeholder">No conversation history found.</div>
+            <div className="ts-placeholder" style={{ padding: "20px", color: "var(--tx-mut)", fontSize: "13px", textAlign: "center" }}>No conversation history found.</div>
           )}
-          {sessions.map((session) => {
-            let messages: any[] = [];
-            if (Array.isArray(session.data)) {
-              messages = session.data;
-            } else if (session.data && Array.isArray(session.data.history)) {
-              messages = session.data.history;
-            }
-
-            const firstUserMsg = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
-            
-            let dateStr = "Past Session";
-            if (!isNaN(parseInt(session.id)) && session.id.length > 10) {
-              dateStr = new Date(parseInt(session.id)).toLocaleString();
-            } else if (session.data && session.data.updated_at) {
-              dateStr = new Date(session.data.updated_at).toLocaleString();
-            }
-
-            return (
-              <div 
-                key={session.id} 
-                className="tc-turn" 
-                style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-              >
-                <div 
-                  style={{ flex: 1, cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden" }}
-                  onClick={async () => {
-                    await emit("restore-session", { id: session.id, data: messages });
-                    await invoke("hide_panel", { label: "history" });
-                  }}
-                >
-                  <span style={{ fontSize: "11px", color: "var(--tx-mut)", marginBottom: "4px" }}>{dateStr}</span>
-                  <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {String(firstUserMsg).replace(/\n/g, ' ')}
-                  </span>
-                </div>
-                <button 
-                  className="history-del-btn" 
-                  style={{ background: "transparent", border: "none", color: "var(--tx-mut)", cursor: "pointer", padding: "4px", marginLeft: "8px" }}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await invoke("delete_session", { sessionId: session.id });
-                    loadSessions();
-                  }}
-                  title="Delete Session"
-                >
-                  <Trash2 size={14} className="hover:text-red-400 transition-colors" />
-                </button>
+          
+          {groupedSessions.map((group: any) => group.sessions.length > 0 && (
+            <details key={group.id} className="history-accordion" open style={{ marginBottom: "4px" }}>
+              <summary style={{ cursor: "pointer", padding: "12px 16px", fontSize: "12.5px", fontWeight: 600, color: "var(--tx-1)", display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid rgba(255,255,255,0.02)", userSelect: "none" }}>
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: group.color, boxShadow: `0 0 8px ${group.color}` }} />
+                # {group.name}
+                <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--tx-mut)", fontWeight: 500 }}>{group.sessions.length}</span>
+              </summary>
+              <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                {group.sessions.map((session: any) => renderSession(session))}
               </div>
-            );
-          })}
+            </details>
+          ))}
+
+          {defaultSessions.length > 0 && (
+            <details className="history-accordion" open style={{ marginBottom: "4px" }}>
+              <summary style={{ cursor: "pointer", padding: "12px 16px", fontSize: "12.5px", fontWeight: 600, color: "var(--tx-1)", display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid rgba(255,255,255,0.02)", userSelect: "none" }}>
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3c83f5", boxShadow: `0 0 8px #3c83f5` }} />
+                # General
+                <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--tx-mut)", fontWeight: 500 }}>{defaultSessions.length}</span>
+              </summary>
+              <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                {defaultSessions.map((session: any) => renderSession(session))}
+              </div>
+            </details>
+          )}
         </div>
 
       </div>

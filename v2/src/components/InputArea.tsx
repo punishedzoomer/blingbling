@@ -6,25 +6,14 @@ interface InputAreaProps {
   isStreaming: boolean;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   handleSend: () => void;
+  workflows: any[];
+  activeWorkflowId: string | null;
+  setActiveWorkflowId: (id: string | null) => void;
+  isLocked: boolean;
 }
 
-export function InputArea({ input, setInput, isStreaming, textareaRef, handleSend }: InputAreaProps) {
-  const [workflows, setWorkflows] = useState<any[]>(() => {
-    const saved = localStorage.getItem("customWorkflows");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
+export function InputArea({ input, setInput, isStreaming, textareaRef, handleSend, workflows, activeWorkflowId, setActiveWorkflowId, isLocked }: InputAreaProps) {
   const [showWorkflowDropdown, setShowWorkflowDropdown] = useState(false);
-
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "customWorkflows" && e.newValue) {
-        setWorkflows(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
 
   const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
   const activeColor = activeWorkflow ? activeWorkflow.color : "#3c83f5";
@@ -39,15 +28,18 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
       {/* Workflow Switcher Pill */}
       <div style={{ position: "relative", zIndex: 10, paddingTop: "2px" }}>
         <button 
-          onClick={() => setShowWorkflowDropdown(!showWorkflowDropdown)}
+          onClick={() => { if (!isLocked) setShowWorkflowDropdown(!showWorkflowDropdown); }}
+          disabled={isLocked}
           style={{ 
             display: "flex", alignItems: "center", gap: "6px", 
             padding: "4px 8px", background: "rgba(0,0,0,0.3)", 
             border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", 
-            color: "var(--tx-1)", fontSize: "11px", fontWeight: 500, cursor: "pointer",
+            color: "var(--tx-1)", fontSize: "11px", fontWeight: 500,
+            cursor: isLocked ? "default" : "pointer",
+            opacity: isLocked ? 0.6 : 1,
             boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
           }}
-          title="Select Workflow"
+          title={isLocked ? "Workflow locked for this session" : "Select Workflow"}
         >
           <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: activeColor, boxShadow: `0 0 8px ${activeColor}` }} />
           <span style={{ opacity: 0.9 }}># {activeWorkflow ? activeWorkflow.name : "General"}</span>

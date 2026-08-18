@@ -19,7 +19,7 @@ Bling Bling is designed to act as a seamless system accessory—invisible in you
 - **True Accessory Mode:** Runs as a native macOS accessory process. It doesn't clutter your Dock or app switcher.
 - **Glassmorphism Design:** A beautiful, transparent, auto-resizing overlay that blends smoothly into your macOS environment.
 - **Instant Screen Capture:** Native macOS screen snipping using Rust, allowing you to seamlessly provide visual context to the AI.
-- **Multi-Model Intelligence:** Powered by OpenRouter, switch between reasoning models (Claude 3.5 Sonnet, Gemini 1.5 Pro) and lightning-fast local models based on your needs.
+- **Multi-Model Intelligence:** Powered by OpenRouter, switch between reasoning models (Claude 3.5 Sonnet, Kimi K3, Gemini 3.7) and lightning-fast local models based on your needs.
 - **Persistent History:** Your conversations are automatically saved locally and can be browsed or restored at any time.
 
 ## Installation (macOS)
@@ -51,5 +51,3 @@ Currently, Bling Bling heavily relies on macOS-specific native APIs (like `NSPan
 If you have experience with Windows APIs (e.g. `Win32`, `WS_EX_TOOLWINDOW`) or Linux window managers (X11/Wayland layer shells), we would love your help adapting the `.setup()` hooks in `v2/src-tauri/src/lib.rs` to make Bling Bling completely cross-platform.
 
 ---
-
-*(Note: The legacy V1 Python/PyQt5 source code has been moved to the `v1/` directory for historical reference.)*

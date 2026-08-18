@@ -61,15 +61,6 @@ const CodeBlock = ({ inline, className, children, ...props }: any) => {
   return <code className="bg-black/10 rounded px-1 py-0.5 text-sm" {...props}>{children}</code>;
 };
 
-const SYSTEM_PROMPT = `You are an elite competitive programming and LeetCode assistant.
-Your goal is to solve coding puzzles optimally and provide flawless implementations.
-When given a problem:
-1. Carefully read and adhere to all constraints.
-2. If the user asks you to solve it, immediately present the most optimal algorithm. Do not give partial hints or go in circles unless explicitly asked to do so.
-3. Provide the time and space complexity of your solution.
-4. Ensure your code is clean, well-documented, and production-ready.
-5. If the provided code has bugs, pinpoint them exactly and provide the fix.`;
-
 const MessageRenderer = ({ content }: { content: string }) => {
   const thinkStartIndex = content.indexOf('<think>');
   
@@ -128,6 +119,15 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
+  const getSystemPrompt = () => {
+    if (activeWorkflowId) {
+      const wf = workflows.find((w: any) => w.id === activeWorkflowId);
+      if (wf && wf.prompt) return wf.prompt;
+    }
+    return "You are a helpful, elite AI assistant. Always provide clean, optimal, and flawless answers.";
+  };
+
+
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
@@ -323,7 +323,7 @@ function App() {
       };
 
       const messagesPayload = [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: getSystemPrompt() },
         ...previousMessages, 
         currentMessage
       ];
@@ -386,7 +386,7 @@ function App() {
       };
 
       const messagesPayload = [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: getSystemPrompt() },
         ...previousMessages, 
         currentMessage
       ];

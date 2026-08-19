@@ -81,25 +81,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       connectWebSocket();
       flushQueueIfConnected();
       sendResponse({ status: "queued_persistently" });
-    }).catch(err => {
-      console.error("Bling Bling - Storage quota error:", err);
-      // Fallback: Try to connect and send directly without persisting!
-      connectWebSocket();
-      if (socket && socket.readyState === 1) { // WebSocket.OPEN
-          socket.send(request.data);
-      }
-      sendResponse({ status: "error", message: err.toString() });
     });
     return true; // Keep the message channel open for the async response
-  } else if (request.action === "capture_visible_tab") {
+  } else if (request.action === "capture_area") {
+    // We use the native browser API to take a perfect screenshot of the visible tab
     chrome.tabs.captureVisibleTab(null, { format: "png" }, (dataUrl) => {
       if (chrome.runtime.lastError) {
-        sendResponse(null);
         return;
       }
-      sendResponse(dataUrl);
+      
+      // Send the full raw image back to the content script so it can precisely crop the selected element
+      chrome.tabs.sendMessage(sender.tab.id, {
+        action: "crop_and_send",
+        dataUrl: dataUrl,
+        rect: request.rect
+      });
     });
-    return true; // async response
   }
 });
 

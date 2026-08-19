@@ -171,7 +171,11 @@ function extractTextWithImages(node) {
         let src = node.src || node.getAttribute('src');
         let alt = node.alt || node.getAttribute('alt') || "image";
         
-        if (src && !src.startsWith('data:')) {
+        if (src && src.startsWith('data:')) {
+            return `\n[Image omitted: base64 data URI]\n`;
+        }
+        
+        if (src) {
             try {
                 src = new URL(src, window.location.href).href;
             } catch (e) {

@@ -98,12 +98,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           } else {
             try {
               const response = await fetch(url);
-              const blob = await response.blob();
-              const reader = new FileReader();
-              const base64data = await new Promise((resolve) => {
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(blob);
-              });
+              const buffer = await response.arrayBuffer();
+              const bytes = new Uint8Array(buffer);
+              let binary = '';
+              for (let i = 0; i < bytes.byteLength; i++) {
+                  binary += String.fromCharCode(bytes[i]);
+              }
+              const base64String = btoa(binary);
+              const contentType = response.headers.get('content-type') || 'image/png';
+              const base64data = `data:${contentType};base64,${base64String}`;
               extraImages.push(base64data);
             } catch (err) {
               console.error("Failed to fetch harvested image:", url, err);

@@ -199,13 +199,13 @@ button:focus { outline: none; }
   font-size: 15px; font-weight: 500; line-height: 1.35;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
   animation: fadeUp 200ms ease both;
-  -webkit-user-select: text; user-select: text; cursor: text;
+  -webkit-user-select: text; user-select: text; cursor: text; white-space: pre-wrap;
 }
 .ai-text {
   color: var(--tx-1);
   font-size: 20px; font-weight: 400; line-height: 1.5; letter-spacing: -0.01em;
   text-align: left; margin: 14px 0 2px;
-  -webkit-user-select: text; user-select: text; cursor: text;
+  -webkit-user-select: text; user-select: text; cursor: text; white-space: pre-wrap;
 }
 .ai-text.small { font-size: 16px; line-height: 1.55; }
 .ai-text .w { display: inline; opacity: 0; animation: fadeUp 180ms ease forwards; }

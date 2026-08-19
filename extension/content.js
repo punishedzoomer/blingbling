@@ -4,7 +4,7 @@ let overlay = null;
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "trigger_capture") {
     enterCaptureMode();
-
+  }
 });
 
 function enterCaptureMode() {

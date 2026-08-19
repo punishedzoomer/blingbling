@@ -4,6 +4,37 @@ let overlay = null;
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "trigger_capture") {
     enterCaptureMode();
+  } else if (request.action === "crop_and_send") {
+    // We received the raw full-tab screenshot from the background script.
+    // Now we crop it to the exact dimensions of the element the user highlighted.
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const rect = request.rect;
+      const dpr = rect.dpr;
+      
+      const cropX = Math.max(0, rect.x * dpr);
+      const cropY = Math.max(0, rect.y * dpr);
+      const cropW = Math.min(rect.w * dpr, img.width - cropX);
+      const cropH = Math.min(rect.h * dpr, img.height - cropY);
+
+      canvas.width = cropW;
+      canvas.height = cropH;
+
+      if (cropW > 0 && cropH > 0) {
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+          const croppedBase64 = canvas.toDataURL("image/png");
+          
+          chrome.runtime.sendMessage({
+            action: "send_snip",
+            data: croppedBase64
+          }, (response) => {
+            // Silently handle response
+          });
+      }
+    };
+    img.src = request.dataUrl;
   }
 });
 
@@ -97,22 +128,22 @@ function handleClick(e) {
   const element = document.elementFromPoint(e.clientX, e.clientY);
   
   if (element) {
+    
     // Add a slight delay to allow the highlight box to disappear fully
     setTimeout(() => {
-        // Use html2canvas to capture the full element, even out of view
-        if (typeof html2canvas !== 'undefined') {
-            html2canvas(element, { useCORS: true, allowTaint: false, backgroundColor: null }).then(canvas => {
-                const dataUrl = canvas.toDataURL("image/png");
-                chrome.runtime.sendMessage({
-                    action: "send_snip",
-                    data: dataUrl
-                });
-            }).catch(err => {
-                console.error("Bling Bling - html2canvas error:", err);
-            });
-        } else {
-            console.error("Bling Bling - html2canvas is not loaded.");
-        }
+        const rect = element.getBoundingClientRect();
+        
+        // Tell the background script to take a native screenshot of the active tab
+        chrome.runtime.sendMessage({
+            action: "capture_area",
+            rect: { 
+                x: rect.left, 
+                y: rect.top, 
+                w: rect.width, 
+                h: rect.height, 
+                dpr: window.devicePixelRatio 
+            }
+        });
     }, 100);
   }
 }

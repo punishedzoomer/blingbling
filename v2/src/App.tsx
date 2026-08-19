@@ -640,7 +640,8 @@ function App() {
           onClick={() => setPreviewImage(null)}
           style={{
             position: 'fixed', inset: 0, zIndex: 9999, 
-            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(16px)',
+            background: 'rgba(30, 30, 30, 0.4)', backdropFilter: 'blur(20px)',
+            borderRadius: '24px', overflow: 'hidden',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '40px', cursor: 'zoom-out',
             pointerEvents: 'auto'

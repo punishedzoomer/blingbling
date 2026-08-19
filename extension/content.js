@@ -4,38 +4,7 @@ let overlay = null;
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "trigger_capture") {
     enterCaptureMode();
-  } else if (request.action === "crop_and_send") {
-    // We received the raw full-tab screenshot from the background script.
-    // Now we crop it to the exact dimensions of the element the user highlighted.
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const rect = request.rect;
-      const dpr = rect.dpr;
-      
-      const cropX = Math.max(0, rect.x * dpr);
-      const cropY = Math.max(0, rect.y * dpr);
-      const cropW = Math.min(rect.w * dpr, img.width - cropX);
-      const cropH = Math.min(rect.h * dpr, img.height - cropY);
 
-      canvas.width = cropW;
-      canvas.height = cropH;
-
-      if (cropW > 0 && cropH > 0) {
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-          const croppedBase64 = canvas.toDataURL("image/png");
-          
-          chrome.runtime.sendMessage({
-            action: "send_snip",
-            data: croppedBase64
-          }, (response) => {
-            // Silently handle response
-          });
-      }
-    };
-    img.src = request.dataUrl;
-  }
 });
 
 function enterCaptureMode() {
@@ -116,34 +85,86 @@ function handleMouseMove(e) {
   }
 }
 
-function handleClick(e) {
+async function handleClick(e) {
   e.preventDefault();
   e.stopPropagation();
   
-  // Clean up UI
   cleanupUI();
-
-  // Hide overlay temporarily to find the element underneath again
   overlay.style.display = 'none';
   const element = document.elementFromPoint(e.clientX, e.clientY);
   
-  if (element) {
-    
-    // Add a slight delay to allow the highlight box to disappear fully
-    setTimeout(() => {
-        const rect = element.getBoundingClientRect();
-        
-        // Tell the background script to take a native screenshot of the active tab
-        chrome.runtime.sendMessage({
-            action: "capture_area",
-            rect: { 
-                x: rect.left, 
-                y: rect.top, 
-                w: rect.width, 
-                h: rect.height, 
-                dpr: window.devicePixelRatio 
-            }
-        });
-    }, 100);
+  if (!element) return;
+
+  // Wait a moment for highlight box to disappear
+  await new Promise(r => setTimeout(r, 100));
+
+  const initialRect = element.getBoundingClientRect();
+  const startX = window.scrollX + initialRect.left;
+  const startY = window.scrollY + initialRect.top;
+  const fullWidth = initialRect.width;
+  const fullHeight = initialRect.height;
+  const endX = startX + fullWidth;
+  const endY = startY + fullHeight;
+
+  const dpr = window.devicePixelRatio || 1;
+  const canvas = document.createElement('canvas');
+  canvas.width = fullWidth * dpr;
+  canvas.height = fullHeight * dpr;
+  const ctx = canvas.getContext('2d');
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // Save original scroll position
+  const originalScrollX = window.scrollX;
+  const originalScrollY = window.scrollY;
+
+  // Hide scrollbars temporarily
+  const originalOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+
+  for (let y = startY; y < endY; y += viewportHeight) {
+    for (let x = startX; x < endX; x += viewportWidth) {
+      window.scrollTo(x, y);
+      await new Promise(r => setTimeout(r, 150)); // Wait for paint
+
+      const dataUrl = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ action: "capture_visible_tab" }, resolve);
+      });
+
+      if (!dataUrl) continue;
+
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise(r => img.onload = r);
+
+      const rectNow = element.getBoundingClientRect();
+      const intersectLeft = Math.max(0, rectNow.left);
+      const intersectTop = Math.max(0, rectNow.top);
+      const intersectRight = Math.min(viewportWidth, rectNow.right);
+      const intersectBottom = Math.min(viewportHeight, rectNow.bottom);
+
+      const cropX = intersectLeft * dpr;
+      const cropY = intersectTop * dpr;
+      const cropW = (intersectRight - intersectLeft) * dpr;
+      const cropH = (intersectBottom - intersectTop) * dpr;
+
+      if (cropW > 0 && cropH > 0) {
+        const drawX = (window.scrollX + intersectLeft - startX) * dpr;
+        const drawY = (window.scrollY + intersectTop - startY) * dpr;
+        ctx.drawImage(img, cropX, cropY, cropW, cropH, drawX, drawY, cropW, cropH);
+      }
+    }
   }
+
+  // Restore everything
+  document.body.style.overflow = originalOverflow;
+  window.scrollTo(originalScrollX, originalScrollY);
+
+  // Send stitched image
+  const finalImage = canvas.toDataURL("image/png");
+  chrome.runtime.sendMessage({
+    action: "send_snip",
+    data: finalImage
+  });
 }

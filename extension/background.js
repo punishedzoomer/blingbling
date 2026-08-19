@@ -83,20 +83,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ status: "queued_persistently" });
     });
     return true; // Keep the message channel open for the async response
-  } else if (request.action === "capture_area") {
-    // We use the native browser API to take a perfect screenshot of the visible tab
+  } else if (request.action === "capture_visible_tab") {
     chrome.tabs.captureVisibleTab(null, { format: "png" }, (dataUrl) => {
       if (chrome.runtime.lastError) {
+        sendResponse(null);
         return;
       }
-      
-      // Send the full raw image back to the content script so it can precisely crop the selected element
-      chrome.tabs.sendMessage(sender.tab.id, {
-        action: "crop_and_send",
-        dataUrl: dataUrl,
-        rect: request.rect
-      });
+      sendResponse(dataUrl);
     });
+    return true; // async response
   }
 });
 

@@ -146,6 +146,7 @@ function App() {
 
 
   const [pendingSnips, setPendingSnips] = useState<string[]>([]);
+  const [showSnipsTray, setShowSnipsTray] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [aiMode, setAiMode] = useState<"quick" | "smart" | "ultra">(() => {
@@ -321,6 +322,7 @@ function App() {
 
     const snipsToSend = [...pendingSnips];
     setPendingSnips([]);
+    setShowSnipsTray(false);
     setIsThinking(true);
     setIsStreaming(true);
 
@@ -502,6 +504,33 @@ function App() {
               <ActionButtons isStreaming={isStreaming} sendPreset={sendPreset} />
 
               <div id="composer" style={{ opacity: isStreaming ? 0.6 : 1 }}>
+                                {showSnipsTray && pendingSnips.length > 0 && (
+                  <div className="snips-tray" style={{ display: 'flex', gap: '8px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto' }}>
+                    {pendingSnips.map((snip, idx) => (
+                      <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
+                        <img src={snip} style={{ height: '60px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }} alt="Snip preview" />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newSnips = pendingSnips.filter((_, i) => i !== idx);
+                            setPendingSnips(newSnips);
+                            if (newSnips.length === 0) setShowSnipsTray(false);
+                          }}
+                          style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => handleSnip(true)}
+                      style={{ height: '60px', minWidth: '40px', padding: '0 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '6px', cursor: 'pointer', color: 'var(--tx-mut)', gap: '4px' }}
+                    >
+                      <Plus size={16} />
+                      <span style={{ fontSize: '10px' }}>Add</span>
+                    </button>
+                  </div>
+                )}
                 <InputArea
             input={input}
             setInput={setInput}
@@ -558,7 +587,7 @@ function App() {
                       </>
                     )}
                   </div>
-                  <button id="snip-interactive-btn" className="smart-pill" title="Snip Region" onClick={() => handleSnip(true)} disabled={isCapturing || isStreaming} style={{ marginLeft: '8px', color: pendingSnips.length > 0 ? 'var(--accent)' : undefined, borderColor: pendingSnips.length > 0 ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : undefined }}>
+                  <button id="snip-interactive-btn" className="smart-pill" title="Snip Region" onClick={() => { if (pendingSnips.length > 0) setShowSnipsTray(!showSnipsTray); else handleSnip(true); }} disabled={isCapturing || isStreaming} style={{ marginLeft: '8px', color: pendingSnips.length > 0 ? 'var(--accent)' : undefined, borderColor: pendingSnips.length > 0 ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : undefined }}>
                     <span className="ic"><Scissors size={14} /></span>
                     <span>{pendingSnips.length > 0 ? `${pendingSnips.length} Snip${pendingSnips.length > 1 ? 's' : ''}` : 'Snip'}</span>
                   </button>

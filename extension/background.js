@@ -107,8 +107,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                   binary += String.fromCharCode(bytes[i]);
               }
               const base64String = btoa(binary);
-              let contentType = (response.headers.get('content-type') || 'image/png').split(';')[0];
-              if (contentType !== 'image/svg+xml' && contentType !== 'image/svg') {
+              let contentType = (response.headers.get('content-type') || 'image/png').split(';')[0].toLowerCase().trim();
+              
+              // AWS S3 often serves images as application/octet-stream. Fix the MIME type based on URL extension.
+              if (!contentType.startsWith('image/') || contentType === 'application/octet-stream') {
+                  const lowerUrl = url.toLowerCase();
+                  if (lowerUrl.endsWith('.png') || lowerUrl.includes('.png?')) contentType = 'image/png';
+                  else if (lowerUrl.endsWith('.jpg') || lowerUrl.includes('.jpg?') || lowerUrl.endsWith('.jpeg') || lowerUrl.includes('.jpeg?')) contentType = 'image/jpeg';
+                  else if (lowerUrl.endsWith('.gif') || lowerUrl.includes('.gif?')) contentType = 'image/gif';
+                  else if (lowerUrl.endsWith('.webp') || lowerUrl.includes('.webp?')) contentType = 'image/webp';
+                  else contentType = 'image/png'; // Safe fallback
+              }
+
+              // Anthropic strictly only supports jpeg, png, gif, and webp.
+              const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+              if (validTypes.includes(contentType)) {
                   const base64data = `data:${contentType};base64,${base64String}`;
                   extraImages.push(base64data);
               }

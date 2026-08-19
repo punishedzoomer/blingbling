@@ -147,8 +147,54 @@ function handleClick(e) {
                 h: rect.height, 
                 dpr: window.devicePixelRatio 
             },
-            contextText: element.innerText || ""
+            contextText: extractTextWithImages(element).trim()
         });
     }, 100);
   }
+}
+
+function extractTextWithImages(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        return "";
+    }
+    
+    // Ignore non-visible or irrelevant tags
+    const tagName = node.tagName.toUpperCase();
+    if (tagName === 'SCRIPT' || tagName === 'STYLE' || tagName === 'NOSCRIPT') {
+        return "";
+    }
+
+    if (tagName === 'IMG') {
+        let src = node.src || node.getAttribute('src');
+        let alt = node.alt || node.getAttribute('alt') || "image";
+        
+        if (src && !src.startsWith('data:')) {
+            try {
+                src = new URL(src, window.location.href).href;
+            } catch (e) {
+                // Ignore invalid URLs
+            }
+        }
+        return `\n![${alt}](${src})\n`;
+    }
+
+    if (tagName === 'SVG') {
+        return `\n\`\`\`xml\n${node.outerHTML}\n\`\`\`\n`;
+    }
+
+    let text = "";
+    for (let child of node.childNodes) {
+        text += extractTextWithImages(child);
+    }
+    
+    // Add newlines for block elements
+    const blockTags = ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BR', 'LI', 'TR', 'PRE', 'TABLE'];
+    if (blockTags.includes(tagName)) {
+        text += "\n";
+    }
+    
+    return text;
 }

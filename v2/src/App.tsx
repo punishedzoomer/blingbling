@@ -645,6 +645,18 @@ function App() {
             padding: '20px', cursor: 'zoom-out'
           }}
         >
+          <button 
+            style={{
+              position: 'absolute', top: '20px', right: '20px',
+              background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%',
+              width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', cursor: 'pointer', zIndex: 10000
+            }}
+            onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
+            title="Close Preview (Esc)"
+          >
+            <X size={20} />
+          </button>
           <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} />
         </div>
       )}

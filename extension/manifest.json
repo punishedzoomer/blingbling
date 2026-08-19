@@ -22,22 +22,15 @@
   },
   "background": {
     "service_worker": "background.js",
-    "scripts": [
-      "background.js"
-    ]
+    "scripts": ["background.js"]
   },
   "content_security_policy": {
     "extension_pages": "default-src 'self'; connect-src 'self' ws://localhost:14444 ws://127.0.0.1:14444; script-src 'self'; object-src 'self';"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "fsapi.js",
-        "content.js"
-      ]
+      "matches": ["<all_urls>"],
+      "js": ["html2canvas.min.js", "content.js"]
     }
   ],
   "commands": {
@@ -54,9 +47,7 @@
       "id": "companion2@blingbling.app",
       "strict_min_version": "109.0",
       "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
+        "required": ["none"]
       }
     }
   }

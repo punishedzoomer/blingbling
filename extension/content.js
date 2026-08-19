@@ -4,6 +4,41 @@ let overlay = null;
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "trigger_capture") {
     enterCaptureMode();
+  } else if (request.action === "crop_and_send") {
+    // We received the raw full-tab screenshot from the background script.
+    // Now we crop it to the exact dimensions of the element the user highlighted.
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const rect = request.rect;
+      const dpr = rect.dpr;
+      const contextText = request.contextText || "";
+      
+      const cropX = Math.max(0, rect.x * dpr);
+      const cropY = Math.max(0, rect.y * dpr);
+      const cropW = Math.min(rect.w * dpr, img.width - cropX);
+      const cropH = Math.min(rect.h * dpr, img.height - cropY);
+
+      canvas.width = cropW;
+      canvas.height = cropH;
+
+      if (cropW > 0 && cropH > 0) {
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+          const croppedBase64 = canvas.toDataURL("image/png");
+          
+          chrome.runtime.sendMessage({
+            action: "send_snip",
+            data: JSON.stringify({
+              image: croppedBase64,
+              text: contextText
+            })
+          }, (response) => {
+            // Silently handle response
+          });
+      }
+    };
+    img.src = request.dataUrl;
   }
 });
 
@@ -89,42 +124,31 @@ function handleClick(e) {
   e.preventDefault();
   e.stopPropagation();
   
+  // Clean up UI
   cleanupUI();
+
+  // Hide overlay temporarily to find the element underneath again
   overlay.style.display = 'none';
   const element = document.elementFromPoint(e.clientX, e.clientY);
   
   if (element) {
-    // We add a temporary ID so FireShot knows exactly what to capture
-    let targetId = element.id;
-    let tempIdAdded = false;
-    if (!targetId) {
-        targetId = "bling_bling_capture_" + Date.now();
-        element.id = targetId;
-        tempIdAdded = true;
-    }
-
+    
+    // Add a slight delay to allow the highlight box to disappear fully
     setTimeout(() => {
-        // Suppress FireShot installation prompts, just fail silently if not installed
-        FireShotAPI.AutoInstall = false;
+        const rect = element.getBoundingClientRect();
         
-        if (FireShotAPI.isAvailable()) {
-            // FireShot captures the exact element id and returns the full Base64
-            FireShotAPI.base64EncodePage(true, targetId, (base64Data) => {
-                if (tempIdAdded) element.id = ""; // Clean up
-                
-                chrome.runtime.sendMessage({
-                    action: "send_snip",
-                    data: JSON.stringify({
-                      image: base64Data,
-                      text: element.innerText || ""
-                    })
-                });
-            });
-        } else {
-            console.error("Bling Bling - FireShot is not installed or API is not enabled in FireShot settings.");
-            if (tempIdAdded) element.id = ""; // Clean up
-            alert("FireShot API failed. Please ensure FireShot is installed and the API is enabled in its Advanced Options.");
-        }
+        // Tell the background script to take a native screenshot of the active tab
+        chrome.runtime.sendMessage({
+            action: "capture_area",
+            rect: { 
+                x: rect.left, 
+                y: rect.top, 
+                w: rect.width, 
+                h: rect.height, 
+                dpr: window.devicePixelRatio 
+            },
+            contextText: element.innerText || ""
+        });
     }, 100);
   }
 }

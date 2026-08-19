@@ -1,3 +1,4 @@
+import { Wand } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface InputAreaProps {
@@ -33,7 +34,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
           style={{ 
             display: "flex", alignItems: "center", gap: "6px", 
             padding: "4px 8px", background: "rgba(0,0,0,0.3)", 
-            border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", 
+            border: `1px solid ${activeColor}`, borderRadius: "12px", 
             color: "var(--tx-1)", fontSize: "11px", fontWeight: 500,
             cursor: isLocked ? "default" : "pointer",
             opacity: isLocked ? 0.6 : 1,
@@ -41,8 +42,8 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
           }}
           title={isLocked ? "Workflow locked for this session" : "Select Workflow"}
         >
-          <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: activeColor, boxShadow: `0 0 8px ${activeColor}` }} />
-          <span style={{ opacity: 0.9 }}># {activeWorkflow ? activeWorkflow.name : "General"}</span>
+          <Wand size={14} style={{ color: activeColor }} />
+          <span style={{ opacity: 0.9 }}>{activeWorkflow ? activeWorkflow.name : "General"}</span>
         </button>
 
         {showWorkflowDropdown && (
@@ -64,7 +65,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
                 onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
                 onMouseLeave={(e) => e.currentTarget.style.background = !activeWorkflowId ? "rgba(255,255,255,0.1)" : "transparent"}
               >
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3c83f5" }} />
+                <Wand size={14} style={{ color: "#3c83f5" }} />
                 <span style={{ fontSize: "13px", color: "var(--tx-1)", flex: 1 }}>General</span>
               </div>
               
@@ -78,7 +79,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
                   onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
                   onMouseLeave={(e) => e.currentTarget.style.background = activeWorkflowId === wf.id ? "rgba(255,255,255,0.1)" : "transparent"}
                 >
-                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: wf.color }} />
+                  <Wand size={14} style={{ color: wf.color }} />
                   <span style={{ fontSize: "13px", color: "var(--tx-1)", flex: 1 }}>{wf.name}</span>
                 </div>
               ))}

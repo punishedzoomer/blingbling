@@ -640,24 +640,34 @@ function App() {
           onClick={() => setPreviewImage(null)}
           style={{
             position: 'fixed', inset: 0, zIndex: 9999, 
-            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(16px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '20px', cursor: 'zoom-out'
+            padding: '40px', cursor: 'zoom-out',
+            pointerEvents: 'auto'
           }}
         >
           <button 
             style={{
               position: 'absolute', top: '20px', right: '20px',
-              background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%',
               width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', cursor: 'pointer', zIndex: 10000
+              color: 'white', cursor: 'pointer', zIndex: 10000,
+              pointerEvents: 'auto', backdropFilter: 'blur(10px)'
             }}
             onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
             title="Close Preview (Esc)"
           >
             <X size={20} />
           </button>
-          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} />
+          <img 
+            src={previewImage} 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ 
+              maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', 
+              borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', 
+              border: '1px solid rgba(255,255,255,0.1)', cursor: 'default'
+            }} 
+          />
         </div>
       )}
     </div>

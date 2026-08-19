@@ -147,6 +147,7 @@ function App() {
 
   const [pendingSnips, setPendingSnips] = useState<string[]>([]);
   const [showSnipsTray, setShowSnipsTray] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [aiMode, setAiMode] = useState<"quick" | "smart" | "ultra">(() => {
@@ -507,7 +508,7 @@ function App() {
                                 {showSnipsTray && pendingSnips.length > 0 && (
                   <div className="snips-tray" style={{ display: 'flex', gap: '8px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto' }}>
                     {pendingSnips.map((snip, idx) => (
-                      <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
+                      <div key={idx} style={{ position: 'relative', flexShrink: 0, cursor: 'zoom-in' }} onClick={() => setPreviewImage(snip)}>
                         <img src={snip} style={{ height: '60px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }} alt="Snip preview" />
                         <button 
                           onClick={(e) => {
@@ -632,6 +633,21 @@ function App() {
           </div>
         </div>
       </div>
+      
+      {/* Fullscreen Image Preview Modal */}
+      {previewImage && (
+        <div 
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999, 
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px', cursor: 'zoom-out'
+          }}
+        >
+          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} />
+        </div>
+      )}
     </div>
   );
 }

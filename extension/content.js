@@ -85,7 +85,7 @@ function handleMouseMove(e) {
   }
 }
 
-async function handleClick(e) {
+function handleClick(e) {
   e.preventDefault();
   e.stopPropagation();
   
@@ -95,79 +95,28 @@ async function handleClick(e) {
   
   if (!element) return;
 
-  // Wait a moment for highlight box to disappear
-  await new Promise(r => setTimeout(r, 100));
-
-  const initialRect = element.getBoundingClientRect();
-  const startX = window.scrollX + initialRect.left;
-  const startY = window.scrollY + initialRect.top;
-  const fullWidth = initialRect.width;
-  const fullHeight = initialRect.height;
-  const endX = startX + fullWidth;
-  const endY = startY + fullHeight;
-
-  const dpr = window.devicePixelRatio || 1;
-  const canvas = document.createElement('canvas');
-  canvas.width = fullWidth * dpr;
-  canvas.height = fullHeight * dpr;
-  const ctx = canvas.getContext('2d');
-
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-
-  // Save original scroll position
-  const originalScrollX = window.scrollX;
-  const originalScrollY = window.scrollY;
-
-  // Hide scrollbars temporarily
-  const originalOverflow = document.body.style.overflow;
-  document.body.style.overflow = 'hidden';
-
-  for (let y = startY; y < endY; y += viewportHeight) {
-    for (let x = startX; x < endX; x += viewportWidth) {
-      window.scrollTo(x, y);
-      await new Promise(r => setTimeout(r, 150)); // Wait for paint
-
-      const dataUrl = await new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: "capture_visible_tab" }, resolve);
-      });
-
-      if (!dataUrl) continue;
-
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise(r => img.onload = r);
-
-      const rectNow = element.getBoundingClientRect();
-      const intersectLeft = Math.max(0, rectNow.left);
-      const intersectTop = Math.max(0, rectNow.top);
-      const intersectRight = Math.min(viewportWidth, rectNow.right);
-      const intersectBottom = Math.min(viewportHeight, rectNow.bottom);
-
-      const cropX = intersectLeft * dpr;
-      const cropY = intersectTop * dpr;
-      const cropW = (intersectRight - intersectLeft) * dpr;
-      const cropH = (intersectBottom - intersectTop) * dpr;
-
-      if (cropW > 0 && cropH > 0) {
-        const drawX = (window.scrollX + intersectLeft - startX) * dpr;
-        const drawY = (window.scrollY + intersectTop - startY) * dpr;
-        ctx.drawImage(img, cropX, cropY, cropW, cropH, drawX, drawY, cropW, cropH);
+  setTimeout(() => {
+      if (typeof html2canvas !== 'undefined') {
+          html2canvas(element, { 
+              useCORS: true, 
+              allowTaint: false, 
+              backgroundColor: null,
+              scale: window.devicePixelRatio || 1
+          }).then(canvas => {
+              // Use PNG to prevent transparent areas from turning black
+              const dataUrl = canvas.toDataURL("image/png");
+              
+              chrome.runtime.sendMessage({
+                  action: "send_snip",
+                  data: dataUrl
+              }, (response) => {
+                  console.log("Bling Bling - Background response:", response);
+              });
+          }).catch(err => {
+              console.error("Bling Bling - html2canvas error:", err);
+          });
+      } else {
+          console.error("Bling Bling - html2canvas is not loaded.");
       }
-    }
-  }
-
-  // Restore everything
-  document.body.style.overflow = originalOverflow;
-  window.scrollTo(originalScrollX, originalScrollY);
-
-  // Send stitched image heavily compressed to avoid Firefox storage quota limits
-  const finalImage = canvas.toDataURL("image/jpeg", 0.7);
-  chrome.runtime.sendMessage({
-    action: "send_snip",
-    data: finalImage
-  }, (response) => {
-    // Firefox requires a callback here or it throws an unhandled message error
-    console.log("Bling Bling - Background response:", response);
-  });
+  }, 100);
 }

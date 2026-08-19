@@ -100,6 +100,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           } else {
             try {
               const response = await fetch(url);
+              if (!response.ok) {
+                  console.error("Failed to fetch harvested image, status:", response.status);
+                  continue;
+              }
               const buffer = await response.arrayBuffer();
               const bytes = new Uint8Array(buffer);
               let binary = '';

@@ -4,7 +4,7 @@ let overlay = null;
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "trigger_capture") {
     enterCaptureMode();
-
+  }
 });
 
 function enterCaptureMode() {
@@ -101,7 +101,7 @@ function handleClick(e) {
     setTimeout(() => {
         // Use html2canvas to capture the full element, even out of view
         if (typeof html2canvas !== 'undefined') {
-            html2canvas(element, { useCORS: true, allowTaint: true, backgroundColor: null }).then(canvas => {
+            html2canvas(element, { useCORS: true, allowTaint: false, backgroundColor: null }).then(canvas => {
                 const dataUrl = canvas.toDataURL("image/png");
                 chrome.runtime.sendMessage({
                     action: "send_snip",

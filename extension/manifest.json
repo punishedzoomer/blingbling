@@ -27,7 +27,7 @@
     ]
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; connect-src 'self' ws://localhost:14444 ws://127.0.0.1:14444; script-src 'self'; object-src 'self';"
+    "extension_pages": "default-src 'self'; connect-src 'self' ws://localhost:14444 ws://127.0.0.1:14444 https://* http://* data: blob:; script-src 'self'; object-src 'self';"
   },
   "content_scripts": [
     {

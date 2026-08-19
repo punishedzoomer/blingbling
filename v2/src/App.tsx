@@ -273,6 +273,9 @@ function App() {
         if (payload.image) {
           setPendingSnips((prev) => [...prev, payload.image]);
         }
+        if (payload.extraImages && payload.extraImages.length > 0) {
+          setPendingSnips((prev) => [...prev, ...payload.extraImages]);
+        }
         if (payload.text) {
           setInput((prev) => prev + (prev.length > 0 ? "\n\n" : "") + `<context>\n${payload.text}\n</context>`);
         }

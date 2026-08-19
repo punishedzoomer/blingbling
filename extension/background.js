@@ -85,9 +85,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep the message channel open for the async response
   } else if (request.action === "capture_area") {
     // We use the native browser API to take a perfect screenshot of the visible tab
-    chrome.tabs.captureVisibleTab(null, { format: "png" }, (dataUrl) => {
+    chrome.tabs.captureVisibleTab(null, { format: "png" }, async (dataUrl) => {
       if (chrome.runtime.lastError) {
         return;
+      }
+
+      let extraImages = [];
+      if (request.harvestedImages && request.harvestedImages.length > 0) {
+        for (const url of request.harvestedImages) {
+          if (url.startsWith('data:')) {
+            extraImages.push(url);
+          } else {
+            try {
+              const response = await fetch(url);
+              const blob = await response.blob();
+              const reader = new FileReader();
+              const base64data = await new Promise((resolve) => {
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+              });
+              extraImages.push(base64data);
+            } catch (err) {
+              console.error("Failed to fetch harvested image:", url, err);
+            }
+          }
+        }
       }
       
       // Send the full raw image back to the content script so it can precisely crop the selected element
@@ -95,7 +117,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         action: "crop_and_send",
         dataUrl: dataUrl,
         rect: request.rect,
-        contextText: request.contextText
+        contextText: request.contextText,
+        extraImages: extraImages
       });
     });
   }

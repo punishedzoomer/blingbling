@@ -1,4 +1,5 @@
 let isCaptureMode = false;
+let harvestedImages = [];
 let overlay = null;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -31,7 +32,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             action: "send_snip",
             data: JSON.stringify({
               image: croppedBase64,
-              text: contextText
+              text: contextText,
+              extraImages: request.extraImages || []
             })
           }, (response) => {
             // Silently handle response
@@ -137,6 +139,9 @@ function handleClick(e) {
     setTimeout(() => {
         const rect = element.getBoundingClientRect();
         
+        harvestedImages = []; // reset
+        const contextText = extractTextWithImages(element).trim();
+        
         // Tell the background script to take a native screenshot of the active tab
         chrome.runtime.sendMessage({
             action: "capture_area",
@@ -147,7 +152,8 @@ function handleClick(e) {
                 h: rect.height, 
                 dpr: window.devicePixelRatio 
             },
-            contextText: extractTextWithImages(element).trim()
+            contextText: contextText,
+            harvestedImages: harvestedImages
         });
     }, 100);
   }
@@ -171,13 +177,20 @@ function extractTextWithImages(node) {
         let src = node.src || node.getAttribute('src');
         let alt = node.alt || node.getAttribute('alt') || "image";
         
+        // Skip tiny UI icons
+        if (node.width > 0 && node.width < 30 && node.height > 0 && node.height < 30) {
+            return "";
+        }
+        
         if (src && src.startsWith('data:')) {
-            return `\n[Image omitted: base64 data URI]\n`;
+            harvestedImages.push(src);
+            return `\n[Image extracted as attachment]\n`;
         }
         
         if (src) {
             try {
                 src = new URL(src, window.location.href).href;
+                harvestedImages.push(src);
             } catch (e) {
                 // Ignore invalid URLs
             }

@@ -161,10 +161,13 @@ async function handleClick(e) {
   document.body.style.overflow = originalOverflow;
   window.scrollTo(originalScrollX, originalScrollY);
 
-  // Send stitched image
-  const finalImage = canvas.toDataURL("image/png");
+  // Send stitched image heavily compressed to avoid Firefox storage quota limits
+  const finalImage = canvas.toDataURL("image/jpeg", 0.7);
   chrome.runtime.sendMessage({
     action: "send_snip",
     data: finalImage
+  }, (response) => {
+    // Firefox requires a callback here or it throws an unhandled message error
+    console.log("Bling Bling - Background response:", response);
   });
 }

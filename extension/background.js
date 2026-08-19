@@ -81,6 +81,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       connectWebSocket();
       flushQueueIfConnected();
       sendResponse({ status: "queued_persistently" });
+    }).catch(err => {
+      console.error("Bling Bling - Storage quota error:", err);
+      // Fallback: Try to connect and send directly without persisting!
+      connectWebSocket();
+      if (socket && socket.readyState === 1) { // WebSocket.OPEN
+          socket.send(request.data);
+      }
+      sendResponse({ status: "error", message: err.toString() });
     });
     return true; // Keep the message channel open for the async response
   } else if (request.action === "capture_visible_tab") {

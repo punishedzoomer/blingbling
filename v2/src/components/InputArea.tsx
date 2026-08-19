@@ -1,4 +1,3 @@
-import { Wand } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface InputAreaProps {
@@ -42,8 +41,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
           }}
           title={isLocked ? "Workflow locked for this session" : "Select Workflow"}
         >
-          <Wand size={14} style={{ color: activeColor }} />
-          <span style={{ opacity: 0.9 }}>{activeWorkflow ? activeWorkflow.name : "General"}</span>
+          <span style={{ color: "rgba(255,255,255,0.7)", fontWeight: 700 }}>{activeWorkflow ? activeWorkflow.name : "General"}</span>
         </button>
 
         {showWorkflowDropdown && (
@@ -65,7 +63,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
                 onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
                 onMouseLeave={(e) => e.currentTarget.style.background = !activeWorkflowId ? "rgba(255,255,255,0.1)" : "transparent"}
               >
-                <Wand size={14} style={{ color: "#3c83f5" }} />
+                
                 <span style={{ fontSize: "13px", color: "var(--tx-1)", flex: 1 }}>General</span>
               </div>
               
@@ -79,7 +77,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
                   onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
                   onMouseLeave={(e) => e.currentTarget.style.background = activeWorkflowId === wf.id ? "rgba(255,255,255,0.1)" : "transparent"}
                 >
-                  <Wand size={14} style={{ color: wf.color }} />
+                  
                   <span style={{ fontSize: "13px", color: "var(--tx-1)", flex: 1 }}>{wf.name}</span>
                 </div>
               ))}

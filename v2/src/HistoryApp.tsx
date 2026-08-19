@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { emit, listen } from "@tauri-apps/api/event";
-import { Trash2, Wand } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import "./App.css";
 
 export function HistoryApp() {
@@ -143,8 +143,8 @@ export function HistoryApp() {
           {groupedSessions.map((group: any) => group.sessions.length > 0 && (
             <details key={group.id} className="history-accordion" open style={{ marginBottom: "4px" }}>
               <summary style={{ cursor: "pointer", padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid rgba(255,255,255,0.02)", userSelect: "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px", background: "rgba(0,0,0,0.3)", border: `1px solid ${group.color}`, borderRadius: "12px", color: "var(--tx-1)", fontSize: "11px", fontWeight: 500 }}>
-                  <Wand size={14} style={{ color: group.color }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px", background: "rgba(0,0,0,0.3)", border: `1px solid ${group.color}`, borderRadius: "12px", color: "rgba(255,255,255,0.7)", fontSize: "11px", fontWeight: 700 }}>
+                  
                   {group.name}
                 </div>
                 <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--tx-mut)", fontWeight: 500 }}>{group.sessions.length}</span>
@@ -158,8 +158,8 @@ export function HistoryApp() {
           {defaultSessions.length > 0 && (
             <details className="history-accordion" open style={{ marginBottom: "4px" }}>
               <summary style={{ cursor: "pointer", padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid rgba(255,255,255,0.02)", userSelect: "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px", background: "rgba(0,0,0,0.3)", border: `1px solid #3c83f5`, borderRadius: "12px", color: "var(--tx-1)", fontSize: "11px", fontWeight: 500 }}>
-                  <Wand size={14} style={{ color: "#3c83f5" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px", background: "rgba(0,0,0,0.3)", border: `1px solid #3c83f5`, borderRadius: "12px", color: "rgba(255,255,255,0.7)", fontSize: "11px", fontWeight: 700 }}>
+                  
                   General
                 </div>
                 <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--tx-mut)", fontWeight: 500 }}>{defaultSessions.length}</span>

@@ -372,15 +372,15 @@ export function SettingsApp() {
                       </div>
                       <div style={{ flex: 2 }}>
                         <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>System Prompt</label>
-                        <input 
-                          type="text" 
+                        <textarea 
                           value={btn.prompt}
                           onChange={(e) => {
                             const newBtns = [...buttons];
                             newBtns[i].prompt = e.target.value;
                             saveButtons(newBtns);
                           }}
-                          style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "12px" }}
+                          rows={4}
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "12px", resize: "vertical", minHeight: "60px" }}
                         />
                       </div>
                     </div>

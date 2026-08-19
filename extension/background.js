@@ -94,7 +94,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.harvestedImages && request.harvestedImages.length > 0) {
         for (const url of request.harvestedImages) {
           if (url.startsWith('data:')) {
-            extraImages.push(url);
+            if (!url.includes('image/svg')) {
+              extraImages.push(url);
+            }
           } else {
             try {
               const response = await fetch(url);
@@ -105,9 +107,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                   binary += String.fromCharCode(bytes[i]);
               }
               const base64String = btoa(binary);
-              const contentType = response.headers.get('content-type') || 'image/png';
-              const base64data = `data:${contentType};base64,${base64String}`;
-              extraImages.push(base64data);
+              let contentType = (response.headers.get('content-type') || 'image/png').split(';')[0];
+              if (contentType !== 'image/svg+xml' && contentType !== 'image/svg') {
+                  const base64data = `data:${contentType};base64,${base64String}`;
+                  extraImages.push(base64data);
+              }
             } catch (err) {
               console.error("Failed to fetch harvested image:", url, err);
             }

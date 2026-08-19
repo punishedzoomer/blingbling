@@ -665,7 +665,7 @@ function App() {
             onClick={(e) => e.stopPropagation()} 
             style={{ 
               maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', 
-              borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', 
+              boxShadow: '0 20px 50px rgba(0,0,0,0.6)', 
               border: '1px solid rgba(255,255,255,0.1)', cursor: 'default'
             }} 
           />

@@ -12,6 +12,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const canvas = document.createElement('canvas');
       const rect = request.rect;
       const dpr = rect.dpr;
+      const contextText = request.contextText || "";
       
       const cropX = Math.max(0, rect.x * dpr);
       const cropY = Math.max(0, rect.y * dpr);
@@ -28,7 +29,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           
           chrome.runtime.sendMessage({
             action: "send_snip",
-            data: croppedBase64
+            data: JSON.stringify({
+              image: croppedBase64,
+              text: contextText
+            })
           }, (response) => {
             // Silently handle response
           });
@@ -142,7 +146,8 @@ function handleClick(e) {
                 w: rect.width, 
                 h: rect.height, 
                 dpr: window.devicePixelRatio 
-            }
+            },
+            contextText: element.innerText || ""
         });
     }, 100);
   }

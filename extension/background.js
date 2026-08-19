@@ -94,7 +94,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       chrome.tabs.sendMessage(sender.tab.id, {
         action: "crop_and_send",
         dataUrl: dataUrl,
-        rect: request.rect
+        rect: request.rect,
+        contextText: request.contextText
       });
     });
   }

@@ -268,7 +268,18 @@ function App() {
     });
 
     const unlistenSnip = listen<string>("extension-snip-received", (event) => {
-      setPendingSnips((prev) => [...prev, event.payload]);
+      try {
+        const payload = JSON.parse(event.payload);
+        if (payload.image) {
+          setPendingSnips((prev) => [...prev, payload.image]);
+        }
+        if (payload.text) {
+          setInput((prev) => prev + (prev.length > 0 ? "\n\n" : "") + `<context>\n${payload.text}\n</context>`);
+        }
+      } catch (e) {
+        // Fallback for legacy format
+        setPendingSnips((prev) => [...prev, event.payload]);
+      }
       invoke("show_panel", { label: "main" });
     });
 

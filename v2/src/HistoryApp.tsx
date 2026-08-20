@@ -15,7 +15,10 @@ const INITIAL_MOCK_NOTEBOOKS = [
 
 export function HistoryApp() {
   const [sessions, setSessions] = useState<any[]>([]);
-  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [workflows] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customWorkflows");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [activeTab, setActiveTab] = useState<"history" | "notebooks">("history");
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -26,9 +29,7 @@ export function HistoryApp() {
   const [editNbTitle, setEditNbTitle] = useState("");
 
   const loadSessions = () => {
-    invoke("get_workflows")
-      .then((wfs: any) => setWorkflows(wfs))
-      .catch(console.error);
+
 
     invoke("load_sessions")
       .then((data: any) => {
@@ -103,7 +104,11 @@ export function HistoryApp() {
   };
 
   const renderHistoryItem = (session: any) => {
-    const displayTitle = session.data?.title || "Empty Chat";
+    let messages: any[] = [];
+    if (Array.isArray(session.data)) messages = session.data;
+    else if (session.data && Array.isArray(session.data.history)) messages = session.data.history;
+    const firstUserMsg = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
+    const displayTitle = session.data?.title || String(firstUserMsg).replace(/\n/g, ' ');
     const wf = workflows.find(w => w.id === session.data?.workflowId);
     const isDeleting = deletingIds.includes(session.id);
     
@@ -135,7 +140,7 @@ export function HistoryApp() {
             </div>
           )}
         </div>
-        <div style={{ fontSize: "11px", color: "var(--tx-mut)", marginLeft: "12px", whiteSpace: "nowrap", paddingTop: "2px" }}>
+        <div style={{ fontSize: "11px", color: "var(--tx-mut)", marginLeft: "12px", marginRight: "32px", whiteSpace: "nowrap", paddingTop: "2px" }}>
           {session.ts ? (getRelativeDay(session.ts) === "Today" ? formatTime(session.ts) : new Date(session.ts).toLocaleDateString([], { month: 'short', day: 'numeric' })) : ""}
         </div>
         <button 

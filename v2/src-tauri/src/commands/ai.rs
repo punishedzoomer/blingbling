@@ -152,7 +152,7 @@ pub async fn generate_title(
     let payload = json!({
         "model": model, // Use a fast default model for title generation
         "messages": [
-            { "role": "system", "content": "You are a title generator. Generate a very short, concise, 3 to 5 word title that summarizes the following conversation. Do NOT use quotes, punctuation, or any introductory text. Just the title." },
+            { "role": "system", "content": "You are a title generator. Generate an extremely short, concise title (max 2 to 4 words) that summarizes the core context and technical topic of the conversation. Do NOT use long sentences. Tell it in very few words. Do NOT use quotes, punctuation, or any introductory text. Just the title." },
             { "role": "user", "content": context_text }
         ],
         "stream": false,

@@ -121,16 +121,12 @@ const MessageRenderer = ({ content }: { content: string }) => {
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [workflows, setWorkflows] = useState<any[]>(() => {
-    const saved = localStorage.getItem("customWorkflows");
+  const [tags, setTags] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
   });
-  const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
+  const [activeTagId, setActiveTagId] = useState<string | null>(null);
   const getSystemPrompt = () => {
-    if (activeWorkflowId) {
-      const wf = workflows.find((w: any) => w.id === activeWorkflowId);
-      if (wf && wf.prompt) return wf.prompt;
-    }
     return "You are a helpful, elite AI assistant. Always provide clean, optimal, and flawless answers.";
   };
 
@@ -139,7 +135,7 @@ function App() {
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "customWorkflows" && e.newValue) {
-        setWorkflows(JSON.parse(e.newValue));
+        setTags(JSON.parse(e.newValue));
       }
     };
     window.addEventListener("storage", handleStorage);
@@ -175,7 +171,7 @@ function App() {
   // Sync messages to History window and save to backend whenever they change
   useEffect(() => {
     if (messages.length > 0) {
-      invoke("save_session", { sessionId, data: { history: messages, workflowId: activeWorkflowId, title: sessionTitle } }).catch(console.error);
+      invoke("save_session", { sessionId, data: { history: messages, tagId: activeTagId, title: sessionTitle } }).catch(console.error);
     }
     emit("history-sync", messages);
   }, [messages, sessionId, sessionTitle]);
@@ -201,13 +197,13 @@ function App() {
   // Listen for actions from other windows
   useEffect(() => {
     let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any;
-    listen("clear-history", () => { setMessages([]); setActiveWorkflowId(null); setSessionTitle(null); }).then(f => unlistenClear = f);
+    listen("clear-history", () => { setMessages([]); setActiveTagId(null); setSessionTitle(null); }).then(f => unlistenClear = f);
       listen("add-message", (e: any) => setMessages(prev => [...prev, e.payload])).then(f => unlistenAddMsg = f);
       listen("restore-session", (e: any) => {
-        const { id, data, workflowId, title } = e.payload;
+        const { id, data, tagId, title } = e.payload;
         setSessionId(id);
         setMessages(data);
-        setActiveWorkflowId(workflowId || null);
+        setActiveTagId(tagId || null);
         setSessionTitle(title || null);
       }).then(f => unlistenRestore = f);
       listen("simulate-llm", async () => {
@@ -638,9 +634,10 @@ function App() {
             isStreaming={isStreaming}
             textareaRef={textareaRef}
             handleSend={handleSend}
-            workflows={workflows}
-            activeWorkflowId={activeWorkflowId}
-            setActiveWorkflowId={setActiveWorkflowId}
+            tags={tags}
+            setTags={setTags}
+            activeTagId={activeTagId}
+            setActiveTagId={setActiveTagId}
             isLocked={messages.length > 0}
           />
                 <div id="composer-bottom">

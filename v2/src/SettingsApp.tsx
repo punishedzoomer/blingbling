@@ -2,7 +2,7 @@ import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Plus, Trash2, ArrowLeft, Layers, Paperclip } from "lucide-react";
+import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers } from "lucide-react";
 import "./App.css";
 import { useDynamicBounds } from "./useDynamicBounds";
 
@@ -125,15 +125,14 @@ export function SettingsApp() {
     localStorage.setItem("buttonConfigs", JSON.stringify(newButtons));
   };
 
-  const [workflows, setWorkflows] = useState<any[]>(() => {
-    const saved = localStorage.getItem("customWorkflows");
+  const [tags, setTags] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
   });
-  const [editingWorkflowId, setEditingWorkflowId] = useState<string | null>(null);
 
-  const saveWorkflows = (newWorkflows: any[]) => {
-    setWorkflows(newWorkflows);
-    localStorage.setItem("customWorkflows", JSON.stringify(newWorkflows));
+  const saveTags = (newTags: any[]) => {
+    setTags(newTags);
+    localStorage.setItem("customTags", JSON.stringify(newTags));
   };
 
 
@@ -273,8 +272,8 @@ export function SettingsApp() {
             <button className={`s-tab ${activeTab === 'prompts' ? 'on' : ''}`} onClick={() => setActiveTab('prompts')} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               <MessageCircle size={14} style={{ marginRight: "6px" }} /> Prompts
             </button>
-            <button className={`s-tab ${activeTab === 'advanced' ? 'on' : ''}`} onClick={() => { setActiveTab('advanced'); setEditingWorkflowId(null); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-              <Layers size={14} style={{ marginRight: "6px" }} /> Workflows
+            <button className={`s-tab ${activeTab === 'tags' ? 'on' : ''}`} onClick={() => setActiveTab('tags')} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <Layers size={14} style={{ marginRight: "6px" }} /> Tags
             </button>
             {import.meta.env.DEV && (
               <button className={`s-tab ${activeTab === 'dev' ? 'on' : ''}`} onClick={() => setActiveTab('dev')} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
@@ -389,130 +388,35 @@ export function SettingsApp() {
               </div>
             )}
 
-            {activeTab === 'advanced' && (
+            {activeTab === 'tags' && (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
-                {!editingWorkflowId ? (
-                  <>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ fontSize: "12px", color: "var(--tx-2)", lineHeight: "1.5" }}>
-                        Create custom color-coded workflows.
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontSize: "12px", color: "var(--tx-2)", lineHeight: "1.5" }}>
+                    Manage your custom tags. Tags are created directly in the chat using the /tag command.
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1 }}>
+                  {tags.length === 0 && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100px", color: "var(--tx-mut)", fontSize: "13px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px dashed rgba(255,255,255,0.1)" }}>
+                      No tags created yet. Type /tag in chat to create one.
+                    </div>
+                  )}
+                  {tags.map(t => (
+                    <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: t.color }}></div>
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx-1)" }}>#{t.name}</span>
                       </div>
                       <button 
-                        onClick={() => {
-                          const newId = Date.now().toString();
-                          const newWf = { id: newId, name: "New Workflow", color: "#3c83f5", prompt: "", attachments: [] };
-                          saveWorkflows([...workflows, newWf]);
-                          setEditingWorkflowId(newId);
-                        }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "var(--accent)", color: "#fff", borderRadius: "8px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}
+                        onClick={() => saveTags(tags.filter(tag => tag.id !== t.id))}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", background: "rgba(255,0,0,0.1)", color: "#ff4444", border: "none", borderRadius: "6px", cursor: "pointer" }}
                       >
-                        <Plus size={14} /> Create
+                        <Trash2 size={14} />
                       </button>
                     </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1 }}>
-                      {workflows.length === 0 && (
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100px", color: "var(--tx-mut)", fontSize: "13px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px dashed rgba(255,255,255,0.1)" }}>
-                          No workflows created yet.
-                        </div>
-                      )}
-                      {workflows.map(wf => (
-                        <div 
-                          key={wf.id} 
-                          onClick={() => setEditingWorkflowId(wf.id)}
-                          style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", background: "rgba(255,255,255,0.04)", borderRadius: "8px", cursor: "pointer", borderLeft: `4px solid ${wf.color}` }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-                          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-                        >
-                          <span style={{ fontSize: "14px", color: "var(--tx-1)", fontWeight: 500, flex: 1 }}>{wf.name}</span>
-                          <span style={{ fontSize: "12px", color: "var(--tx-mut)" }}>Edit</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (() => {
-                  const wf = workflows.find(w => w.id === editingWorkflowId);
-                  if (!wf) return null;
-                  return (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <button 
-                          onClick={() => setEditingWorkflowId(null)}
-                          style={{ background: "transparent", border: "none", color: "var(--tx-mut)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", borderRadius: "6px" }}
-                        >
-                          <ArrowLeft size={16} />
-                        </button>
-                        <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--tx-1)", flex: 1 }}>Edit Workflow</div>
-                        <button 
-                          onClick={() => {
-                            saveWorkflows(workflows.filter(w => w.id !== editingWorkflowId));
-                            setEditingWorkflowId(null);
-                          }}
-                          style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "6px", borderRadius: "6px" }}
-                          title="Delete Workflow"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>Workflow Name</label>
-                        <input 
-                          type="text" 
-                          value={wf.name}
-                          onChange={(e) => {
-                            const newWf = [...workflows];
-                            const idx = newWf.findIndex(w => w.id === editingWorkflowId);
-                            newWf[idx].name = e.target.value;
-                            saveWorkflows(newWf);
-                          }}
-                          style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "13px" }}
-                        />
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>Accent Color</label>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          {['#3c83f5', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'].map(color => (
-                            <div 
-                              key={color}
-                              onClick={() => {
-                                const newWf = [...workflows];
-                                const idx = newWf.findIndex(w => w.id === editingWorkflowId);
-                                newWf[idx].color = color;
-                                saveWorkflows(newWf);
-                              }}
-                              style={{ width: "24px", height: "24px", borderRadius: "50%", background: color, cursor: "pointer", border: wf.color === color ? "2px solid #fff" : "2px solid transparent", transition: "all 0.2s" }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>System Prompt</label>
-                        <textarea 
-                          value={wf.prompt}
-                          onChange={(e) => {
-                            const newWf = [...workflows];
-                            const idx = newWf.findIndex(w => w.id === editingWorkflowId);
-                            newWf[idx].prompt = e.target.value;
-                            saveWorkflows(newWf);
-                          }}
-                          placeholder="e.g. You are an expert coding assistant..."
-                          style={{ width: "100%", flex: 1, minHeight: "80px", padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.3)", color: "var(--tx-1)", fontSize: "13px", resize: "none" }}
-                        />
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <label className="s-label" style={{ fontSize: "11px", color: "var(--tx-mut)" }}>Custom Attachments</label>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "16px", borderRadius: "8px", background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)", color: "var(--tx-mut)", fontSize: "12px", cursor: "pointer" }}>
-                          <Paperclip size={14} /> Add File/Vault (Coming Soon)
-                        </div>
-                      </div>
-
-                    </div>
-                  );
-                })()}
+                  ))}
+                </div>
               </div>
             )}
 

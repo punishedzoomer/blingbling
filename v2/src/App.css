@@ -3,7 +3,7 @@
 /* cue — glassmorphism overlay. Tokens reconstructed from the Cluely screenshot. */
 
 :root {
-  --accent: #3C83F5;
+  --accent: #3C83F5 !important;
   --accent-hi: #4A8DF7;
   --live: #22C55E;
 

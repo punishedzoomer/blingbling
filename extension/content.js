@@ -1,6 +1,7 @@
 let isCaptureMode = false;
 let harvestedImages = [];
-let overlay = null;
+let globalStyle = null;
+let targetElement = null;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "trigger_capture") {
@@ -48,39 +49,36 @@ function enterCaptureMode() {
   if (isCaptureMode) return;
   isCaptureMode = true;
 
-  // Create an invisible overlay to intercept clicks
-  overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100vw';
-  overlay.style.height = '100vh';
-  overlay.style.zIndex = '2147483647';
-  overlay.style.cursor = 'crosshair';
-  
-  document.body.appendChild(overlay);
+  globalStyle = document.createElement('style');
+  globalStyle.textContent = '* { cursor: crosshair !important; }';
+  document.head.appendChild(globalStyle);
 
-  overlay.addEventListener('mousemove', handleMouseMove);
-  overlay.addEventListener('click', handleClick);
-  overlay.addEventListener('contextmenu', handleRightClick);
-  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('mouseover', handleMouseOver, true);
+  document.addEventListener('click', handleClick, true);
+  document.addEventListener('contextmenu', handleRightClick, true);
+  document.addEventListener('keydown', handleKeyDown, true);
 }
 
 function handleRightClick(e) {
   if (isCaptureMode) {
     e.preventDefault();
+    e.stopPropagation();
   }
 }
 
 function cleanupUI() {
-  if (overlay && document.body.contains(overlay)) {
-    document.body.removeChild(overlay);
+  if (globalStyle && document.head.contains(globalStyle)) {
+    document.head.removeChild(globalStyle);
   }
   if (highlightBox && document.body.contains(highlightBox)) {
     document.body.removeChild(highlightBox);
   }
-  document.removeEventListener('keydown', handleKeyDown);
+  document.removeEventListener('mouseover', handleMouseOver, true);
+  document.removeEventListener('click', handleClick, true);
+  document.removeEventListener('contextmenu', handleRightClick, true);
+  document.removeEventListener('keydown', handleKeyDown, true);
   isCaptureMode = false;
+  targetElement = null;
 }
 
 function handleKeyDown(e) {
@@ -93,7 +91,6 @@ function handleKeyDown(e) {
   }
 }
 
-// Visual highlight box
 let highlightBox = document.createElement('div');
 highlightBox.style.position = 'absolute';
 highlightBox.style.border = '2px solid rgba(120, 120, 120, 0.4)';
@@ -101,13 +98,12 @@ highlightBox.style.backgroundColor = 'rgba(120, 120, 120, 0.1)';
 highlightBox.style.pointerEvents = 'none';
 highlightBox.style.zIndex = '2147483646';
 
-function handleMouseMove(e) {
-  // Hide overlay temporarily to find the element underneath
-  overlay.style.display = 'none';
-  const element = document.elementFromPoint(e.clientX, e.clientY);
-  overlay.style.display = 'block';
+function handleMouseOver(e) {
+  if (!isCaptureMode) return;
+  const element = e.target;
+  targetElement = element;
 
-  if (element) {
+  if (element && element !== highlightBox) {
     const rect = element.getBoundingClientRect();
     highlightBox.style.top = `${window.scrollY + rect.top}px`;
     highlightBox.style.left = `${window.scrollX + rect.left}px`;
@@ -117,21 +113,16 @@ function handleMouseMove(e) {
     if (!document.body.contains(highlightBox)) {
       document.body.appendChild(highlightBox);
     }
-    
-    overlay.dataset.targetElement = element;
   }
 }
 
 function handleClick(e) {
+  if (!isCaptureMode) return;
   e.preventDefault();
   e.stopPropagation();
   
-  // Clean up UI
+  const element = targetElement || e.target;
   cleanupUI();
-
-  // Hide overlay temporarily to find the element underneath again
-  overlay.style.display = 'none';
-  const element = document.elementFromPoint(e.clientX, e.clientY);
   
   if (element) {
     

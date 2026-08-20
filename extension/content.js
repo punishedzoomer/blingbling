@@ -53,7 +53,7 @@ function enterCaptureMode() {
   globalStyle.textContent = '* { cursor: crosshair !important; }';
   document.head.appendChild(globalStyle);
 
-  document.addEventListener('mouseover', handleMouseOver, true);
+  document.addEventListener('mousemove', handleMouseMove, true);
   document.addEventListener('click', handleClick, true);
   document.addEventListener('contextmenu', handleRightClick, true);
   document.addEventListener('keydown', handleKeyDown, true);
@@ -73,7 +73,7 @@ function cleanupUI() {
   if (highlightBox && document.body.contains(highlightBox)) {
     document.body.removeChild(highlightBox);
   }
-  document.removeEventListener('mouseover', handleMouseOver, true);
+  document.removeEventListener('mousemove', handleMouseMove, true);
   document.removeEventListener('click', handleClick, true);
   document.removeEventListener('contextmenu', handleRightClick, true);
   document.removeEventListener('keydown', handleKeyDown, true);
@@ -98,8 +98,10 @@ highlightBox.style.backgroundColor = 'rgba(120, 120, 120, 0.1)';
 highlightBox.style.pointerEvents = 'none';
 highlightBox.style.zIndex = '2147483646';
 
-function handleMouseOver(e) {
+function handleMouseMove(e) {
   if (!isCaptureMode) return;
+  e.stopPropagation();
+  
   const element = e.target;
   targetElement = element;
 

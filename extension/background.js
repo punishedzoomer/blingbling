@@ -56,7 +56,7 @@ function connectWebSocket() {
   };
 
   socket.onclose = () => {
-    console.error("FAIL - Disconnected from Crackit Desktop App!");
+    console.log("Disconnected from Crackit Desktop App");
     chrome.action.setBadgeText({ text: "ERR" });
     chrome.action.setBadgeBackgroundColor({ color: "#F44336" }); // Red
     isConnecting = false;
@@ -64,7 +64,7 @@ function connectWebSocket() {
   };
   
   socket.onerror = (err) => {
-    console.error("FAIL - WebSocket Error:", err);
+    console.log("WebSocket Error:", err.message || "Connection refused");
     chrome.action.setBadgeText({ text: "ERR" });
     chrome.action.setBadgeBackgroundColor({ color: "#F44336" }); // Red
     isConnecting = false;
@@ -130,7 +130,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                   extraImages.push(base64data);
               }
             } catch (err) {
-              console.error("Failed to fetch harvested image:", url, err);
+              console.log("Failed to fetch harvested image:", url);
             }
           }
         }
@@ -143,12 +143,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         rect: request.rect,
         contextText: request.contextText,
         extraImages: extraImages
-      });
+      }).catch(() => {});
     });
   }
 });
 
 // When the extension icon is clicked, send a message to the content script of the active tab
 chrome.action.onClicked.addListener((tab) => {
-  chrome.tabs.sendMessage(tab.id, { action: "trigger_capture" });
+  chrome.tabs.sendMessage(tab.id, { action: "trigger_capture" }).catch(() => {});
 });

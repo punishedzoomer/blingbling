@@ -11,7 +11,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useDynamicBounds } from "./useDynamicBounds";
 import { ChevronDown, Square, X, 
-  Zap, Settings, History, ArrowUp, Scissors, Monitor, Sparkles, Flame, Plus, FileText } from "lucide-react";
+  Zap, Settings, History, ArrowUp, Scissors, Monitor, Sparkles, Flame, Plus, FileText, Pencil } from "lucide-react";
 import "./App.css";
 import { ActionButtons } from "./components/ActionButtons";
 import { InputArea } from "./components/InputArea";
@@ -538,44 +538,60 @@ function App() {
                   </div>
                 )}
                 {messages.map((msg, idx) => (
-                  <div key={idx} className={msg.role === "user" ? "user-bubble" : "ai-text small"}>
-                    {msg.role === "user" ? (
-                      <div>
+                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '100%' }}>
+                    <div className={msg.role === "user" ? "user-bubble" : "ai-text small"} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                      {msg.role === "user" ? (
                         <div>{msg.content}</div>
-                        {(msg.contextText || msg.contextImages?.length) && (
-                          <div style={{ marginTop: '12px' }}>
+                      ) : (
+                        <MessageRenderer content={msg.content} />
+                      )}
+                    </div>
+                    {msg.role === "user" && (
+                      <div style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%' }}>
+                        <div style={{ display: 'flex', gap: '6px', marginBottom: showContextState[idx] ? '8px' : '0' }}>
                             <button
-                               onClick={() => setShowContextState(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                               onClick={() => {
+                                 setInput(msg.content);
+                                 setPendingContextText(msg.contextText || "");
+                                 setPendingSnips(msg.contextImages ? [...msg.contextImages] : []);
+                               }}
                                className="smart-pill"
-                               style={{ marginBottom: '8px', opacity: 0.8 }}
+                               style={{ opacity: 0.6, background: 'rgba(255, 255, 255, 0.05)', borderColor: 'transparent', color: 'var(--tx-mut)' }}
+                               title="Edit Prompt"
                             >
-                              <span className="ic"><FileText size={12} /></span>
-                              <span>View Context</span>
-                              <span className="ic" style={{ marginLeft: "4px", transform: showContextState[idx] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><ChevronDown size={12} /></span>
+                              <span className="ic"><Pencil size={12} /></span>
                             </button>
-                            {showContextState[idx] && (
-                               <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                 {msg.contextText && (
-                                   <pre style={{ marginBottom: msg.contextImages?.length ? '12px' : 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', color: 'var(--tx-2)', fontFamily: 'monospace' }}>
-                                     {msg.contextText}
-                                   </pre>
-                                 )}
-                                 {msg.contextImages && msg.contextImages.length > 0 && (
-                                   <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-                                      {msg.contextImages.map((img: string, i: number) => (
-                                         <div key={i} style={{ flexShrink: 0, cursor: 'zoom-in' }} onClick={() => setPreviewImage(img)}>
-                                            <img src={img} style={{ height: '40px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }} alt="Context attachment" />
-                                         </div>
-                                      ))}
-                                   </div>
-                                 )}
-                               </div>
+                            {(msg.contextText || msg.contextImages?.length) && (
+                                <button
+                                   onClick={() => setShowContextState(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                   className="smart-pill"
+                                   style={{ opacity: 0.6, background: 'rgba(255, 255, 255, 0.05)', borderColor: 'transparent', color: 'var(--tx-mut)' }}
+                                >
+                                  <span className="ic"><FileText size={12} /></span>
+                                  <span>View Context</span>
+                                  <span className="ic" style={{ marginLeft: "4px", transform: showContextState[idx] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><ChevronDown size={12} /></span>
+                                </button>
                             )}
-                          </div>
+                        </div>
+                        {showContextState[idx] && (msg.contextText || msg.contextImages?.length) && (
+                           <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', maxWidth: '90%', alignSelf: 'flex-end' }}>
+                             {msg.contextText && (
+                               <pre style={{ marginBottom: msg.contextImages?.length ? '12px' : 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', color: 'var(--tx-2)', fontFamily: 'monospace' }}>
+                                 {msg.contextText}
+                               </pre>
+                             )}
+                             {msg.contextImages && msg.contextImages.length > 0 && (
+                               <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                                  {msg.contextImages.map((img: string, i: number) => (
+                                     <div key={i} style={{ flexShrink: 0, cursor: 'zoom-in' }} onClick={() => setPreviewImage(img)}>
+                                        <img src={img} style={{ height: '40px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }} alt="Context attachment" />
+                                     </div>
+                                  ))}
+                               </div>
+                             )}
+                           </div>
                         )}
                       </div>
-                    ) : (
-                      <MessageRenderer content={msg.content} />
                     )}
                   </div>
                 ))}

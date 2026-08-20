@@ -28,7 +28,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
       let existingTag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
       
       if (!existingTag) {
-        existingTag = { id: crypto.randomUUID(), name: tagName, color: generateRandomColor() };
+        existingTag = { id: Date.now().toString() + Math.random().toString(36).substring(2, 9), name: tagName, color: generateRandomColor() };
         const newTags = [...tags, existingTag];
         setTags(newTags);
         localStorage.setItem("customTags", JSON.stringify(newTags));

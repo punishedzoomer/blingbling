@@ -191,6 +191,25 @@ function extractTextWithImages(node) {
         return `\n![${alt}](${src})\n`;
     }
 
+
+    if (tagName === 'TABLE') {
+        let tableText = "\n";
+        const rows = Array.from(node.rows || []);
+        rows.forEach((row, rowIndex) => {
+            const cells = Array.from(row.cells || []);
+            const cellTexts = cells.map(cell => {
+                return extractTextWithImages(cell).replace(/\n+/g, ' ').trim();
+            });
+            tableText += "| " + cellTexts.join(" | ") + " |\n";
+            
+            if (rowIndex === 0 && rows.length > 1) {
+                const sep = cells.map(() => "---");
+                tableText += "| " + sep.join(" | ") + " |\n";
+            }
+        });
+        return tableText + "\n";
+    }
+
     if (tagName === 'SVG') {
         return `\n\`\`\`xml\n${node.outerHTML}\n\`\`\`\n`;
     }

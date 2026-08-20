@@ -707,6 +707,8 @@ function App() {
                     setInput("");
                     setPendingSnips([]);
                     setPendingContextText("");
+                    setActiveTagId(null);
+                    setSessionTitle(null);
                   }} style={{ marginLeft: '4px' }}>
                     <span className="ic"><Plus size={16} /></span>
                   </button>

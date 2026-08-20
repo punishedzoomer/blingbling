@@ -39,8 +39,8 @@
       {
         "title": "Conversation History",
         "label": "history",
-        "width": 300,
-        "height": 600,
+        "width": 380,
+        "height": 650,
         "transparent": true,
         "decorations": false,
         "shadow": false,

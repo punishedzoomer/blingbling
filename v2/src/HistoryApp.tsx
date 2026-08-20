@@ -35,7 +35,7 @@ export function HistoryApp() {
         const sorted = data.sort((a: any, b: any) => {
           const getTime = (s: any) => {
             const idStr = String(s.id);
-            if (/^\d{13}$/.test(idStr)) return parseInt(idStr, 10);
+            if (idStr.length === 13 && /^1\d{12}$/.test(idStr)) return parseInt(idStr, 10);
             if (s.data && s.data.updated_at) return new Date(s.data.updated_at).getTime();
             return 0;
           };
@@ -83,7 +83,7 @@ export function HistoryApp() {
 
   const groupedSessions = filteredSessions.reduce((acc: any, s: any) => {
     const idStr = String(s.id);
-    const ts = (/^\d{13}$/.test(idStr)) ? parseInt(idStr, 10) : (s.data?.updated_at ? new Date(s.data.updated_at).getTime() : 0);
+    const ts = (idStr.length === 13 && /^1\d{12}$/.test(idStr)) ? parseInt(idStr, 10) : (s.data?.updated_at ? new Date(s.data.updated_at).getTime() : 0);
     const group = getRelativeDay(ts);
     if (!acc[group]) acc[group] = [];
     acc[group].push({ ...s, ts });
@@ -218,7 +218,7 @@ export function HistoryApp() {
       style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
       onMouseEnter={() => invoke("focus_panel", { label: "history" }).catch(console.error)} 
     >
-      <div id="transcript-sidebar" className="transcript-sidebar" style={{ width: "100%", height: "100%", margin: 0, padding: 0, display: "flex", flexDirection: "column", boxSizing: "border-box", position: "relative" }}>
+      <div id="transcript-sidebar" className="transcript-sidebar" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%", margin: 0, padding: 0, display: "flex", flexDirection: "column", boxSizing: "border-box", borderRadius: "16px" }}>
         
         <style>{`
           .history-item { display: flex; align-items: flex-start; padding: 12px 16px; cursor: pointer; border-radius: 8px; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); max-height: 80px; opacity: 1; overflow: hidden; margin-bottom: 2px; }
@@ -239,7 +239,7 @@ export function HistoryApp() {
           
           .search-input::placeholder { color: var(--tx-mut); }
           
-          .views-container { display: flex; width: 200%; flex: 1; overflow: hidden; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+          .views-container { display: flex; width: 200%; flex-shrink: 0; flex: 1; overflow: hidden; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
           .view-pane { width: 50%; height: 100%; display: flex; flexDirection: column; padding: 0 16px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
           
           .group-header { display: flex; alignItems: center; fontSize: 11px; fontWeight: 700; color: var(--tx-mut); letterSpacing: 1px; marginBottom: 8px; textTransform: uppercase; }

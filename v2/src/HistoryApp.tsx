@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Trash2, Clock, Book, Search, MessageSquare, Plus, Layers, BookOpen, Briefcase, User, PenSquare } from "lucide-react";
+import { Trash2, Clock, Book, Search, MessageSquare, Plus, Layers, BookOpen, Briefcase, User, PenSquare, ChevronDown, ChevronRight } from "lucide-react";
 import "./App.css";
 
 const INITIAL_MOCK_NOTEBOOKS = [
@@ -22,6 +22,16 @@ export function HistoryApp() {
   const [activeTab, setActiveTab] = useState<"history" | "notebooks">("history");
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  
+  const isCollapsed = (group: string) => {
+    if (collapsedGroups[group] !== undefined) return collapsedGroups[group];
+    return !["Today", "Yesterday", "This Week"].includes(group);
+  };
+  
+  const toggleGroup = (group: string) => {
+    setCollapsedGroups(prev => ({ ...prev, [group]: !isCollapsed(group) }));
+  };
   
   // Notebooks state
   const [notebooks, setNotebooks] = useState<any[]>(INITIAL_MOCK_NOTEBOOKS);
@@ -62,7 +72,6 @@ export function HistoryApp() {
     const d = new Date(ts);
     const now = new Date();
     
-    // Normalize to midnight
     const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const diffDays = Math.floor((nowDate.getTime() - dDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -70,8 +79,24 @@ export function HistoryApp() {
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return "This Week";
-    if (diffDays < 30) return "This Month";
-    return "Earlier";
+    
+    const isCurrentYear = d.getFullYear() === now.getFullYear();
+    const isCurrentMonth = isCurrentYear && d.getMonth() === now.getMonth();
+    
+    if (isCurrentMonth) return "This Month";
+    
+    let lastMonth = now.getMonth() - 1;
+    let lastMonthYear = now.getFullYear();
+    if (lastMonth < 0) {
+      lastMonth = 11;
+      lastMonthYear -= 1;
+    }
+    if (d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear) return "Last Month";
+    
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    if (isCurrentYear) return monthNames[d.getMonth()];
+    
+    return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
   };
 
   const filteredSessions = sessions.filter(s => {
@@ -82,16 +107,18 @@ export function HistoryApp() {
     return title.toLowerCase().includes(searchQuery.toLowerCase()) || wfName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const groupedSessions = filteredSessions.reduce((acc: any, s: any) => {
+  const groupsMap = new Map<string, any[]>();
+  filteredSessions.forEach((s: any) => {
     const idStr = String(s.id);
     const ts = (idStr.length === 13 && /^1\d{12}$/.test(idStr)) ? parseInt(idStr, 10) : (s.data?.updated_at ? new Date(s.data.updated_at).getTime() : 0);
     const group = getRelativeDay(ts);
-    if (!acc[group]) acc[group] = [];
-    acc[group].push({ ...s, ts });
-    return acc;
-  }, {});
-
-  const groupOrder = ["Today", "Yesterday", "This Week", "This Month", "Earlier"];
+    if (!groupsMap.has(group)) groupsMap.set(group, []);
+    groupsMap.get(group)!.push({ ...s, ts });
+  });
+  
+  const groupOrder = Array.from(groupsMap.keys());
+  const groupedSessions: Record<string, any[]> = {};
+  groupsMap.forEach((val, key) => groupedSessions[key] = val);
 
   const handleDelete = async (e: any, id: string) => {
     e.stopPropagation();
@@ -248,7 +275,7 @@ export function HistoryApp() {
           .view-pane { width: 50%; height: 100%; display: flex; flex-direction: column; padding: 0 16px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
           
           .group-header { display: flex; align-items: center; font-size: 11px; font-weight: 700; color: var(--tx-mut); letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
-          .group-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.05); margin-left: 12px; }
+          
           
           .nb-item { display: flex; align-items: center; padding: 12px; cursor: pointer; border-radius: 12px; transition: all 0.2s; margin-bottom: 4px; border: 1px solid transparent; }
           .nb-item:hover { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); }
@@ -309,14 +336,21 @@ export function HistoryApp() {
               {groupOrder.map(group => {
                 const groupSess = groupedSessions[group];
                 if (!groupSess || groupSess.length === 0) return null;
+                const collapsed = isCollapsed(group);
                 return (
-                  <div key={group} style={{ marginBottom: "16px" }}>
-                    <div className="group-header">
+                  <div key={group} style={{ marginBottom: collapsed ? "8px" : "16px" }}>
+                    <div className="group-header" onClick={() => toggleGroup(group)} style={{ cursor: "pointer", userSelect: "none" }}>
+                      <span style={{ marginRight: "4px", display: "flex", alignItems: "center", color: "var(--tx-mut)" }}>
+                        {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                      </span>
                       {group} <span style={{ marginLeft: "6px", opacity: 0.6 }}>{groupSess.length}</span>
+                      <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.05)", marginLeft: "12px" }} />
                     </div>
-                    <div>
-                      {groupSess.map((s: any) => renderHistoryItem(s))}
-                    </div>
+                    {!collapsed && (
+                      <div style={{ marginTop: "8px" }}>
+                        {groupSess.map((s: any) => renderHistoryItem(s))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

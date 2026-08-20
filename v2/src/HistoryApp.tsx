@@ -30,7 +30,7 @@ export function HistoryApp() {
       .then((wfs: any) => setWorkflows(wfs))
       .catch(console.error);
 
-    invoke("get_sessions")
+    invoke("load_sessions")
       .then((data: any) => {
         const sorted = data.sort((a: any, b: any) => {
           const getTime = (s: any) => {
@@ -240,10 +240,10 @@ export function HistoryApp() {
           .search-input::placeholder { color: var(--tx-mut); }
           
           .views-container { display: flex; width: 200%; flex-shrink: 0; flex: 1; overflow: hidden; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-          .view-pane { width: 50%; height: 100%; display: flex; flexDirection: column; padding: 0 16px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
+          .view-pane { width: 50%; height: 100%; display: flex; flex-direction: column; padding: 0 16px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
           
-          .group-header { display: flex; alignItems: center; fontSize: 11px; fontWeight: 700; color: var(--tx-mut); letterSpacing: 1px; marginBottom: 8px; textTransform: uppercase; }
-          .group-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.05); marginLeft: 12px; }
+          .group-header { display: flex; align-items: center; font-size: 11px; font-weight: 700; color: var(--tx-mut); letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+          .group-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.05); margin-left: 12px; }
           
           .nb-item { display: flex; align-items: center; padding: 12px; cursor: pointer; border-radius: 12px; transition: all 0.2s; margin-bottom: 4px; border: 1px solid transparent; }
           .nb-item:hover { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); }

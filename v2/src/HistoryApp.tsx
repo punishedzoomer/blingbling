@@ -15,8 +15,8 @@ const INITIAL_MOCK_NOTEBOOKS = [
 
 export function HistoryApp() {
   const [sessions, setSessions] = useState<any[]>([]);
-  const [workflows] = useState<any[]>(() => {
-    const saved = localStorage.getItem("customWorkflows");
+  const [tags] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
   });
   const [activeTab, setActiveTab] = useState<"history" | "notebooks">("history");
@@ -102,7 +102,7 @@ export function HistoryApp() {
   const filteredSessions = sessions.filter(s => {
     if (!searchQuery) return true;
     const title = s.data?.title || "";
-    const wf = workflows.find(w => w.id === s.data?.workflowId);
+    const wf = tags.find(w => w.id === s.data?.workflowId);
     const wfName = wf?.name || "";
     return title.toLowerCase().includes(searchQuery.toLowerCase()) || wfName.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -136,7 +136,7 @@ export function HistoryApp() {
     else if (session.data && Array.isArray(session.data.history)) messages = session.data.history;
     const firstUserMsg = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
     const displayTitle = session.data?.title || String(firstUserMsg).replace(/\n/g, ' ');
-    const wf = workflows.find(w => w.id === session.data?.workflowId);
+    const tag = tags.find(t => t.id === session.data?.tagId);
     const isDeleting = deletingIds.includes(session.id);
     
     return (
@@ -148,7 +148,7 @@ export function HistoryApp() {
           let messages: any[] = [];
           if (Array.isArray(session.data)) messages = session.data;
           else if (session.data && Array.isArray(session.data.history)) messages = session.data.history;
-          await emit("restore-session", { id: session.id, data: messages, workflowId: session.data?.workflowId, title: session.data?.title });
+          await emit("restore-session", { id: session.id, data: messages, tagId: session.data?.tagId, title: session.data?.title });
           await invoke("hide_panel", { label: "history" });
         }}
       >
@@ -159,10 +159,10 @@ export function HistoryApp() {
           <div style={{ color: "rgba(255,255,255,0.9)", fontSize: "14px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {displayTitle}
           </div>
-          {wf && (
+          {tag && (
             <div style={{ display: "inline-flex" }}>
-              <div className="tag-pill" style={{ '--tag-color': wf.color } as any}>
-                #{wf.name.toLowerCase()}
+              <div className="tag-pill" style={{ '--tag-color': tag.color } as any}>
+                #{tag.name.toLowerCase()}
               </div>
             </div>
           )}

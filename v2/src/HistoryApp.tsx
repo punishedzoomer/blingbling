@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Trash2, Sparkles, Clock, Book, Search, MessageSquare, Plus, Layers, BookOpen, Briefcase, User, X } from "lucide-react";
+import { Trash2, Clock, Book, Search, MessageSquare, Plus, Layers, BookOpen, Briefcase, User } from "lucide-react";
 import "./App.css";
 
 const MOCK_NOTEBOOKS = [
@@ -153,9 +153,10 @@ export function HistoryApp() {
   return (
     <div 
       id="history-window" 
-      style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-1)", overflow: "hidden" }}
+      style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
       onMouseEnter={() => invoke("focus_panel", { label: "history" }).catch(console.error)} 
     >
+      <div id="transcript-sidebar" className="transcript-sidebar" style={{ width: "100%", height: "100%", margin: 0, padding: 0, display: "flex", flexDirection: "column", boxSizing: "border-box", position: "relative" }}>
       <style>{`
         .history-item:hover { background: rgba(255,255,255,0.03); }
         .history-item:hover .history-del-btn { display: block !important; }
@@ -165,19 +166,12 @@ export function HistoryApp() {
       `}</style>
 
       {/* Header */}
-      <div style={{ padding: "20px 24px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 100 }} data-tauri-drag-region onMouseDown={(e) => { if (e.buttons === 1 && !(e.target as HTMLElement).closest('button, input')) getCurrentWindow().startDragging(); }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", pointerEvents: "none" }}>
-          <div style={{ background: "#7C3AED", borderRadius: "8px", padding: "6px" }}>
-            <Sparkles size={16} color="#fff" />
-          </div>
-          <span style={{ color: "#fff", fontSize: "18px", fontWeight: 600 }}>Aether</span>
-        </div>
-        <button onClick={() => invoke("hide_panel", { label: "history" })} style={{ background: "transparent", border: "none", color: "var(--tx-mut)", cursor: "pointer", padding: "4px" }}>
-          <X size={20} />
-        </button>
+      <div className="s-head" style={{ padding: "16px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 100 }} data-tauri-drag-region onMouseDown={(e) => { if (e.buttons === 1 && !(e.target as HTMLElement).closest('button, input')) getCurrentWindow().startDragging(); }}>
+        <div className="s-title" style={{ pointerEvents: "none" }}>Conversations</div>
+        <button className="s-close" onClick={() => invoke("hide_panel", { label: "history" })}>Done</button>
       </div>
 
-      <div style={{ padding: "0 24px", display: "flex", flexDirection: "column", gap: "16px", flex: 1, overflow: "hidden" }}>
+      <div style={{ padding: "0 14px", display: "flex", flexDirection: "column", gap: "12px", flex: 1, overflow: "hidden" }}>
         
         {/* Segmented Control */}
         <div style={{ display: "flex", background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "4px" }}>
@@ -243,6 +237,7 @@ export function HistoryApp() {
           </div>
         )}
 
+      </div>
       </div>
     </div>
   );

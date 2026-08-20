@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 interface InputAreaProps {
   input: string;
   setInput: (val: string) => void;
@@ -85,6 +86,14 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
             <span style={{ color: activeTag ? activeTag.color : "var(--tx-mut)", fontSize: "12px", fontWeight: 700 }}>
               #{activeTag ? activeTag.name : "Unknown"}
             </span>
+            {!isLocked && (
+              <button 
+                onClick={() => setActiveTagId(null)}
+                style={{ background: "transparent", border: "none", color: "var(--tx-mut)", cursor: "pointer", display: "flex", alignItems: "center", padding: 0, marginLeft: "4px" }}
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         </div>
       )}

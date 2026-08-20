@@ -196,8 +196,9 @@ function App() {
 
   // Listen for actions from other windows
   useEffect(() => {
-    let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any;
+    let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any, unlistenReset: any;
     listen("clear-history", () => { setMessages([]); setActiveTagId(null); setSessionTitle(null); }).then(f => unlistenClear = f);
+    listen("reset-session", () => { setSessionId(Date.now().toString()); setMessages([]); setActiveTagId(null); setSessionTitle(null); }).then(f => unlistenReset = f);
       listen("add-message", (e: any) => setMessages(prev => [...prev, e.payload])).then(f => unlistenAddMsg = f);
       listen("restore-session", (e: any) => {
         const { id, data, tagId, title } = e.payload;
@@ -226,6 +227,7 @@ function App() {
       if (unlistenAddMsg) unlistenAddMsg();
       if (unlistenSimulate) unlistenSimulate();
       if (unlistenRestore) unlistenRestore();
+      if (unlistenReset) unlistenReset();
     };
   }, []);
 

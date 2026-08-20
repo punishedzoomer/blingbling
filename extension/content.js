@@ -202,6 +202,22 @@ function extractTextWithImages(node) {
         return `\n\`\`\`xml\n${node.outerHTML}\n\`\`\`\n`;
     }
 
+    if (tagName === 'SUP') {
+        let text = "";
+        for (let child of node.childNodes) {
+            text += extractTextWithImages(child);
+        }
+        return `^${text}`;
+    }
+
+    if (tagName === 'SUB') {
+        let text = "";
+        for (let child of node.childNodes) {
+            text += extractTextWithImages(child);
+        }
+        return `_${text}`;
+    }
+
     let text = "";
     for (let child of node.childNodes) {
         text += extractTextWithImages(child);

@@ -28,6 +28,7 @@ This document tracks upcoming features, ideas, and works in progress for the Cra
 - [x] **Main UI Workflow Switcher (Medium)**: A clean, non-intrusive UI element on the main chat window that allows the user to select the active workflow right before starting a new conversation.
 - [x] **History Window Workflow Grouping (Medium)**: History sessions will be color-coded and partitioned into accordion-style lists (hamburger/collapsible items) based on which workflow they belong to, rather than using tabs or a flat list.
 - [x] **Workflow Context Tracking (Hard)**: Equip each customized workflow with its own dedicated system prompt, progress tracking, and context memory feature.
+- [ ] **Notebooks (High)**: Create a folder-based system where conversations can share knowledge, context, and assets. Useful for iterating on tasks repeated frequently (e.g. blog writing, resume updates).
 - [ ] **Obsidian Vault Integration (Extreme)**: Connect the app directly to an Obsidian vault for seamless bi-directional data flow and deep knowledge retrieval.
 
 - [ ] *Add more feature ideas here...*

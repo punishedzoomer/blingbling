@@ -2,13 +2,21 @@
 
 This document tracks upcoming features, ideas, and works in progress for the Crackit desktop app and extension. 
 
+
+## Recently Resolved Bugs & Fixes
+- [x] **Context State Persistence**: Fixed issue where context text remained stuck in the chat input across sends and new sessions.
+- [x] **Markdown Table Formatting**: Overhauled the extension's Smart Parser to correctly extract HTML tables as clean Markdown tables with rows/columns instead of vertical lists.
+- [x] **Extension UI Glitches**: Patched `content.js` to eliminate screen tearing in Chromium browsers (Brave) during snip captures.
+- [x] **Extension Error Dashboard**: Suppressed expected websocket disconnection logs and unhandled promise rejections so they no longer trigger errors in `chrome://extensions`.
+- [x] **Edit Prompt Workflow**: Added Edit Prompt button to chat bubbles allowing quick re-population of the prompt and context into the input field.
+
 ## Planned Features
 - [ ] **System-wide Searchability (Raycast)**: Enable chat history search via a Raycast extension, allowing the user to search past prompts and screenshots globally from macOS.
 
 - [x] **Tutorial Page (Fan Icon)**: Replace the behavior of the fan icon and make it open a tutorial page.
 - [x] **Master Prompts in Settings**: Add a master prompts section to the settings so that the user can have their own prompts and customize it according to their use cases.
 - [ ] **Shortcut Support**: Add shortcut support for the app.
-- [ ] **Better Previews**: Implement a better way of dealing with previews (images, etc.).
+- [x] **Better Previews**: Implemented expandable View Context dropdown with thumbnails for history bubbles.
 - [ ] **Rich Attachments**: Add voice support, PDF files, and custom attachment support.
 - [x] **Context-Aware Session Renaming (Medium/Hard)**: Automatically rename saved sessions in the history panel using an LLM to summarize the actual problem or context (e.g. the specific LeetCode problem name), instead of generically naming them all based on the first prompt.
 - [ ] **History Search (Medium)**: Implement a search feature inside the history panel to quickly find past conversations.

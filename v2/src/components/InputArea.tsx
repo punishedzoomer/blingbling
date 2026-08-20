@@ -19,31 +19,47 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
     return `hsl(${hue}, 85%, 60%)`;
   };
 
+  const processTagCommand = (val: string, matchRegExp: RegExp): string | null => {
+    if (isLocked) return null;
+    const tagMatch = val.match(matchRegExp);
+    if (tagMatch) {
+      const tagName = tagMatch[1].trim();
+      let existingTag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
+      
+      if (!existingTag) {
+        existingTag = { id: crypto.randomUUID(), name: tagName, color: generateRandomColor() };
+        const newTags = [...tags, existingTag];
+        setTags(newTags);
+        localStorage.setItem("customTags", JSON.stringify(newTags));
+      }
+      
+      setActiveTagId(existingTag.id);
+      return val.replace(tagMatch[0], "").trimStart();
+    }
+    return null;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
+    let val = e.target.value;
+    
+    // Check for tag command with a trailing space
+    const processedVal = processTagCommand(val, /^\/tag\s+([a-zA-Z0-9_-]+)\s/i);
+    if (processedVal !== null) {
+      val = processedVal;
+    }
+    
+    setInput(val);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       
-      if (!isLocked) {
-        const tagMatch = input.match(/^\/tag\s+([a-zA-Z0-9_-]+)(?:\s|$)/i);
-        if (tagMatch) {
-          const tagName = tagMatch[1].trim();
-          let existingTag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
-          
-          if (!existingTag) {
-            existingTag = { id: crypto.randomUUID(), name: tagName, color: generateRandomColor() };
-            const newTags = [...tags, existingTag];
-            setTags(newTags);
-            localStorage.setItem("customTags", JSON.stringify(newTags));
-          }
-          
-          setActiveTagId(existingTag.id);
-          setInput(input.replace(tagMatch[0], "").trim());
-          return; // Don't send message, just process command
-        }
+      // Fallback: Check for tag command if they hit enter without a trailing space
+      const processedVal = processTagCommand(input, /^\/tag\s+([a-zA-Z0-9_-]+)$/i);
+      if (processedVal !== null) {
+        setInput(processedVal);
+        return; // Don't send message, just process the tag
       }
       
       handleSend();

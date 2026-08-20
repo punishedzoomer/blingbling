@@ -2,16 +2,9 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Trash2, Clock, Book, Search, MessageSquare, Plus, Layers, BookOpen, Briefcase, User, PenSquare, ChevronDown, ChevronRight } from "lucide-react";
+import { Trash2, Clock, Book, Search, MessageSquare, PenSquare, ChevronDown, ChevronRight } from "lucide-react";
 import "./App.css";
-
-const INITIAL_MOCK_NOTEBOOKS = [
-  { id: 1, title: "ML Research Hub", chats: 12, attachments: 7, time: "Yesterday", color: "#8B5CF6", icon: BookOpen },
-  { id: 2, title: "System Design Notes", chats: 8, attachments: 3, time: "4d ago", color: "#06B6D4", icon: BookOpen },
-  { id: 3, title: "IELTS Prep 2026", chats: 15, attachments: 11, time: "7d ago", color: "#F59E0B", icon: BookOpen },
-  { id: 4, title: "Work Projects Q3", chats: 6, attachments: 4, time: "14d ago", color: "#10B981", icon: Briefcase },
-  { id: 5, title: "Personal Journal", chats: 22, attachments: 2, time: "30d ago", color: "#EC4899", icon: User },
-];
+import { NotebookList } from "./components/NotebookList";
 
 export function HistoryApp() {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -33,10 +26,6 @@ export function HistoryApp() {
     setCollapsedGroups(prev => ({ ...prev, [group]: !isCollapsed(group) }));
   };
   
-  // Notebooks state
-  const [notebooks, setNotebooks] = useState<any[]>(INITIAL_MOCK_NOTEBOOKS);
-  const [editingNbId, setEditingNbId] = useState<number | null>(null);
-  const [editNbTitle, setEditNbTitle] = useState("");
 
   const loadSessions = () => {
 
@@ -181,68 +170,6 @@ export function HistoryApp() {
     );
   };
 
-  const handleNewNotebook = () => {
-    const newNb = {
-      id: Date.now(),
-      title: "",
-      chats: 0,
-      attachments: 0,
-      time: "Just now",
-      color: "#3B82F6",
-      icon: BookOpen
-    };
-    setNotebooks([newNb, ...notebooks]);
-    setEditingNbId(newNb.id);
-    setEditNbTitle("");
-    setActiveTab("notebooks");
-  };
-
-  const saveNotebookTitle = (id: number) => {
-    setNotebooks(nbs => nbs.map(nb => nb.id === id ? { ...nb, title: editNbTitle || "Untitled Notebook" } : nb));
-    setEditingNbId(null);
-  };
-
-  const renderNotebookItem = (nb: any) => {
-    const Icon = nb.icon;
-    const isEditing = editingNbId === nb.id;
-    return (
-      <div 
-        key={nb.id} 
-        className="nb-item"
-        onDoubleClick={() => {
-          setEditingNbId(nb.id);
-          setEditNbTitle(nb.title);
-        }}
-      >
-        <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: nb.color, display: "flex", alignItems: "center", justifyContent: "center", marginRight: "16px", flexShrink: 0 }}>
-          <Icon size={20} color="#fff" />
-        </div>
-        <div style={{ flex: 1, overflow: "hidden" }}>
-          {isEditing ? (
-            <input 
-              autoFocus
-              className="nb-edit-input"
-              value={editNbTitle}
-              onChange={e => setEditNbTitle(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') saveNotebookTitle(nb.id); if (e.key === 'Escape') setEditingNbId(null); }}
-              onBlur={() => saveNotebookTitle(nb.id)}
-            />
-          ) : (
-            <div style={{ color: "#fff", fontSize: "14px", fontWeight: 600, marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{nb.title}</div>
-          )}
-          <div style={{ color: "var(--tx-mut)", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <span>{nb.chats} chats</span>
-            <span style={{ opacity: 0.5 }}>•</span>
-            <span style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-              <Layers size={10} /> {nb.attachments}
-            </span>
-            <span style={{ opacity: 0.5 }}>•</span>
-            <span>{nb.time}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div 
@@ -361,27 +288,7 @@ export function HistoryApp() {
           </div>
 
           {/* NOTEBOOKS PANE */}
-          <div className="view-pane">
-            <button 
-              onClick={handleNewNotebook}
-              style={{ width: "100%", padding: "14px", background: "transparent", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: "12px", color: "var(--tx-mut)", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600, marginBottom: "16px", transition: "all 0.2s" }} 
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"}
-            >
-              <Plus size={16} /> New Notebook
-            </button>
-
-            <div style={{ background: "rgba(124, 58, 237, 0.08)", border: "1px solid rgba(124, 58, 237, 0.2)", borderRadius: "12px", padding: "16px", display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "16px" }}>
-              <Layers size={20} color="#A78BFA" style={{ flexShrink: 0, marginTop: "2px" }} />
-              <span style={{ color: "#C4B5FD", fontSize: "13px", lineHeight: "1.4" }}>
-                Notebooks share attachments and can read each other's context across chats.
-              </span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {notebooks.map(nb => renderNotebookItem(nb))}
-            </div>
-          </div>
+          <NotebookList setActiveTab={setActiveTab} />
 
         </div>
 

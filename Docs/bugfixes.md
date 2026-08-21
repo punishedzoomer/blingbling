@@ -2,6 +2,14 @@
 
 ## Architecture Context & Bug Log
 
+### 2026-08-21: Markdown Code Block Containerization & Copy Button Panning Fix
+- **Feature/Fix**: Restructured code block rendering in `MarkdownRenderer.tsx` and updated `.ai-text` layout rules in `App.css`.
+- **Root Cause & Rationale**: In `react-markdown` v10, default `<pre>` wrappers nested around custom code blocks allowed inner flex containers to expand to the width of the longest code line. Because `#messages` has `overflow-x: hidden`, this pushed the top-right "Copy" button out of viewport bounds. Furthermore, `.ai-text` lacked explicit full-width constraints inside flex containers, and code blocks without language tags lacked copy support.
+- **Exact Fix**:
+  - Replaced `<pre>` with a pass-through component (`PreBlock`) to avoid duplicate preformatted container nesting and padding.
+  - Pinned the code block header (language identifier and copy button) to 100% container width while isolating horizontal scrolling (`overflow-x: auto`) strictly to the inner code container.
+  - Enforced `width: 100%; max-width: 100%; box-sizing: border-box;` on `.ai-text` and added copy support for untagged code blocks.
+
 ### 2026-08-21: Robust Reasoning Token Parsing (<think> tags)
 - **Feature/Fix**: Cleaned duplicate/nested `<think>` tag emissions and added a multi-pass parser for reasoning content in `MarkdownRenderer.tsx` and `ai.rs`.
 - **Root Cause & Rationale**: When models emitted reasoning tokens or already contained `<think>` tags in their content stream, the backend and frontend simple index matching multiplied the tags into `<think><think><think>`, leaking raw XML tags into rendered markdown.

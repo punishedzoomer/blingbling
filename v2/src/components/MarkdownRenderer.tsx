@@ -4,12 +4,17 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Copy, Check } from "lucide-react";
 import { useState } from "react";
 
-const CodeBlock = ({ inline, className, children, ...props }: any) => {
+const PreBlock = ({ children }: any) => {
+  return <>{children}</>;
+};
+
+const CodeBlock = ({ node, className, children, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || "");
-  const code = String(children).replace(/\n$/, "");
+  const rawCode = String(children || "");
+  const code = rawCode.replace(/\n$/, "");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -18,28 +23,78 @@ const CodeBlock = ({ inline, className, children, ...props }: any) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (!inline && match) {
+  const isBlock = Boolean(
+    match ||
+    rawCode.includes("\n") ||
+    (node && node.position && node.position.start.line !== node.position.end.line)
+  );
+
+  if (isBlock) {
+    const language = match ? match[1] : "";
+
     return (
-      <div className="relative group my-4 rounded-md overflow-hidden bg-[#1d1f21]">
-        <div className="flex items-center justify-between px-4 py-1 bg-[#2d2f31] text-xs text-gray-400">
-          <span>{match[1]}</span>
-          <button onClick={handleCopy} className="hover:text-white transition-colors">
-            {copied ? "Copied!" : "Copy"}
+      <div className="relative group my-3 w-full max-w-full rounded-lg overflow-hidden border border-[rgba(255,255,255,0.12)] bg-[#16181d] shadow-sm">
+        <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#1e2026] border-b border-[rgba(255,255,255,0.08)] text-xs text-gray-400 select-none">
+          <span className="font-mono text-[11px] font-medium tracking-wide text-gray-400 lowercase">
+            {language || "code"}
+          </span>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.08)] transition-all cursor-pointer"
+            title="Copy code"
+          >
+            {copied ? (
+              <>
+                <Check size={12} className="text-emerald-400" />
+                <span className="text-emerald-400">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={12} />
+                <span>Copy</span>
+              </>
+            )}
           </button>
         </div>
-        <SyntaxHighlighter
-          style={atomDark as any}
-          language={match[1]}
-          PreTag="div"
-          customStyle={{ margin: 0, background: "transparent" }}
-          {...props}
-        >
-          {code}
-        </SyntaxHighlighter>
+        <div className="overflow-x-auto w-full p-3.5 text-[13px] leading-relaxed font-mono bg-[#13151a]">
+          <SyntaxHighlighter
+            style={atomDark as any}
+            language={language || "text"}
+            PreTag="div"
+            customStyle={{
+              margin: 0,
+              padding: 0,
+              background: "transparent",
+              fontSize: "13px",
+              lineHeight: "1.55",
+              fontFamily: "var(--mono)",
+              overflowX: "auto",
+              maxWidth: "100%",
+            }}
+            codeTagProps={{
+              style: {
+                fontFamily: "var(--mono)",
+                background: "transparent",
+              },
+            }}
+            {...props}
+          >
+            {code}
+          </SyntaxHighlighter>
+        </div>
       </div>
     );
   }
-  return <code className="bg-black/10 rounded px-1 py-0.5 text-sm" {...props}>{children}</code>;
+
+  return (
+    <code
+      className="bg-[rgba(255,255,255,0.08)] text-[#e6edf3] rounded px-1.5 py-0.5 text-[13px] font-mono border border-[rgba(255,255,255,0.08)]"
+      {...props}
+    >
+      {children}
+    </code>
+  );
 };
 
 export interface ParsedReasoning {
@@ -133,7 +188,7 @@ export const MessageRenderer = ({ content }: { content: string }) => {
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex]}
-            components={{ code: CodeBlock }}
+            components={{ pre: PreBlock, code: CodeBlock }}
           >
             {mainContent}
           </ReactMarkdown>
@@ -146,7 +201,7 @@ export const MessageRenderer = ({ content }: { content: string }) => {
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[rehypeKatex]}
-      components={{ code: CodeBlock }}
+      components={{ pre: PreBlock, code: CodeBlock }}
     >
       {content}
     </ReactMarkdown>

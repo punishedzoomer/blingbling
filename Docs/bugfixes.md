@@ -117,3 +117,18 @@
 - **Feature/Fix**: Resolved transparent NSPanel click-blocking and hit-testing on secondary windows.
 - **Root Cause**: Transparent window backgrounds were intercepting mouse events on macOS.
 - **Exact Fix**: Applied `pointerEvents: "none"` on root window wrappers and `pointerEvents: "auto"` on inner content containers.
+
+### 2026-08-21: Robust Tagging Command and Session Tag Management
+- **Feature/Fix**: Fixed `/tag` command recognition, auto-creation, prompt extraction, and unlocked tag management in active conversations.
+- **Root Cause**:
+  1. `isLocked={messages.length > 0}` in `App.tsx` locked tag modification and command execution as soon as a conversation started.
+  2. Input regex `/^\/tag\s+([a-zA-Z0-9_-]+)\s/i` was too restrictive, failing on `#tag` prefixes, punctuation, or commands submitted without trailing spaces.
+  3. `handleSend` in `App.tsx` did not parse `/tag` commands, inadvertently transmitting `/tag <name>` to the LLM when clicking Send.
+  4. Tag pill inside the textarea container consumed significant horizontal prompt space.
+- **Exact Fix**:
+  - Implemented `applyTagByName` in `InputArea.tsx` and unified regex `/^\/(?:tag|t)\s+#?([a-zA-Z0-9_\-\.]+)/is` for inline typing, Enter keypress, and Send action.
+  - Added tag command interception in `handleSend` to extract prompt text, create or assign the tag, and prevent empty messages from reaching the LLM.
+  - Removed artificial `isLocked` restriction, enabling users to add, switch, or remove tags at any time during conversations.
+  - Relocated the active tag chip below the prompt composer into the window bottom padding area, freeing 100% of the input box width for typing.
+  - Locked notebook folder tags on notebook chats: automatically assigned to the notebook folder tag name, made unremovable (hiding the close button), and prevented tag reassignment while belonging to that notebook.
+  - Emitted `history-sync` on tag creation and removal for instantaneous cross-window state synchronization.

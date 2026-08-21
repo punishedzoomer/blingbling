@@ -41,6 +41,25 @@ export function syncNotebookTag(notebook: { id: number; title: string; color?: s
   }
 }
 
+export function getNotebookTagById(notebookId: number): Tag | null {
+  try {
+    const customNotebooksStr = localStorage.getItem("customNotebooks") || "[]";
+    const notebooks = JSON.parse(customNotebooksStr);
+    const found = notebooks.find((nb: any) => nb.id === notebookId);
+    if (found) {
+      return syncNotebookTag(found);
+    }
+
+    const customTagsStr = localStorage.getItem("customTags") || "[]";
+    const tags: Tag[] = JSON.parse(customTagsStr);
+    const existing = tags.find((t) => t.notebookId === notebookId || t.id === `nb_${notebookId}`);
+    return existing || null;
+  } catch (e) {
+    console.error("Failed to get notebook tag by id:", e);
+    return null;
+  }
+}
+
 export function updateNotebookTagName(notebookId: number, oldTitle: string, newTitle: string, color?: string) {
   try {
     const customTagsStr = localStorage.getItem("customTags") || "[]";

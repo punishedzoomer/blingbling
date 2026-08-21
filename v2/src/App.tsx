@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
+import { X } from "lucide-react";
 import "katex/dist/katex.min.css";
 import "./App.css";
 
@@ -16,6 +17,7 @@ import { ImagePreviewModal } from "./components/ImagePreviewModal";
 import { useDynamicBounds } from "./useDynamicBounds";
 import { useAttachments } from "./hooks/useAttachments";
 import { Attachment } from "./utils/fileProcessor";
+import { getNotebookTagById } from "./utils/notebookTags";
 
 export interface Message {
   role: "user" | "assistant" | "system";
@@ -191,7 +193,15 @@ function App() {
       setSessionId(id || Date.now().toString());
       setMessages(data || []);
       setInput("");
-      setActiveTagId(tagId || null);
+
+      let resolvedTagId = tagId || null;
+      if (notebookId) {
+        const nbTag = getNotebookTagById(notebookId);
+        if (nbTag) {
+          resolvedTagId = nbTag.id;
+        }
+      }
+      setActiveTagId(resolvedTagId);
       setActiveNotebookId(notebookId || null);
       setSessionTitle(title || null);
       clearAllAttachments();
@@ -306,10 +316,52 @@ function App() {
     }
   };
 
-  const handleSend = async () => {
-    if (isStreaming || (!input.trim() && totalAttachmentsCount === 0)) return;
+  const activeTag = tags.find((t) => t.id === activeTagId);
+  const isNotebookChat = Boolean(activeNotebookId || activeTag?.notebookId);
 
-    const userMsg = input.trim();
+  useEffect(() => {
+    if (activeNotebookId) {
+      const nbTag = getNotebookTagById(activeNotebookId);
+      if (nbTag && activeTagId !== nbTag.id) {
+        setActiveTagId(nbTag.id);
+      }
+    }
+  }, [activeNotebookId, activeTagId]);
+
+  const handleSend = async () => {
+    let userMsg = input.trim();
+
+    // Check if user submitted a tag command
+    const tagMatch = userMsg.match(/^\/(?:tag|t)\s+#?([a-zA-Z0-9_\-\.]+)(?:\s+(.*)|$)/is);
+    if (tagMatch) {
+      const tagName = tagMatch[1].replace(/^#+/, "").trim();
+      const remaining = (tagMatch[2] || "").trim();
+
+      if (!isNotebookChat && tagName) {
+        let existingTag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
+        if (!existingTag) {
+          existingTag = {
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+            name: tagName,
+            color: `hsl(${Math.floor(Math.random() * 360)}, 85%, 60%)`,
+          };
+          const newTags = [...tags, existingTag];
+          setTags(newTags);
+          localStorage.setItem("customTags", JSON.stringify(newTags));
+          emit("history-sync", null).catch(() => {});
+        }
+        setActiveTagId(existingTag.id);
+      }
+      userMsg = remaining;
+    }
+
+    if (isStreaming || (!userMsg && totalAttachmentsCount === 0)) {
+      if (tagMatch && !userMsg && totalAttachmentsCount === 0) {
+        setInput("");
+      }
+      return;
+    }
+
     const payload = buildSendPayload(userMsg);
 
     const userMessageRecord: Message = {
@@ -448,7 +500,7 @@ function App() {
                   setTags={setTags}
                   activeTagId={activeTagId}
                   setActiveTagId={setActiveTagId}
-                  isLocked={messages.length > 0}
+                  isNotebookChat={isNotebookChat}
                   onPaste={async (e) => {
                     const handled = await handlePaste(e);
                     if (handled) {
@@ -483,6 +535,30 @@ function App() {
                   input={input}
                 />
               </div>
+
+              {activeTag && (
+                <div className="active-tag-bar">
+                  <div
+                    className="active-tag-chip"
+                    style={{
+                      borderColor: `color-mix(in srgb, ${activeTag.color} 45%, rgba(255,255,255,0.12))`,
+                      paddingRight: isNotebookChat ? "10px" : "8px",
+                    }}
+                  >
+                    <span className="tag-hash" style={{ color: activeTag.color }}>#</span>
+                    <span className="tag-name" style={{ color: activeTag.color }}>{activeTag.name}</span>
+                    {!isNotebookChat && (
+                      <button
+                        className="tag-remove-btn"
+                        onClick={() => setActiveTagId(null)}
+                        title="Remove Tag"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

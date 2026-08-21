@@ -72,6 +72,18 @@
         "alwaysOnTop": true,
         "visibleOnAllWorkspaces": true,
         "visible": false
+      },
+      {
+        "title": "Notebook",
+        "label": "notebook",
+        "width": 480,
+        "height": 620,
+        "transparent": true,
+        "decorations": false,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
+        "visible": false
       }
     ],
     "security": {

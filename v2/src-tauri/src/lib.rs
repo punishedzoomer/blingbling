@@ -34,6 +34,8 @@ pub fn run() {
             commands::window::set_debug_mode,
             commands::window::show_panel,
             commands::window::hide_panel,
+            commands::window::show_notebook,
+            commands::window::hide_notebook,
             commands::window::resize_panel,
             commands::window::focus_panel,
             commands::window::unfocus_panel

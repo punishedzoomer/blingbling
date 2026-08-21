@@ -136,6 +136,10 @@ export function HistoryApp() {
   };
 
   const handleSelectSession = async (session: any) => {
+    invoke("log_debug", {
+      code: "INFO-HIST-001",
+      message: `handleSelectSession in history: id=${session.id}`,
+    }).catch(() => {});
     const messages = extractMessages(session.data);
     await emit("restore-session", {
       id: String(session.id),

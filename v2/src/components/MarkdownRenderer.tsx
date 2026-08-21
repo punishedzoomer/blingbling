@@ -42,44 +42,100 @@ const CodeBlock = ({ inline, className, children, ...props }: any) => {
   return <code className="bg-black/10 rounded px-1 py-0.5 text-sm" {...props}>{children}</code>;
 };
 
-export const MessageRenderer = ({ content }: { content: string }) => {
-  const thinkStartIndex = content.indexOf('<think>');
-  
-  if (thinkStartIndex !== -1) {
-    const thinkEndIndex = content.indexOf('</think>', thinkStartIndex);
-    const beforeThink = content.substring(0, thinkStartIndex);
-    let thinkContent = '';
-    let afterThink = '';
-    
-    if (thinkEndIndex !== -1) {
-      thinkContent = content.substring(thinkStartIndex + 7, thinkEndIndex).trim();
-      afterThink = content.substring(thinkEndIndex + 8).trim();
-    } else {
-      thinkContent = content.substring(thinkStartIndex + 7).trim();
+export interface ParsedReasoning {
+  hasReasoning: boolean;
+  reasoningText: string;
+  isStreamingReasoning: boolean;
+  mainContent: string;
+}
+
+export function parseReasoning(content: string): ParsedReasoning {
+  if (!content) {
+    return {
+      hasReasoning: false,
+      reasoningText: "",
+      isStreamingReasoning: false,
+      mainContent: "",
+    };
+  }
+
+  let text = content;
+  const reasoningParts: string[] = [];
+  let isStreamingReasoning = false;
+
+  // 1. Extract and clean all closed <think>...</think> blocks
+  const thinkBlockRegex = /<think>([\s\S]*?)<\/think>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = thinkBlockRegex.exec(text)) !== null) {
+    const rawReasoning = match[1] || "";
+    // Clean any nested/duplicate think tags inside the matched reasoning
+    const cleaned = rawReasoning.replace(/<\/?think>/gi, "").trim();
+    if (cleaned) {
+      reasoningParts.push(cleaned);
     }
-    
+  }
+
+  // Remove the matched closed blocks from text
+  text = text.replace(thinkBlockRegex, "");
+
+  // 2. Check for an unclosed trailing <think> block (active streaming)
+  const openThinkIndex = text.indexOf("<think>");
+  if (openThinkIndex !== -1) {
+    const beforeOpen = text.substring(0, openThinkIndex);
+    const afterOpen = text.substring(openThinkIndex + 7);
+    const cleanedActive = afterOpen.replace(/<\/?think>/gi, "").trim();
+    if (cleanedActive) {
+      reasoningParts.push(cleanedActive);
+    }
+    isStreamingReasoning = true;
+    text = beforeOpen;
+  }
+
+  // 3. Clean any orphaned <think> or </think> tags from the remaining main content
+  const cleanedMain = text.replace(/<\/?think>/gi, "").trim();
+  const fullReasoningText = reasoningParts.join("\n\n").trim();
+
+  return {
+    hasReasoning: fullReasoningText.length > 0 || isStreamingReasoning,
+    reasoningText: fullReasoningText,
+    isStreamingReasoning,
+    mainContent: cleanedMain,
+  };
+}
+
+export const MessageRenderer = ({ content }: { content: string }) => {
+  const { hasReasoning, reasoningText, isStreamingReasoning, mainContent } = parseReasoning(content);
+
+  if (hasReasoning) {
     return (
       <>
-        {beforeThink && (
-          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
-            {beforeThink}
-          </ReactMarkdown>
-        )}
-        <details className="mb-4" open={thinkEndIndex === -1}>
+        <details className="mb-4" open={isStreamingReasoning}>
           <summary className="cursor-pointer text-xs font-semibold text-[#8b949e] mb-2 select-none hover:text-[#c9d1d9] transition-colors outline-none list-none flex items-center gap-2">
-            {thinkEndIndex === -1 ? (
-              <span className="flex items-center gap-2"><Sparkles size={12} className="animate-pulse text-[#d2a8ff]" /> Reasoning...</span>
+            {isStreamingReasoning ? (
+              <span className="flex items-center gap-2">
+                <Sparkles size={12} className="animate-pulse text-[#d2a8ff]" /> Reasoning...
+              </span>
             ) : (
-              <span className="flex items-center gap-2"><Sparkles size={12} className="text-[#8b949e]" /> View Reasoning</span>
+              <span className="flex items-center gap-2">
+                <Sparkles size={12} className="text-[#8b949e]" /> View Reasoning
+              </span>
             )}
           </summary>
-          <div className="pl-3 border-l-2 border-[#30363d] text-[#8b949e] text-[13px] leading-relaxed italic mb-4 whitespace-pre-wrap font-sans">
-            {thinkContent}
-          </div>
+          {reasoningText && (
+            <div className="pl-3 border-l-2 border-[#30363d] text-[#8b949e] text-[13px] leading-relaxed italic mb-4 whitespace-pre-wrap font-sans">
+              {reasoningText}
+            </div>
+          )}
         </details>
-        {afterThink && (
-          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
-            {afterThink}
+
+        {mainContent && (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
+            components={{ code: CodeBlock }}
+          >
+            {mainContent}
           </ReactMarkdown>
         )}
       </>
@@ -87,7 +143,11 @@ export const MessageRenderer = ({ content }: { content: string }) => {
   }
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+      components={{ code: CodeBlock }}
+    >
       {content}
     </ReactMarkdown>
   );

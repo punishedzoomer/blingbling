@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Search, MessageSquare, Trash2, Plus, X, RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 
 export interface ConversationListProps {
@@ -215,7 +216,20 @@ export function ConversationList({
           marginBottom: "2px",
           transition: "all 0.15s ease",
         }}
-        onClick={() => onSelectSession(session)}
+        onClick={() => {
+          invoke("log_debug", {
+            code: "INFO-CL-001",
+            message: `Conversation item clicked: id=${session.id}, title=${title}`,
+          }).catch(() => {});
+          try {
+            onSelectSession(session);
+          } catch (err: any) {
+            invoke("log_debug", {
+              code: "ERR-CL-001",
+              message: `onSelectSession threw error: ${String(err)}`,
+            }).catch(() => {});
+          }
+        }}
       >
         <div
           style={{

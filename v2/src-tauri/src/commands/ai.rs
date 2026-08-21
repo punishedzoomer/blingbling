@@ -88,29 +88,40 @@ pub async fn stream_ai_response(
                     if trimmed.starts_with("data: ") {
                         let data = &trimmed[6..];
                         if data == "[DONE]" {
-                            app.emit_to("main", "ai-response", "[DONE]").unwrap();
+                            if is_reasoning {
+                                app.emit_to("main", "ai-response", "\n</think>\n").unwrap_or_default();
+                            }
+                            app.emit_to("main", "ai-response", "[DONE]").unwrap_or_default();
                             return Ok(());
                         }
                         if let Ok(json) = serde_json::from_str::<Value>(data) {
                             let delta = &json["choices"][0]["delta"];
                             
-                            if let Some(reasoning) = delta.get("reasoning").and_then(|r| r.as_str()) {
+                            let reasoning_opt = delta
+                                .get("reasoning")
+                                .or_else(|| delta.get("reasoning_content"))
+                                .and_then(|r| r.as_str());
+
+                            if let Some(reasoning) = reasoning_opt {
                                 if !reasoning.is_empty() {
                                     if !is_reasoning {
-                                        app.emit_to("main", "ai-response", "<think>\n").unwrap();
+                                        app.emit_to("main", "ai-response", "<think>\n").unwrap_or_default();
                                         is_reasoning = true;
                                     }
-                                    app.emit_to("main", "ai-response", reasoning).unwrap();
+                                    let cleaned = reasoning.replace("<think>", "").replace("</think>", "");
+                                    if !cleaned.is_empty() {
+                                        app.emit_to("main", "ai-response", cleaned).unwrap_or_default();
+                                    }
                                 }
                             }
                             
                             if let Some(content) = delta.get("content").and_then(|c| c.as_str()) {
                                 if !content.is_empty() {
                                     if is_reasoning {
-                                        app.emit_to("main", "ai-response", "\n</think>\n").unwrap();
+                                        app.emit_to("main", "ai-response", "\n</think>\n").unwrap_or_default();
                                         is_reasoning = false;
                                     }
-                                    app.emit_to("main", "ai-response", content).unwrap();
+                                    app.emit_to("main", "ai-response", content).unwrap_or_default();
                                 }
                             }
                             
@@ -125,7 +136,10 @@ pub async fn stream_ai_response(
         }
     }
 
-    app.emit_to("main", "ai-response", "[DONE]").unwrap();
+    if is_reasoning {
+        app.emit_to("main", "ai-response", "\n</think>\n").unwrap_or_default();
+    }
+    app.emit_to("main", "ai-response", "[DONE]").unwrap_or_default();
     Ok(())
 }
 

@@ -44,6 +44,7 @@ pub fn run() {
             commands::window::focus_panel,
             commands::window::unfocus_panel,
             commands::window::open_main_chat,
+            commands::window::log_debug,
             commands::file::pick_files
         ])
         .setup(|app| {

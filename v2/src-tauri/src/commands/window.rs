@@ -179,31 +179,67 @@ pub fn hide_panel(label: String, app: AppHandle) {
 
 
 #[tauri::command]
+pub fn log_debug(code: String, message: String) {
+    println!("[{}] {}", code, message);
+}
+
+#[tauri::command]
 pub fn open_main_chat(app: AppHandle) {
-    // Hide all auxiliary windows
-    for label in &["history", "notebook", "settings", "snip"] {
-        if let Some(window) = app.get_webview_window(label) {
-            #[cfg(target_os = "macos")]
-            {
-                let ns_window_ptr = window.ns_window().unwrap() as usize;
-                let _ = app.run_on_main_thread(move || {
-                    let ns_window = ns_window_ptr as cocoa::base::id;
-                    use objc::{sel, sel_impl};
-                    unsafe {
-                        let _: () = objc::msg_send![ns_window, orderOut: cocoa::base::nil];
-                    }
-                });
+    println!("[INFO-WIN-001] open_main_chat invoked");
+    #[cfg(target_os = "macos")]
+    {
+        let mut aux_ptrs = Vec::new();
+        for label in &["history", "notebook", "settings", "snip"] {
+            if let Some(window) = app.get_webview_window(label) {
+                if let Ok(ptr) = window.ns_window() {
+                    aux_ptrs.push((label.to_string(), ptr as usize));
+                } else {
+                    println!("[ERR-WIN-001] Failed to get ns_window pointer for label: {}", label);
+                }
             }
-            #[cfg(not(target_os = "macos"))]
-            {
+        }
+        let main_ptr = app.get_webview_window("main").and_then(|w| w.ns_window().ok().map(|p| p as usize));
+        if main_ptr.is_none() {
+            println!("[ERR-WIN-002] Main window pointer NOT found!");
+        }
+
+        let _ = app.run_on_main_thread(move || {
+            use objc::{class, sel, sel_impl};
+            unsafe {
+                // Order out all secondary auxiliary windows
+                for (label, ptr) in aux_ptrs {
+                    println!("[INFO-WIN-002] Ordering out auxiliary panel: {}", label);
+                    let ns_window = ptr as cocoa::base::id;
+                    let _: () = objc::msg_send![ns_window, orderOut: cocoa::base::nil];
+                }
+
+                // Make main chat overlay visible, mouse-interactive, and focused
+                if let Some(ptr) = main_ptr {
+                    println!("[INFO-WIN-003] Raising main window, alpha=1.0, ignoresMouse=NO, makeKeyAndOrderFront");
+                    let ns_window = ptr as cocoa::base::id;
+                    let _: () = objc::msg_send![ns_window, setAlphaValue: 1.0f64];
+                    let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::NO];
+                    let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
+
+                    let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
+                    let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
+                }
+            }
+        });
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        for label in &["history", "notebook", "settings", "snip"] {
+            if let Some(window) = app.get_webview_window(label) {
                 let _ = window.hide();
             }
         }
+        if let Some(main_win) = app.get_webview_window("main") {
+            let _ = main_win.show();
+            let _ = main_win.set_focus();
+        }
     }
-
-    // Explicitly show and raise main panel
-    show_panel("main".to_string(), app.clone());
-    focus_panel("main".to_string(), app);
 }
 
 #[tauri::command]

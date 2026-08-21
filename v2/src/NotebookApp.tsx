@@ -263,35 +263,74 @@ export function NotebookApp() {
   };
 
   const openSession = async (session: any) => {
-    const currentSession = allSessions.find((s: any) => String(s.id) === String(session.id)) || session;
-    const messages = extractMessages(currentSession.data);
-    const tag = syncNotebookTag(notebook);
-    const tagId = currentSession.data?.tagId || tag.id;
+    try {
+      invoke("log_debug", {
+        code: "INFO-NB-001",
+        message: `openSession called for session id=${session.id}, notebookId=${notebook?.id}`,
+      }).catch(() => {});
 
-    await emit("restore-session", {
-      id: String(currentSession.id),
-      data: messages,
-      tagId,
-      notebookId: notebook.id,
-      title: currentSession.data?.title,
-    });
+      const currentSession = allSessions.find((s: any) => String(s.id) === String(session.id)) || session;
+      const messages = extractMessages(currentSession.data);
+      const tag = syncNotebookTag(notebook);
+      const tagId = currentSession.data?.tagId || tag.id;
 
-    await invoke("open_main_chat");
+      invoke("log_debug", {
+        code: "INFO-NB-002",
+        message: `Emitting restore-session: id=${currentSession.id}, messageCount=${messages.length}, tagId=${tagId}`,
+      }).catch(() => {});
+
+      await emit("restore-session", {
+        id: String(currentSession.id),
+        data: messages,
+        tagId,
+        notebookId: notebook.id,
+        title: currentSession.data?.title,
+      });
+
+      invoke("log_debug", {
+        code: "INFO-NB-003",
+        message: "Invoking open_main_chat...",
+      }).catch(() => {});
+
+      await invoke("open_main_chat");
+
+      invoke("log_debug", {
+        code: "INFO-NB-004",
+        message: "open_main_chat invoke resolved successfully.",
+      }).catch(() => {});
+    } catch (err: any) {
+      invoke("log_debug", {
+        code: "ERR-NB-001",
+        message: `Failed in openSession: ${String(err)}`,
+      }).catch(() => {});
+    }
   };
 
   const handleNewChatInNotebook = async () => {
-    const newSessionId = Date.now().toString();
-    const tag = syncNotebookTag(notebook);
+    try {
+      invoke("log_debug", {
+        code: "INFO-NB-010",
+        message: `handleNewChatInNotebook called for notebookId=${notebook?.id}`,
+      }).catch(() => {});
 
-    await emit("restore-session", {
-      id: newSessionId,
-      data: [],
-      tagId: tag.id,
-      notebookId: notebook.id,
-      title: null,
-    });
+      const newSessionId = Date.now().toString();
+      const tag = syncNotebookTag(notebook);
 
-    await invoke("open_main_chat");
+      await emit("restore-session", {
+        id: newSessionId,
+        data: [],
+        tagId: tag.id,
+        notebookId: notebook.id,
+        title: null,
+      });
+
+      await invoke("open_main_chat");
+    } catch (err: any) {
+      invoke("log_debug", {
+        code: "ERR-NB-010",
+        message: `Failed in handleNewChatInNotebook: ${String(err)}`,
+      }).catch(() => {});
+    }
   };
 
   return (

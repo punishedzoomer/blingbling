@@ -176,6 +176,10 @@ function App() {
 
     listen("restore-session", (e: any) => {
       const { id, data, tagId, notebookId, title } = e.payload;
+      invoke("log_debug", {
+        code: "INFO-APP-001",
+        message: `restore-session received in main window: id=${id}, messageCount=${Array.isArray(data) ? data.length : 0}, tagId=${tagId}, notebookId=${notebookId}, title=${title}`,
+      }).catch(() => {});
       try {
         const savedTags = localStorage.getItem("customTags");
         if (savedTags) {

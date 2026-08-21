@@ -2,6 +2,20 @@
 
 ## Architecture Context & Bug Log
 
+### 2026-08-21: Robust Reasoning Token Parsing (<think> tags)
+- **Feature/Fix**: Cleaned duplicate/nested `<think>` tag emissions and added a multi-pass parser for reasoning content in `MarkdownRenderer.tsx` and `ai.rs`.
+- **Root Cause & Rationale**: When models emitted reasoning tokens or already contained `<think>` tags in their content stream, the backend and frontend simple index matching multiplied the tags into `<think><think><think>`, leaking raw XML tags into rendered markdown.
+- **Exact Fix**:
+  - Implemented `parseReasoning` in `MarkdownRenderer.tsx` with regular expressions to strip redundant nested/consecutive think tags, isolate closed reasoning blocks, support streaming unclosed reasoning, and output clean markdown.
+  - Sanitized reasoning stream chunks in `v2/src-tauri/src/commands/ai.rs` and ensured `\n</think>\n` closes on stream completion.
+
+### 2026-08-21: Tauri v2 Capabilities Permission for Notebook Window Events
+- **Feature/Fix**: Added `"notebook"` and auxiliary window labels to `v2/src-tauri/capabilities/default.json`.
+- **Root Cause & Rationale**: In Tauri v2, IPC event emissions (`emit`) and core API commands are strictly restricted by window label in `capabilities/default.json`. Because `"notebook"` was omitted from `"windows": ["main", "settings", "history"]`, calling `emit("restore-session")` from the notebook dialog threw a security error `[ERR-NB-001] event.emit not allowed on window "notebook"`, silently halting `openSession`.
+- **Exact Fix**:
+  - Updated `v2/src-tauri/capabilities/default.json` to include `"windows": ["main", "settings", "history", "notebook", "snip", "tutorial"]`.
+  - Added Rust debug IPC logging with structured error and info codes.
+
 ### 2026-08-21: Unified open_main_chat Command for Window Transitions
 - **Feature/Fix**: Added a dedicated `open_main_chat` command in the Rust backend to handle window transitions when opening conversations from secondary panels.
 - **Root Cause & Rationale**: Calling multiple asynchronous window hide/show commands across separate webviews created race conditions where the main panel was not raised or focused.

@@ -8,7 +8,7 @@ import { NotebookList } from "./components/NotebookList";
 
 export function HistoryApp() {
   const [sessions, setSessions] = useState<any[]>([]);
-  const [tags] = useState<any[]>(() => {
+  const [tags, setTags] = useState<any[]>(() => {
     const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
   });
@@ -28,7 +28,14 @@ export function HistoryApp() {
 
 
   const loadSessions = () => {
-
+    try {
+      const saved = localStorage.getItem("customTags");
+      if (saved) {
+        setTags(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Failed to parse tags", e);
+    }
 
     invoke("load_sessions")
       .then((data: any) => {
@@ -47,8 +54,25 @@ export function HistoryApp() {
 
   useEffect(() => {
     loadSessions();
+
+    const handleStorage = (e: StorageEvent) => {
+      if ((e.key === "customTags" || e.key === "customWorkflows") && e.newValue) {
+        try {
+          setTags(JSON.parse(e.newValue));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", loadSessions);
+
     const unlisten = listen("history-sync", () => loadSessions());
-    return () => { unlisten.then((f) => f()); };
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", loadSessions);
+      unlisten.then((f) => f());
+    };
   }, []);
 
   const formatTime = (ts: number) => {
@@ -91,9 +115,9 @@ export function HistoryApp() {
   const filteredSessions = sessions.filter(s => {
     if (!searchQuery) return true;
     const title = s.data?.title || "";
-    const wf = tags.find(w => w.id === s.data?.workflowId);
-    const wfName = wf?.name || "";
-    return title.toLowerCase().includes(searchQuery.toLowerCase()) || wfName.toLowerCase().includes(searchQuery.toLowerCase());
+    const tag = tags.find(t => t.id === (s.data?.tagId || s.data?.workflowId));
+    const tagName = tag?.name || "";
+    return title.toLowerCase().includes(searchQuery.toLowerCase()) || tagName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const groupsMap = new Map<string, any[]>();
@@ -125,7 +149,7 @@ export function HistoryApp() {
     else if (session.data && Array.isArray(session.data.history)) messages = session.data.history;
     const firstUserMsg = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
     const displayTitle = session.data?.title || String(firstUserMsg).replace(/\n/g, ' ');
-    const tag = tags.find(t => t.id === session.data?.tagId);
+    const tag = tags.find(t => t.id === (session.data?.tagId || session.data?.workflowId));
     const isDeleting = deletingIds.includes(session.id);
 
     return (

@@ -12,6 +12,7 @@ extension.xpi
 # IDE and Agents
 .vscode/
 .agents/
+.opencode/
 graphify-out/
 .graphify*
 skills-lock.json

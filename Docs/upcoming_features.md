@@ -4,6 +4,8 @@ This document tracks upcoming features, ideas, and works in progress for the Cra
 
 
 ## Recently Resolved Bugs & Fixes
+- [x] **Rich Attachments & External Imports**: Support attaching external assets to chats and notebooks — Obsidian notes (`.md`), code files, PDFs, and images (drag-and-drop, native file picker with automatic background window hiding, or clipboard paste).
+- [x] **Cross-Window Tag Synchronization**: Fixed history panel tag synchronization and tag rendering under conversation titles.
 - [x] **Context State Persistence**: Fixed issue where context text remained stuck in the chat input across sends and new sessions.
 - [x] **Markdown Table Formatting**: Overhauled the extension's Smart Parser to correctly extract HTML tables as clean Markdown tables with rows/columns instead of vertical lists.
 - [x] **Extension UI Glitches**: Patched `content.js` to eliminate screen tearing in Chromium browsers (Brave) during snip captures.
@@ -17,8 +19,8 @@ This document tracks upcoming features, ideas, and works in progress for the Cra
 - [x] **Master Prompts in Settings**: Add a master prompts section to the settings so that the user can have their own prompts and customize it according to their use cases.
 - [ ] **Shortcut Support**: Add shortcut support for the app.
 - [x] **Better Previews**: Implemented expandable View Context dropdown with thumbnails for history bubbles.
-- [ ] **Rich Attachments**: Add voice support, PDF files, and custom attachment support.
-- [ ] **External Attachments & Clipboard Imports (Hard)**: Support attaching external assets to chats and notebooks — Obsidian notes (`.md`), code files, images (drag-and-drop or pasted directly from clipboard). Clipboard image paste should work inline in the chat composer.
+- [x] **Rich Attachments**: Added support for PDFs, code files, markdown, and images with clipboard paste and drag-and-drop.
+- [x] **External Attachments & Clipboard Imports (Hard)**: Support attaching external assets to chats and notebooks — Obsidian notes (`.md`), code files, images (drag-and-drop or pasted directly from clipboard). Clipboard image paste works inline in the chat composer.
 - [x] **Context-Aware Session Renaming (Medium/Hard)**: Automatically rename saved sessions in the history panel using an LLM to summarize the actual problem or context (e.g. the specific LeetCode problem name), instead of generically naming them all based on the first prompt.
 - [ ] **History Search (Medium)**: Implement a search feature inside the history panel to quickly find past conversations.
 - [ ] **Session Branching / Forking (Hard)**: Allow forking an existing session to spin up multiple agents to explore different solutions to the same task simultaneously.

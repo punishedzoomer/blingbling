@@ -10,9 +10,10 @@ interface InputAreaProps {
   activeTagId: string | null;
   setActiveTagId: (id: string | null) => void;
   isLocked: boolean;
+  onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 }
 
-export function InputArea({ input, setInput, isStreaming, textareaRef, handleSend, tags, setTags, activeTagId, setActiveTagId, isLocked }: InputAreaProps) {
+export function InputArea({ input, setInput, isStreaming, textareaRef, handleSend, tags, setTags, activeTagId, setActiveTagId, isLocked, onPaste }: InputAreaProps) {
   const activeTag = tags.find(w => w.id === activeTagId);
   
   const generateRandomColor = () => {
@@ -110,6 +111,7 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
           disabled={isStreaming}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
+          onPaste={onPaste}
         />
       </div>
     </div>

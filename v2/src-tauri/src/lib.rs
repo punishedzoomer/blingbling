@@ -38,7 +38,8 @@ pub fn run() {
             commands::window::hide_notebook,
             commands::window::resize_panel,
             commands::window::focus_panel,
-            commands::window::unfocus_panel
+            commands::window::unfocus_panel,
+            commands::file::pick_files
         ])
         .setup(|app| {
             let ws_handle = app.handle().clone();

@@ -42,6 +42,7 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
+  const [activeNotebookId, setActiveNotebookId] = useState<number | null>(null);
 
   const [aiMode, setAiMode] = useState<"quick" | "smart" | "ultra">(() => {
     return (localStorage.getItem("aiMode") as any) || "smart";
@@ -117,11 +118,11 @@ function App() {
     if (messages.length > 0) {
       invoke("save_session", {
         sessionId,
-        data: { history: messages, tagId: activeTagId, title: sessionTitle },
+        data: { history: messages, tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle },
       }).catch(console.error);
     }
     emit("history-sync", messages);
-  }, [messages, sessionId, sessionTitle, activeTagId]);
+  }, [messages, sessionId, sessionTitle, activeTagId, activeNotebookId]);
 
   // Auto-generate session title after first assistant response
   useEffect(() => {
@@ -147,17 +148,26 @@ function App() {
 
     listen("clear-history", () => {
       setMessages([]);
+      setInput("");
       setActiveTagId(null);
+      setActiveNotebookId(null);
       setSessionTitle(null);
       clearAllAttachments();
+      setIsStreaming(false);
+      setIsThinking(false);
     }).then((f) => (unlistenClear = f));
 
     listen("reset-session", () => {
       setSessionId(Date.now().toString());
       setMessages([]);
+      setInput("");
       setActiveTagId(null);
+      setActiveNotebookId(null);
       setSessionTitle(null);
       clearAllAttachments();
+      setIsStreaming(false);
+      setIsThinking(false);
+      setTimeout(() => textareaRef.current?.focus(), 50);
     }).then((f) => (unlistenReset = f));
 
     listen("add-message", (e: any) => setMessages((prev) => [...prev, e.payload])).then(
@@ -165,12 +175,25 @@ function App() {
     );
 
     listen("restore-session", (e: any) => {
-      const { id, data, tagId, title } = e.payload;
-      setSessionId(id);
-      setMessages(data);
+      const { id, data, tagId, notebookId, title } = e.payload;
+      try {
+        const savedTags = localStorage.getItem("customTags");
+        if (savedTags) {
+          setTags(JSON.parse(savedTags));
+        }
+      } catch (err) {
+        console.error("Failed to reload tags on restore-session", err);
+      }
+      setSessionId(id || Date.now().toString());
+      setMessages(data || []);
+      setInput("");
       setActiveTagId(tagId || null);
+      setActiveNotebookId(notebookId || null);
       setSessionTitle(title || null);
       clearAllAttachments();
+      setIsStreaming(false);
+      setIsThinking(false);
+      setTimeout(() => textareaRef.current?.focus(), 50);
     }).then((f) => (unlistenRestore = f));
 
     listen("simulate-llm", async () => {

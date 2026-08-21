@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { Pencil, FileText, ChevronDown, FileCode, FileType } from "lucide-react";
 import { MessageRenderer } from "./MarkdownRenderer";
 import { Attachment, formatFileSize } from "../utils/fileProcessor";
@@ -44,8 +45,22 @@ export function MessageList({
   setPreviewImage,
   isThinking,
 }: MessageListProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Instantly place the user at the bottom of the conversation without animation jump
+  useLayoutEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [messages, isThinking]);
+
   return (
-    <div id="messages">
+    <div id="messages" ref={containerRef}>
       {messages.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--tx-mut)" }}>
           <h3 style={{ color: "var(--tx-1)", fontSize: "16px", fontWeight: 600, marginBottom: "8px" }}>

@@ -54,6 +54,83 @@ export function InputArea({ input, setInput, isStreaming, textareaRef, handleSen
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const tabSpaces = "    "; // 4 spaces
+
+      if (start === end) {
+        if (!e.shiftKey) {
+          const updated = input.substring(0, start) + tabSpaces + input.substring(end);
+          setInput(updated);
+          requestAnimationFrame(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + tabSpaces.length;
+            }
+          });
+        } else {
+          // Shift+Tab unindent
+          const before = input.substring(0, start);
+          const after = input.substring(end);
+          const match = before.match(/ {1,4}$/);
+          if (match) {
+            const removed = match[0].length;
+            const updated = before.slice(0, -removed) + after;
+            setInput(updated);
+            requestAnimationFrame(() => {
+              if (textareaRef.current) {
+                textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start - removed;
+              }
+            });
+          }
+        }
+      } else {
+        // Multi-line selection indent / unindent
+        const beforeSelection = input.substring(0, start);
+        const lineStart = beforeSelection.lastIndexOf("\n") + 1;
+        const selectedText = input.substring(lineStart, end);
+        const lines = selectedText.split("\n");
+
+        if (!e.shiftKey) {
+          const indented = lines.map((l) => tabSpaces + l).join("\n");
+          const updated = input.substring(0, lineStart) + indented + input.substring(end);
+          setInput(updated);
+          requestAnimationFrame(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = start + tabSpaces.length;
+              textareaRef.current.selectionEnd = end + tabSpaces.length * lines.length;
+            }
+          });
+        } else {
+          let totalRemovedFirstLine = 0;
+          let totalRemoved = 0;
+          const unindented = lines
+            .map((l, i) => {
+              const match = l.match(/^ {1,4}/);
+              const count = match ? match[0].length : 0;
+              if (i === 0) totalRemovedFirstLine = count;
+              totalRemoved += count;
+              return l.slice(count);
+            })
+            .join("\n");
+
+          const updated = input.substring(0, lineStart) + unindented + input.substring(end);
+          setInput(updated);
+          requestAnimationFrame(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = Math.max(lineStart, start - totalRemovedFirstLine);
+              textareaRef.current.selectionEnd = Math.max(lineStart, end - totalRemoved);
+            }
+          });
+        }
+      }
+      return;
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       

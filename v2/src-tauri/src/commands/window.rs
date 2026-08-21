@@ -90,6 +90,7 @@ pub fn show_panel(label: String, app: AppHandle) {
                         use objc::{sel, sel_impl, class};
                         let _: () = objc::msg_send![ns_window, setAlphaValue: 1.0f64];
                         let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::NO];
+                        let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
                         
                         let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
                         let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
@@ -176,6 +177,34 @@ pub fn hide_panel(label: String, app: AppHandle) {
 }
 
 
+
+#[tauri::command]
+pub fn open_main_chat(app: AppHandle) {
+    // Hide all auxiliary windows
+    for label in &["history", "notebook", "settings", "snip"] {
+        if let Some(window) = app.get_webview_window(label) {
+            #[cfg(target_os = "macos")]
+            {
+                let ns_window_ptr = window.ns_window().unwrap() as usize;
+                let _ = app.run_on_main_thread(move || {
+                    let ns_window = ns_window_ptr as cocoa::base::id;
+                    use objc::{sel, sel_impl};
+                    unsafe {
+                        let _: () = objc::msg_send![ns_window, orderOut: cocoa::base::nil];
+                    }
+                });
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let _ = window.hide();
+            }
+        }
+    }
+
+    // Explicitly show and raise main panel
+    show_panel("main".to_string(), app.clone());
+    focus_panel("main".to_string(), app);
+}
 
 #[tauri::command]
 pub fn focus_panel(label: String, app: AppHandle) {

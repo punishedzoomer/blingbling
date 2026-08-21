@@ -29,6 +29,10 @@ pub fn run() {
             commands::session::save_session,
             commands::session::delete_session,
             commands::session::load_sessions,
+            commands::session::load_trash,
+            commands::session::restore_session,
+            commands::session::permanently_delete_session,
+            commands::session::empty_trash,
             commands::window::hide_window,
             commands::window::quit_app,
             commands::window::set_debug_mode,
@@ -39,6 +43,7 @@ pub fn run() {
             commands::window::resize_panel,
             commands::window::focus_panel,
             commands::window::unfocus_panel,
+            commands::window::open_main_chat,
             commands::file::pick_files
         ])
         .setup(|app| {

@@ -18,9 +18,11 @@ This document tracks upcoming features, ideas, and works in progress for the Cra
 - [ ] **Shortcut Support**: Add shortcut support for the app.
 - [x] **Better Previews**: Implemented expandable View Context dropdown with thumbnails for history bubbles.
 - [ ] **Rich Attachments**: Add voice support, PDF files, and custom attachment support.
+- [ ] **External Attachments & Clipboard Imports (Hard)**: Support attaching external assets to chats and notebooks — Obsidian notes (`.md`), code files, images (drag-and-drop or pasted directly from clipboard). Clipboard image paste should work inline in the chat composer.
 - [x] **Context-Aware Session Renaming (Medium/Hard)**: Automatically rename saved sessions in the history panel using an LLM to summarize the actual problem or context (e.g. the specific LeetCode problem name), instead of generically naming them all based on the first prompt.
 - [ ] **History Search (Medium)**: Implement a search feature inside the history panel to quickly find past conversations.
 - [ ] **Session Branching / Forking (Hard)**: Allow forking an existing session to spin up multiple agents to explore different solutions to the same task simultaneously.
+- [ ] **Full Windowed Mode / Widget Toggle (Hard)**: Introduce a toggle to switch the app between two modes: (1) **Widget/Float Mode** — the current transparent, always-on-top floating overlay that follows across Spaces; (2) **Windowed Mode** — a normal, full-sized app window (like a standard chatbot UI) that behaves like a regular macOS application. User can switch between modes at any time.
 
 
 ### Settings Window & Workflows

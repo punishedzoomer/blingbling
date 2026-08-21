@@ -1,17 +1,12 @@
+import { Toolbar } from "./components/Toolbar";
+import { MessageList } from "./components/MessageList";
+import { ComposerBottom } from "./components/ComposerBottom";
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useDynamicBounds } from "./useDynamicBounds";
-import { ChevronDown, Square, X, 
-  Zap, Settings, History, ArrowUp, Scissors, Monitor, Sparkles, Flame, Plus, FileText, Pencil } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import "./App.css";
 import { ActionButtons } from "./components/ActionButtons";
 import { InputArea } from "./components/InputArea";
@@ -23,114 +18,14 @@ export interface Message {
   contextImages?: string[];
 }
 
-const LogoIcon = ({ size = 16 }: { size?: number }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12" r="9.2" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M12 12 6.5 8.2a6.6 6.6 0 0 1 5.5-2.9V12z" fill="currentColor" />
-    <path d="M12 12 15.8 6.5a6.6 6.6 0 0 1 2.9 5.5H12z" fill="currentColor" opacity="0.72" />
-    <path d="M12 12 17.5 15.8a6.6 6.6 0 0 1-5.5 2.9V12z" fill="currentColor" opacity="0.5" />
-    <path d="M12 12 8.2 17.5a6.6 6.6 0 0 1-2.9-5.5H12z" fill="currentColor" opacity="0.85" />
-  </svg>
-);
-
-const CodeBlock = ({ inline, className, children, ...props }: any) => {
-  const match = /language-(\w+)/.exec(className || "");
-  const code = String(children).replace(/\n$/, "");
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (!inline && match) {
-    return (
-      <div className="relative group my-4 rounded-md overflow-hidden bg-[#1d1f21]">
-        <div className="flex items-center justify-between px-4 py-1 bg-[#2d2f31] text-xs text-gray-400">
-          <span>{match[1]}</span>
-          <button onClick={handleCopy} className="hover:text-white transition-colors">
-            {copied ? "Copied!" : "Copy"}
-          </button>
-        </div>
-        <SyntaxHighlighter
-          style={atomDark as any}
-          language={match[1]}
-          PreTag="div"
-          customStyle={{ margin: 0, background: "transparent" }}
-          {...props}
-        >
-          {code}
-        </SyntaxHighlighter>
-      </div>
-    );
-  }
-  return <code className="bg-black/10 rounded px-1 py-0.5 text-sm" {...props}>{children}</code>;
-};
-
-const MessageRenderer = ({ content }: { content: string }) => {
-  const thinkStartIndex = content.indexOf('<think>');
-  
-  if (thinkStartIndex !== -1) {
-    const thinkEndIndex = content.indexOf('</think>', thinkStartIndex);
-    const beforeThink = content.substring(0, thinkStartIndex);
-    let thinkContent = '';
-    let afterThink = '';
-    
-    if (thinkEndIndex !== -1) {
-      thinkContent = content.substring(thinkStartIndex + 7, thinkEndIndex).trim();
-      afterThink = content.substring(thinkEndIndex + 8).trim();
-    } else {
-      thinkContent = content.substring(thinkStartIndex + 7).trim();
-    }
-    
-    return (
-      <>
-        {beforeThink && (
-          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
-            {beforeThink}
-          </ReactMarkdown>
-        )}
-        <details className="mb-4" open={thinkEndIndex === -1}>
-          <summary className="cursor-pointer text-xs font-semibold text-[#8b949e] mb-2 select-none hover:text-[#c9d1d9] transition-colors outline-none list-none flex items-center gap-2">
-            {thinkEndIndex === -1 ? (
-              <span className="flex items-center gap-2"><Sparkles size={12} className="animate-pulse text-[#d2a8ff]" /> Reasoning...</span>
-            ) : (
-              <span className="flex items-center gap-2"><Sparkles size={12} className="text-[#8b949e]" /> View Reasoning</span>
-            )}
-          </summary>
-          <div className="pl-3 border-l-2 border-[#30363d] text-[#8b949e] text-[13px] leading-relaxed italic mb-4 whitespace-pre-wrap font-sans">
-            {thinkContent}
-          </div>
-        </details>
-        {afterThink && (
-          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
-            {afterThink}
-          </ReactMarkdown>
-        )}
-      </>
-    );
-  }
-
-  return (
-    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={{ code: CodeBlock }}>
-      {content}
-    </ReactMarkdown>
-  );
-};
-
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [workflows, setWorkflows] = useState<any[]>(() => {
-    const saved = localStorage.getItem("customWorkflows");
+  const [tags, setTags] = useState<any[]>(() => {
+    const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
   });
-  const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
+  const [activeTagId, setActiveTagId] = useState<string | null>(null);
   const getSystemPrompt = () => {
-    if (activeWorkflowId) {
-      const wf = workflows.find((w: any) => w.id === activeWorkflowId);
-      if (wf && wf.prompt) return wf.prompt;
-    }
     return "You are a helpful, elite AI assistant. Always provide clean, optimal, and flawless answers.";
   };
 
@@ -139,7 +34,7 @@ function App() {
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "customWorkflows" && e.newValue) {
-        setWorkflows(JSON.parse(e.newValue));
+        setTags(JSON.parse(e.newValue));
       }
     };
     window.addEventListener("storage", handleStorage);
@@ -175,7 +70,7 @@ function App() {
   // Sync messages to History window and save to backend whenever they change
   useEffect(() => {
     if (messages.length > 0) {
-      invoke("save_session", { sessionId, data: { history: messages, workflowId: activeWorkflowId, title: sessionTitle } }).catch(console.error);
+      invoke("save_session", { sessionId, data: { history: messages, tagId: activeTagId, title: sessionTitle } }).catch(console.error);
     }
     emit("history-sync", messages);
   }, [messages, sessionId, sessionTitle]);
@@ -200,14 +95,15 @@ function App() {
 
   // Listen for actions from other windows
   useEffect(() => {
-    let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any;
-    listen("clear-history", () => { setMessages([]); setActiveWorkflowId(null); setSessionTitle(null); }).then(f => unlistenClear = f);
+    let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any, unlistenReset: any;
+    listen("clear-history", () => { setMessages([]); setActiveTagId(null); setSessionTitle(null); }).then(f => unlistenClear = f);
+    listen("reset-session", () => { setSessionId(Date.now().toString()); setMessages([]); setActiveTagId(null); setSessionTitle(null); }).then(f => unlistenReset = f);
       listen("add-message", (e: any) => setMessages(prev => [...prev, e.payload])).then(f => unlistenAddMsg = f);
       listen("restore-session", (e: any) => {
-        const { id, data, workflowId, title } = e.payload;
+        const { id, data, tagId, title } = e.payload;
         setSessionId(id);
         setMessages(data);
-        setActiveWorkflowId(workflowId || null);
+        setActiveTagId(tagId || null);
         setSessionTitle(title || null);
       }).then(f => unlistenRestore = f);
       listen("simulate-llm", async () => {
@@ -230,6 +126,7 @@ function App() {
       if (unlistenAddMsg) unlistenAddMsg();
       if (unlistenSimulate) unlistenSimulate();
       if (unlistenRestore) unlistenRestore();
+      if (unlistenReset) unlistenReset();
     };
   }, []);
 
@@ -489,40 +386,7 @@ function App() {
   return (
     <div id="app">
       {/* Dedicated drag handle / top bar */}
-      <div id="toolbar" className="drag-handle" onPointerDown={(e) => {
-        if (e.buttons === 1 && !(e.target as HTMLElement).closest('button')) {
-          e.preventDefault();
-          getCurrentWindow().startDragging();
-        }
-      }}>
-        <div className="drag-pill" title="Drag to move window">
-          <span className="drag-dots" aria-hidden="true"></span>
-          <span className="drag-label">Drag</span>
-        </div>
-        <button className="tb-logo" id="logo-btn" title="Tutorial" onClick={async () => {
-                    await invoke("show_panel", { label: "tutorial" }).catch(() => {
-            alert("Could not open Tutorial window. Please restart the app for the multi-window update to take effect!");
-          });
-        }}>
-          <LogoIcon size={16} />
-        </button>
-        <div className="tb-divider"></div>
-        <button className={`tb-hide ${isCollapsed ? "collapsed" : ""}`} id="hide-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
-          <span className="chev"><ChevronDown size={14} /></span>
-          <span>{isCollapsed ? "Show" : "Hide"}</span>
-        </button>
-        <div className="tb-divider"></div>
-        <button className="tb-stop" id="stop-btn" title="Stop AI" onClick={async () => {
-                      await invoke("cancel_ai_response");
-        }}>
-          <Square size={14} />
-        </button>
-        <div className="tb-divider"></div>
-        <button className="tb-quit" id="quit-btn" title="Quit" onClick={() => invoke("quit_app")}>
-          <X size={14} />
-        </button>
-      </div>
-
+      <Toolbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       {/* Main assistant panel */}
       <div id="panel-wrap">
         <span id="live-dot" className="off"></span>
@@ -530,78 +394,16 @@ function App() {
           <div id="panel-columns">
             <div id="panel-main">
 
-              <div id="messages">
-                {messages.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--tx-mut)" }}>
-                    <h3 style={{ color: "var(--tx-1)", fontSize: "16px", fontWeight: 600, marginBottom: "8px" }}>Hi There!</h3>
-                    <p style={{ fontSize: "13px", lineHeight: 1.5 }}>How can I help you today? Try taking a snip of your screen or asking a question.</p>
-                  </div>
-                )}
-                {messages.map((msg, idx) => (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '100%' }}>
-                    <div className={msg.role === "user" ? "user-bubble" : "ai-text small"} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                      {msg.role === "user" ? (
-                        <div>{msg.content}</div>
-                      ) : (
-                        <MessageRenderer content={msg.content} />
-                      )}
-                    </div>
-                    {msg.role === "user" && (
-                      <div style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '100%' }}>
-                        <div style={{ display: 'flex', gap: '6px', marginBottom: showContextState[idx] ? '8px' : '0' }}>
-                            <button
-                               onClick={() => {
-                                 setInput(msg.content);
-                                 setPendingContextText(msg.contextText || "");
-                                 setPendingSnips(msg.contextImages ? [...msg.contextImages] : []);
-                               }}
-                               className="smart-pill"
-                               style={{ opacity: 0.6, background: 'rgba(255, 255, 255, 0.05)', borderColor: 'transparent', color: 'var(--tx-mut)' }}
-                               title="Edit Prompt"
-                            >
-                              <span className="ic"><Pencil size={12} /></span>
-                            </button>
-                            {(msg.contextText || msg.contextImages?.length) && (
-                                <button
-                                   onClick={() => setShowContextState(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                                   className="smart-pill"
-                                   style={{ opacity: 0.6, background: 'rgba(255, 255, 255, 0.05)', borderColor: 'transparent', color: 'var(--tx-mut)' }}
-                                >
-                                  <span className="ic"><FileText size={12} /></span>
-                                  <span>View Context</span>
-                                  <span className="ic" style={{ marginLeft: "4px", transform: showContextState[idx] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><ChevronDown size={12} /></span>
-                                </button>
-                            )}
-                        </div>
-                        {showContextState[idx] && (msg.contextText || msg.contextImages?.length) && (
-                           <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', maxWidth: '90%', alignSelf: 'flex-end' }}>
-                             {msg.contextText && (
-                               <pre style={{ marginBottom: msg.contextImages?.length ? '12px' : 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', color: 'var(--tx-2)', fontFamily: 'monospace' }}>
-                                 {msg.contextText}
-                               </pre>
-                             )}
-                             {msg.contextImages && msg.contextImages.length > 0 && (
-                               <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-                                  {msg.contextImages.map((img: string, i: number) => (
-                                     <div key={i} style={{ flexShrink: 0, cursor: 'zoom-in' }} onClick={() => setPreviewImage(img)}>
-                                        <img src={img} style={{ height: '40px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }} alt="Context attachment" />
-                                     </div>
-                                  ))}
-                               </div>
-                             )}
-                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isThinking && (
-                  <div className="ai-text small text-gray-400 italic flex items-center gap-2 px-3 py-2">
-                    <span className="animate-pulse">Thinking...</span>
-                  </div>
-                )}
-              </div>
-
+              <MessageList 
+                messages={messages} 
+                showContextState={showContextState} 
+                setShowContextState={setShowContextState} 
+                setInput={setInput} 
+                setPendingContextText={setPendingContextText} 
+                setPendingSnips={setPendingSnips} 
+                setPreviewImage={setPreviewImage} 
+                isThinking={isThinking} 
+              />
               <ActionButtons isStreaming={isStreaming} sendPreset={sendPreset} />
 
               <div id="composer" style={{ opacity: isStreaming ? 0.6 : 1 }}>
@@ -638,98 +440,33 @@ function App() {
             isStreaming={isStreaming}
             textareaRef={textareaRef}
             handleSend={handleSend}
-            workflows={workflows}
-            activeWorkflowId={activeWorkflowId}
-            setActiveWorkflowId={setActiveWorkflowId}
+            tags={tags}
+            setTags={setTags}
+            activeTagId={activeTagId}
+            setActiveTagId={setActiveTagId}
             isLocked={messages.length > 0}
           />
-                <div id="composer-bottom">
-                  <div style={{ position: "relative" }}>
-                    <button
-                      id="ai-mode-toggle"
-                      className="smart-pill"
-                      disabled={isStreaming}
-                      onClick={() => setShowModeDropdown(!showModeDropdown)}
-                      title="Select AI Mode"
-                    >
-                      <span className="ic">
-                        {aiMode === "quick" && <Zap size={14} />}
-                        {aiMode === "smart" && <Sparkles size={14} />}
-                        {aiMode === "ultra" && <Flame size={14} />}
-                      </span>
-                      <span>
-                        {aiMode === "quick" && "Quick"}
-                        {aiMode === "smart" && "Smart"}
-                        {aiMode === "ultra" && "Ultra"}
-                      </span>
-                      <span className="ic" style={{ marginLeft: "2px" }}><ChevronDown size={14} /></span>
-                    </button>
-
-                    {showModeDropdown && (
-                      <>
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }} onClick={() => setShowModeDropdown(false)} />
-                        <div className="mode-menu">
-                          {aiMode !== "quick" && (
-                            <button className="mode-menu-item" onClick={() => { setAiMode("quick"); setShowModeDropdown(false); }}>
-                              <Zap size={14} /> Quick
-                            </button>
-                          )}
-                          {aiMode !== "smart" && (
-                            <button className="mode-menu-item" onClick={() => { setAiMode("smart"); setShowModeDropdown(false); }}>
-                              <Sparkles size={14} /> Smart
-                            </button>
-                          )}
-                          {aiMode !== "ultra" && (
-                            <button className="mode-menu-item" onClick={() => { setAiMode("ultra"); setShowModeDropdown(false); }}>
-                              <Flame size={14} /> Ultra
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <button id="snip-interactive-btn" className="smart-pill" title="Snip Region" onClick={() => { if (pendingSnips.length > 0) setShowSnipsTray(!showSnipsTray); else handleSnip(true); }} disabled={isCapturing || isStreaming} style={{ marginLeft: '8px', color: pendingSnips.length > 0 ? 'var(--accent)' : undefined, borderColor: pendingSnips.length > 0 ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : undefined }}>
-                    <span className="ic"><Scissors size={14} /></span>
-                    <span>{pendingSnips.length > 0 ? `${pendingSnips.length} Snip${pendingSnips.length > 1 ? 's' : ''}` : 'Snip'}</span>
-                  </button>
-                  <button id="snip-full-btn" className="smart-pill" title="Capture Entire Screen" onClick={() => handleSnip(false)} disabled={isCapturing || isStreaming} style={{ marginLeft: '4px' }}>
-                    <span className="ic"><Monitor size={14} /></span>
-                  </button>
-                  <button id="history-btn" className="history-btn" title="View conversation history" disabled={isStreaming} onClick={async () => {
-                                        await invoke("show_panel", { label: "history" }).catch(() => {
-                      alert("Could not open History window. Please restart the app for the multi-window update to take effect!");
-                    });
-                  }}>
-                    <span className="ic"><History size={16} /></span>
-                  </button>
-                  <button id="new-chat-btn" className="history-btn" title="New Chat" disabled={isStreaming} onClick={() => {
-                    setSessionId(Date.now().toString());
-                    setMessages([]);
-                    setInput("");
-                    setPendingSnips([]);
-                    setPendingContextText("");
-                  }} style={{ marginLeft: '4px' }}>
-                    <span className="ic"><Plus size={16} /></span>
-                  </button>
-                  <button id="more-btn" className="more-btn" title="Settings" disabled={isStreaming} onClick={async () => {
-                                        await invoke("show_panel", { label: "settings" }).catch(() => {
-                      alert("Could not open Settings window. Please restart the app!");
-                    });
-                  }}>
-                    <span className="ic"><Settings size={16} /></span>
-                  </button>
-                  <div className="spacer"></div>
-                  <button 
-                    id="send-btn" 
-                    title={isStreaming ? "Stop" : "Send"} 
-                    onClick={isStreaming ? async () => {
-                                            await invoke("cancel_ai_response");
-                    } : handleSend} 
-                    disabled={!isStreaming && (!input.trim() && pendingSnips.length === 0)}
-                  >
-                    {isStreaming ? <Square size={14} fill="currentColor" /> : <ArrowUp size={16} />}
-                  </button>
-                </div>
+                <ComposerBottom 
+                  aiMode={aiMode} 
+                  setAiMode={setAiMode} 
+                  showModeDropdown={showModeDropdown} 
+                  setShowModeDropdown={setShowModeDropdown} 
+                  pendingSnips={pendingSnips} 
+                  showSnipsTray={showSnipsTray} 
+                  setShowSnipsTray={setShowSnipsTray} 
+                  handleSnip={handleSnip} 
+                  isCapturing={isCapturing} 
+                  isStreaming={isStreaming} 
+                  setSessionId={setSessionId} 
+                  setMessages={setMessages} 
+                  setInput={setInput} 
+                  setPendingSnips={setPendingSnips} 
+                  setPendingContextText={setPendingContextText} 
+                  setActiveTagId={setActiveTagId} 
+                  setSessionTitle={setSessionTitle} 
+                  handleSend={handleSend} 
+                  input={input} 
+                />
               </div>
 
             </div>

@@ -109,6 +109,42 @@ pub fn show_panel(label: String, app: AppHandle) {
 }
 
 #[tauri::command]
+pub fn show_notebook(app: AppHandle) {
+    if let Some(window) = app.get_webview_window("notebook") {
+        #[cfg(target_os = "macos")]
+        {
+            let ns_window_ptr = window.ns_window().unwrap() as usize;
+            let _ = app.run_on_main_thread(move || {
+                let ns_window = ns_window_ptr as cocoa::base::id;
+                unsafe {
+                    use objc::{sel, sel_impl, class};
+                    let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
+                    let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
+                    let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
+                }
+            });
+        }
+    }
+}
+
+#[tauri::command]
+pub fn hide_notebook(app: AppHandle) {
+    if let Some(window) = app.get_webview_window("notebook") {
+        #[cfg(target_os = "macos")]
+        {
+            let ns_window_ptr = window.ns_window().unwrap() as usize;
+            let _ = app.run_on_main_thread(move || {
+                let ns_window = ns_window_ptr as cocoa::base::id;
+                unsafe {
+                    use objc::{sel, sel_impl};
+                    let _: () = objc::msg_send![ns_window, orderOut: cocoa::base::nil];
+                }
+            });
+        }
+    }
+}
+
+#[tauri::command]
 pub fn hide_panel(label: String, app: AppHandle) {
     if label != "main" {
         show_panel("main".to_string(), app.clone());

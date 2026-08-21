@@ -34,6 +34,8 @@ pub fn run() {
             commands::window::set_debug_mode,
             commands::window::show_panel,
             commands::window::hide_panel,
+            commands::window::show_notebook,
+            commands::window::hide_notebook,
             commands::window::resize_panel,
             commands::window::focus_panel,
             commands::window::unfocus_panel
@@ -70,6 +72,10 @@ pub fn run() {
                         let _: () = objc::msg_send![ns_window, setAcceptsMouseMovedEvents:true];
                         let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
                         let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
+                        let clear_color: cocoa::base::id = objc::msg_send![objc::class!(NSColor), clearColor];
+                        let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
+                        let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
+
                     }
 
                     // Only show the main panel by default

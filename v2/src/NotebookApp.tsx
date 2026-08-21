@@ -115,7 +115,7 @@ export function NotebookApp() {
 
   return (
     <div
-      style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", pointerEvents: "none" }}
       onMouseEnter={() => invoke("focus_panel", { label: "notebook" }).catch(console.error)}
     >
       <div style={{
@@ -127,6 +127,7 @@ export function NotebookApp() {
         backdropFilter: "blur(40px) saturate(180%)",
         border: "1px solid rgba(255,255,255,0.07)",
         boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)",
+        pointerEvents: "auto",
       }}>
 
         {/* Header */}

@@ -16,16 +16,16 @@ export function HistoryApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  
+
   const isCollapsed = (group: string) => {
     if (collapsedGroups[group] !== undefined) return collapsedGroups[group];
     return !["Today", "Yesterday", "This Week"].includes(group);
   };
-  
+
   const toggleGroup = (group: string) => {
     setCollapsedGroups(prev => ({ ...prev, [group]: !isCollapsed(group) }));
   };
-  
+
 
   const loadSessions = () => {
 
@@ -60,20 +60,20 @@ export function HistoryApp() {
     if (!ts) return "Earlier";
     const d = new Date(ts);
     const now = new Date();
-    
+
     const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const diffDays = Math.floor((nowDate.getTime() - dDate.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return "This Week";
-    
+
     const isCurrentYear = d.getFullYear() === now.getFullYear();
     const isCurrentMonth = isCurrentYear && d.getMonth() === now.getMonth();
-    
+
     if (isCurrentMonth) return "This Month";
-    
+
     let lastMonth = now.getMonth() - 1;
     let lastMonthYear = now.getFullYear();
     if (lastMonth < 0) {
@@ -81,10 +81,10 @@ export function HistoryApp() {
       lastMonthYear -= 1;
     }
     if (d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear) return "Last Month";
-    
+
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     if (isCurrentYear) return monthNames[d.getMonth()];
-    
+
     return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
   };
 
@@ -104,7 +104,7 @@ export function HistoryApp() {
     if (!groupsMap.has(group)) groupsMap.set(group, []);
     groupsMap.get(group)!.push({ ...s, ts });
   });
-  
+
   const groupOrder = Array.from(groupsMap.keys());
   const groupedSessions: Record<string, any[]> = {};
   groupsMap.forEach((val, key) => groupedSessions[key] = val);
@@ -127,10 +127,10 @@ export function HistoryApp() {
     const displayTitle = session.data?.title || String(firstUserMsg).replace(/\n/g, ' ');
     const tag = tags.find(t => t.id === session.data?.tagId);
     const isDeleting = deletingIds.includes(session.id);
-    
+
     return (
-      <div 
-        key={session.id} 
+      <div
+        key={session.id}
         className={`history-item ${isDeleting ? 'deleting' : ''}`}
         onClick={async () => {
           if (isDeleting) return;
@@ -159,8 +159,8 @@ export function HistoryApp() {
         <div style={{ fontSize: "11px", color: "var(--tx-mut)", marginLeft: "12px", marginRight: "32px", whiteSpace: "nowrap", paddingTop: "2px" }}>
           {session.ts ? (getRelativeDay(session.ts) === "Today" ? formatTime(session.ts) : new Date(session.ts).toLocaleDateString([], { month: 'short', day: 'numeric' })) : ""}
         </div>
-        <button 
-          className="history-del-btn" 
+        <button
+          className="history-del-btn"
           onClick={(e) => handleDelete(e, session.id)}
           title="Delete Session"
         >
@@ -172,13 +172,13 @@ export function HistoryApp() {
 
 
   return (
-    <div 
-      id="history-window" 
-      style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
-      onMouseEnter={() => invoke("focus_panel", { label: "history" }).catch(console.error)} 
+    <div
+      id="history-window"
+      style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "flex-start", overflow: "hidden", pointerEvents: "none" }}
+      onMouseEnter={() => invoke("focus_panel", { label: "history" }).catch(console.error)}
     >
-      <div id="transcript-sidebar" className="transcript-sidebar" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%", margin: 0, padding: 0, display: "flex", flexDirection: "column", boxSizing: "border-box", borderRadius: "16px" }}>
-        
+      <div id="transcript-sidebar" className="transcript-sidebar" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%", maxHeight: "100%", margin: 0, padding: 0, display: "flex", flexDirection: "column", boxSizing: "border-box", borderRadius: "16px", overflow: "hidden", pointerEvents: "auto" }}>
+
         <style>{`
           .history-item { display: flex; align-items: flex-start; padding: 12px 16px; cursor: pointer; border-radius: 8px; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); max-height: 80px; opacity: 1; overflow: hidden; margin-bottom: 2px; }
           .history-item.deleting { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border: none; }
@@ -214,8 +214,8 @@ export function HistoryApp() {
         <div className="s-head" style={{ padding: "16px 16px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 100, borderBottom: "none" }} data-tauri-drag-region onMouseDown={(e) => { if (e.buttons === 1 && !(e.target as HTMLElement).closest('button, input')) getCurrentWindow().startDragging(); }}>
           <div className="s-title" style={{ pointerEvents: "none" }}>Conversations</div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button 
-              className="s-close" 
+            <button
+              className="s-close"
               style={{ background: "rgba(255,255,255,0.05)", border: "none", color: "var(--tx-2)", padding: "6px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
               title="New Chat"
               onClick={async () => {
@@ -244,14 +244,14 @@ export function HistoryApp() {
 
         {/* Sliding Views Container */}
         <div className="views-container" style={{ transform: activeTab === 'history' ? 'translateX(0)' : 'translateX(-50%)' }}>
-          
+
           {/* HISTORY PANE */}
           <div className="view-pane">
             <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "10px", padding: "10px 14px", gap: "10px", marginBottom: "16px", flexShrink: 0 }}>
               <Search size={16} color="var(--tx-mut)" />
-              <input 
-                type="text" 
-                placeholder="Search chats or tags..." 
+              <input
+                type="text"
+                placeholder="Search chats or tags..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
@@ -259,7 +259,7 @@ export function HistoryApp() {
               />
             </div>
 
-            <div style={{ paddingBottom: "20px" }}>
+            <div style={{ overflowY: "auto", flex: 1, minHeight: 0, paddingBottom: "20px" }}>
               {groupOrder.map(group => {
                 const groupSess = groupedSessions[group];
                 if (!groupSess || groupSess.length === 0) return null;

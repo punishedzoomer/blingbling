@@ -26,7 +26,7 @@
         "alwaysOnTop": false,
         "visibleOnAllWorkspaces": false,
         "titleBarStyle": "Overlay",
-        "visible": false
+        "visible": true
       },
       {
         "title": "BlingBling",

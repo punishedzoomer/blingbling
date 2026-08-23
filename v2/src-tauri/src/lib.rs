@@ -70,38 +70,54 @@ pub fn run() {
                     }
                 } else {
                     app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                    if let Some(shell) = app.get_webview_window("app-shell") {
+                        let _ = shell.hide();
+                    }
                 }
                 
-                // Swizzle all auxiliary/main windows into NSPanels, skipping app-shell
-                for (label, window) in app.webview_windows() {
-                    if label == "app-shell" {
-                        continue;
-                    }
-
-                    if let Ok(panel) = window.to_panel() {
-                        let behavior = cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces |
-                                       cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary |
-                                       cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary;
-                        
-                        panel.set_collection_behaviour(behavior);
-                        panel.set_level(1000); // NSScreenSaverWindowLevel
-                        
-                        let ns_window = window.ns_window().unwrap() as cocoa::base::id;
-                        unsafe {
-                            let _: () = objc::msg_send![ns_window, setSharingType: 0];
-                            let _: () = objc::msg_send![ns_window, setAcceptsMouseMovedEvents:true];
-                            let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
-                            let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
-                            let clear_color: cocoa::base::id = objc::msg_send![objc::class!(NSColor), clearColor];
-                            let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
-                            let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
+                let app_handle = app.handle().clone();
+                let is_windowed = initial_mode == "windowed";
+                
+                let swizzle_panels = move || {
+                    for (label, window) in app_handle.webview_windows() {
+                        if label == "app-shell" {
+                            continue;
                         }
 
-                        // Only show the main panel by default when in widget mode
-                        if label == "main" && initial_mode != "windowed" {
-                            panel.show();
+                        if let Ok(panel) = window.to_panel() {
+                            let behavior = cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                           cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary |
+                                           cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary;
+                            
+                            panel.set_collection_behaviour(behavior);
+                            panel.set_level(1000); // NSScreenSaverWindowLevel
+                            
+                            let ns_window = window.ns_window().unwrap() as cocoa::base::id;
+                            unsafe {
+                                let _: () = objc::msg_send![ns_window, setSharingType: 0];
+                                let _: () = objc::msg_send![ns_window, setAcceptsMouseMovedEvents:true];
+                                let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
+                                let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
+                                let clear_color: cocoa::base::id = objc::msg_send![objc::class!(NSColor), clearColor];
+                                let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
+                                let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
+                            }
+
+                            // Only show the main panel by default when in widget mode
+                            if label == "main" && !is_windowed {
+                                panel.show();
+                            }
                         }
                     }
+                };
+
+                if is_windowed {
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
+                        swizzle_panels();
+                    });
+                } else {
+                    swizzle_panels();
                 }
             }
 

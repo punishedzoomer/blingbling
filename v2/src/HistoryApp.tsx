@@ -71,13 +71,17 @@ export function HistoryApp({
 
   const handleSelectSession = async (session: any) => {
     const messages = extractMessages(session.data);
-    await emit("restore-session", {
+    const payload = {
       id: String(session.id),
       data: messages,
       tagId: session.data?.tagId,
       notebookId: session.data?.notebookId,
       title: session.data?.title,
-    });
+    };
+
+    window.dispatchEvent(new CustomEvent("app-restore-session", { detail: payload }));
+    emit("restore-session", payload).catch(() => {});
+
     if (onOpenChat) {
       onOpenChat();
     } else {

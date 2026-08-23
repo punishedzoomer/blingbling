@@ -221,13 +221,16 @@ export function NotebookApp({
       const tag = syncNotebookTag(notebook);
       const tagId = currentSession.data?.tagId || tag.id;
 
-      await emit("restore-session", {
+      const payload = {
         id: String(currentSession.id),
         data: messages,
         tagId,
         notebookId: notebook.id,
         title: currentSession.data?.title,
-      });
+      };
+
+      window.dispatchEvent(new CustomEvent("app-restore-session", { detail: payload }));
+      emit("restore-session", payload).catch(() => {});
 
       if (onOpenChat) {
         onOpenChat();
@@ -244,13 +247,16 @@ export function NotebookApp({
       const newSessionId = Date.now().toString();
       const tag = syncNotebookTag(notebook);
 
-      await emit("restore-session", {
+      const payload = {
         id: newSessionId,
         data: [],
         tagId: tag.id,
         notebookId: notebook.id,
         title: null,
-      });
+      };
+
+      window.dispatchEvent(new CustomEvent("app-restore-session", { detail: payload }));
+      emit("restore-session", payload).catch(() => {});
 
       if (onOpenChat) {
         onOpenChat();

@@ -2,7 +2,7 @@ import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers, Layout, AppWindow } from "lucide-react";
+import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers } from "lucide-react";
 import "./App.css";
 import { useDynamicBounds } from "./useDynamicBounds";
 
@@ -116,7 +116,6 @@ export function SettingsApp({
   useDynamicBounds("settings", !isWindowed);
 
   const [activeTab, setActiveTab] = useState("general");
-  const [appMode, setAppMode] = useState<"widget" | "windowed">(isWindowed ? "windowed" : "widget");
   const [buttons, setButtons] = useState(() => {
     const saved = localStorage.getItem("buttonConfigs");
     return saved ? JSON.parse(saved) : [
@@ -153,19 +152,6 @@ export function SettingsApp({
 
   const [allModels, setAllModels] = useState<OpenRouterModel[]>([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
-
-  useEffect(() => {
-    invoke<string>("get_app_mode").then((mode) => {
-      if (mode === "windowed" || mode === "widget") {
-        setAppMode(mode);
-      }
-    }).catch(() => {});
-  }, []);
-
-  const handleModeChange = async (newMode: "widget" | "windowed") => {
-    setAppMode(newMode);
-    await invoke("set_app_mode", { mode: newMode });
-  };
 
   useEffect(() => {
     setOpenRouterKey(localStorage.getItem("openRouterKey") || "");
@@ -328,56 +314,6 @@ export function SettingsApp({
             
             {activeTab === 'general' && (
               <>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>App Window Mode</label>
-                  <div style={{ display: "flex", gap: "8px", background: "rgba(0,0,0,0.25)", padding: "4px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <button
-                      type="button"
-                      onClick={() => handleModeChange("widget")}
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: "none",
-                        background: appMode === "widget" ? "rgba(255,255,255,0.12)" : "transparent",
-                        color: appMode === "widget" ? "#fff" : "var(--tx-mut)",
-                        fontSize: "12px",
-                        fontWeight: appMode === "widget" ? 600 : 400,
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      <Layout size={14} /> Floating Widget
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleModeChange("windowed")}
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: "none",
-                        background: appMode === "windowed" ? "rgba(255,255,255,0.12)" : "transparent",
-                        color: appMode === "windowed" ? "#fff" : "var(--tx-mut)",
-                        fontSize: "12px",
-                        fontWeight: appMode === "windowed" ? 600 : 400,
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      <AppWindow size={14} /> Full Windowed
-                    </button>
-                  </div>
-                </div>
-
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>OpenRouter API Key</label>

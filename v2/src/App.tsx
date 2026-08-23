@@ -180,8 +180,9 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       (f) => (unlistenAddMsg = f)
     );
 
-    listen("restore-session", (e: any) => {
-      const { id, data, tagId, notebookId, title } = e.payload;
+    const applyRestoreSession = (payload: any) => {
+      if (!payload) return;
+      const { id, data, tagId, notebookId, title } = payload;
       try {
         const savedTags = localStorage.getItem("customTags");
         if (savedTags) {
@@ -208,6 +209,15 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       setIsStreaming(false);
       setIsThinking(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
+    };
+
+    const handleCustomRestore = (e: any) => {
+      applyRestoreSession(e.detail);
+    };
+    window.addEventListener("app-restore-session", handleCustomRestore);
+
+    listen("restore-session", (e: any) => {
+      applyRestoreSession(e.payload);
     }).then((f) => (unlistenRestore = f));
 
     listen("simulate-llm", async () => {
@@ -226,6 +236,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
     }).then((f) => (unlistenSimulate = f));
 
     return () => {
+      window.removeEventListener("app-restore-session", handleCustomRestore);
       if (unlistenClear) unlistenClear();
       if (unlistenAddMsg) unlistenAddMsg();
       if (unlistenSimulate) unlistenSimulate();

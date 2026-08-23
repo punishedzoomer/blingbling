@@ -1,4 +1,4 @@
-import { PanelLeftClose, PanelLeftOpen, PenSquare, Layout, Sparkles } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, PenSquare, Layout } from "lucide-react";
 import { emit } from "@tauri-apps/api/event";
 import { Surface } from "./types";
 
@@ -56,22 +56,6 @@ export function TitleBar({
       <div className="windowed-titlebar-center" />
 
       <div className="windowed-titlebar-right" data-no-drag>
-        {surface !== "chat" && (
-          <button
-            type="button"
-            className="windowed-action-btn"
-            title="Open Chat"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSurface("chat");
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <Sparkles size={14} />
-            <span>Chat</span>
-          </button>
-        )}
-
         <button
           type="button"
           className="windowed-action-btn"

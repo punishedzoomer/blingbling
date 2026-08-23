@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import App from "../App";
 import { HistoryApp } from "../HistoryApp";
 import { NotebookApp } from "../NotebookApp";
@@ -13,13 +13,16 @@ interface WindowedContainerProps {
 }
 
 export function WindowedContainer({ surface, setSurface }: WindowedContainerProps) {
-  const [activeNotebookId, setActiveNotebookId] = useState<number | null>(() => {
-    const saved = localStorage.getItem("activeNotebookId");
-    return saved ? parseInt(saved, 10) : null;
-  });
+  const [activeNotebookId, setActiveNotebookId] = useState<number | null>(null);
 
   const visitedSurfaces = useRef<Set<Surface>>(new Set(["chat"]));
   visitedSurfaces.current.add(surface);
+
+  useEffect(() => {
+    if (surface !== "notebook") {
+      setActiveNotebookId(null);
+    }
+  }, [surface]);
 
   const handleSelectNotebook = useCallback(
     (id: number) => {

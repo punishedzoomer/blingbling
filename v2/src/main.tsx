@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import App from "./App";
 import { AppShell } from "./windowed/AppShell";
 import { SettingsApp } from "./SettingsApp";
@@ -8,6 +9,33 @@ import { HistoryApp } from "./HistoryApp";
 import { SnipApp } from "./SnipApp";
 import { TutorialApp } from "./TutorialApp";
 import { NotebookApp } from "./NotebookApp";
+
+function applyGlassOpacity(opacityPercent: number) {
+  const alpha = Math.max(0.1, Math.min(1.0, opacityPercent / 100));
+  document.documentElement.style.setProperty(
+    "--glass-bg",
+    `rgba(20, 22, 28, ${alpha})`
+  );
+}
+
+// Initial opacity from localStorage
+const savedOpacity = localStorage.getItem("glassOpacity");
+if (savedOpacity) {
+  const val = parseFloat(savedOpacity);
+  if (!isNaN(val)) {
+    applyGlassOpacity(val);
+  }
+}
+
+// Listen for dynamic opacity changes across all windows
+listen("glass-opacity-changed", (event: any) => {
+  if (event.payload?.opacity !== undefined) {
+    const val = parseFloat(event.payload.opacity);
+    if (!isNaN(val)) {
+      applyGlassOpacity(val);
+    }
+  }
+});
 
 function Router() {
   const [label, setLabel] = useState<string | null>(null);

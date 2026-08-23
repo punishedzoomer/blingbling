@@ -20,6 +20,7 @@ export function AppShell() {
         surface={surface}
         onChange={setSurface}
         collapsed={sidebarCollapsed}
+        onToggleSidebar={toggleSidebar}
         onStartDragging={handleStartDragging}
         onSwitchToWidget={switchToWidgetMode}
       />

@@ -100,13 +100,13 @@ export function TutorialApp({
       </div>
       
       <div className="ob-actions">
-        <button id="ob-skip" className="ob-ghost" onClick={handleClose}>Skip</button>
+        <button id="ob-skip" className="ob-ghost" onClick={handleClose}>{isWindowed ? "Go to Chat" : "Skip"}</button>
         <div className="spacer" style={{ flex: 1 }}></div>
         {slide > 0 && (
           <button id="ob-back" className="ob-ghost" onClick={() => setSlide(slide - 1)}>Back</button>
         )}
         <button id="ob-next" className="ob-primary" onClick={handleNext}>
-          {slide === SLIDES.length - 1 ? "Done" : "Next"}
+          {slide === SLIDES.length - 1 ? (isWindowed ? "Get Started" : "Done") : "Next"}
         </button>
       </div>
     </div>

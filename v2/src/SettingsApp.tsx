@@ -109,7 +109,6 @@ function ModelSelect({ value, onChange, models, disabled }: { value: string, onC
 
 export function SettingsApp({
   isWindowed = false,
-  onDone,
 }: {
   isWindowed?: boolean;
   onDone?: () => void;
@@ -267,13 +266,13 @@ export function SettingsApp({
       className={isWindowed ? "windowed-pane" : "glass"}
       style={{
         width: isWindowed ? "100%" : "480px",
-        maxWidth: isWindowed ? "680px" : undefined,
+        maxWidth: isWindowed ? "720px" : undefined,
         margin: isWindowed ? "0 auto" : undefined,
         height: isWindowed ? "100%" : "fit-content",
         minHeight: "400px",
         display: "flex",
         flexDirection: "column",
-        padding: "16px",
+        padding: isWindowed ? "0" : "16px",
         boxSizing: "border-box",
         position: "relative",
       }}
@@ -292,26 +291,23 @@ export function SettingsApp({
       )}
       <div 
         id="settings" 
-        style={{ border: "none", boxShadow: "none", width: "100%", height: "100%", paddingTop: isWindowed ? "8px" : "30px", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}
+        style={{ border: "none", boxShadow: "none", width: "100%", height: "100%", paddingTop: isWindowed ? "0" : "30px", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}
         onMouseEnter={() => { 
           if (!isWindowed) {
             invoke("focus_panel", { label: "settings" }).catch(console.error);
           }
         }} 
       >
-        <div className="s-head">
-          <div className="s-title">Settings</div>
-          {!isWindowed && (
+        {!isWindowed && (
+          <div className="s-head">
+            <div className="s-title">Settings</div>
             <button id="s-close" className="s-close" onClick={async () => {
               await invoke("hide_panel", { label: "settings" });
             }} style={{ zIndex: 101 }}>Done</button>
-          )}
-          {isWindowed && onDone && (
-            <button className="s-close" onClick={onDone} style={{ zIndex: 101 }}>Done</button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="s-tabs" style={{ zIndex: 101, position: "relative" }}>
+        <div className="s-tabs" style={{ zIndex: 101, position: "relative", marginTop: isWindowed ? "8px" : undefined }}>
             <button className={`s-tab ${activeTab === 'general' ? 'on' : ''}`} onClick={() => setActiveTab('general')} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               <Settings size={14} style={{ marginRight: "6px" }} /> General
             </button>

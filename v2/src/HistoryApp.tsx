@@ -221,65 +221,56 @@ export function HistoryApp({
           .view-pane { width: 33.3333%; height: 100%; display: flex; flex-direction: column; padding: 0 16px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
         `}</style>
 
-        {/* Header */}
-        <div
-          className="s-head"
-          style={{
-            padding: "16px 16px 12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            zIndex: 100,
-            borderBottom: "none",
-          }}
-          data-tauri-drag-region
-          onMouseDown={(e) => {
-            if (e.buttons === 1 && !(e.target as HTMLElement).closest("button, input")) {
-              getCurrentWindow().startDragging();
-            }
-          }}
-        >
-          <div className="s-title" style={{ pointerEvents: "none" }}>
-            Conversations
-          </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              className="s-close"
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "none",
-                color: "var(--tx-2)",
-                padding: "6px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              title="New Chat"
-              onClick={async () => {
-                await emit("reset-session");
-                if (onOpenChat) {
-                  onOpenChat();
-                } else {
+        {/* Header (widget mode only) */}
+        {!isWindowed && (
+          <div
+            className="s-head"
+            style={{
+              padding: "16px 16px 12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              zIndex: 100,
+              borderBottom: "none",
+            }}
+            data-tauri-drag-region
+            onMouseDown={(e) => {
+              if (e.buttons === 1 && !(e.target as HTMLElement).closest("button, input")) {
+                getCurrentWindow().startDragging();
+              }
+            }}
+          >
+            <div className="s-title" style={{ pointerEvents: "none" }}>
+              Conversations
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                className="s-close"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "none",
+                  color: "var(--tx-2)",
+                  padding: "6px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                title="New Chat"
+                onClick={async () => {
+                  await emit("reset-session");
                   await invoke("hide_panel", { label: "history" });
-                }
-              }}
-            >
-              <PenSquare size={16} />
-            </button>
-            {!isWindowed && (
+                }}
+              >
+                <PenSquare size={16} />
+              </button>
               <button className="s-close" onClick={() => invoke("hide_panel", { label: "history" })}>
                 Done
               </button>
-            )}
-            {isWindowed && onOpenChat && (
-              <button className="s-close" onClick={onOpenChat}>
-                Done
-              </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 3-Tab Segmented Control */}
         <div style={{ padding: "0 16px", marginBottom: "16px", zIndex: 100 }}>

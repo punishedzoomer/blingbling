@@ -523,9 +523,11 @@ export function NotebookApp({
             >
               <Trash2 size={14} color="#ef4444" />
             </button>
-            <button className="s-close" onClick={handleDone}>
-              Done
-            </button>
+            {!isWindowed && (
+              <button className="s-close" onClick={handleDone}>
+                Done
+              </button>
+            )}
           </div>
         </div>
 

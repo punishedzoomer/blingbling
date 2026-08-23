@@ -64,6 +64,10 @@ pub fn run() {
                 
                 if initial_mode == "windowed" {
                     app.set_activation_policy(tauri::ActivationPolicy::Regular);
+                    if let Some(shell) = app.get_webview_window("app-shell") {
+                        let _ = shell.show();
+                        let _ = shell.set_focus();
+                    }
                 } else {
                     app.set_activation_policy(tauri::ActivationPolicy::Accessory);
                 }
@@ -99,13 +103,6 @@ pub fn run() {
                         }
                     }
                 }
-
-                if initial_mode == "windowed" {
-                    if let Some(shell) = app.get_webview_window("app-shell") {
-                        let _ = shell.show();
-                        let _ = shell.set_focus();
-                    }
-                }
             }
 
             #[cfg(not(target_os = "macos"))]
@@ -123,10 +120,9 @@ pub fn run() {
         })
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                if window.label() == "app-shell" {
-                    api.prevent_close();
-                    let _ = window.hide();
-                } else if window.label() != "main" {
+                if window.label() == "app-shell" || window.label() == "main" {
+                    std::process::exit(0);
+                } else {
                     api.prevent_close();
                     #[cfg(target_os = "macos")]
                     {
@@ -141,8 +137,6 @@ pub fn run() {
                     {
                         let _ = window.hide();
                     }
-                } else {
-                    std::process::exit(0);
                 }
             }
             _ => {}

@@ -457,7 +457,6 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       {!isWindowed && <Toolbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />}
 
       <div id="panel-wrap" className={isWindowed ? "windowed-panel-wrap" : undefined}>
-        {!isWindowed && <span id="live-dot" className="off"></span>}
         <div id="panel" className={`${isWindowed ? "windowed-panel" : "glass"} no-drag ${isCollapsed ? "collapsed" : ""}`}>
           <div id="panel-columns">
             <div id="panel-main" style={{ position: "relative" }}>

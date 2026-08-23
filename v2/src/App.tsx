@@ -148,6 +148,16 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
     }
   }, [isStreaming, messages.length, sessionTitle]);
 
+  const addSnipRef = useRef(addSnip);
+  const setPendingContextTextRef = useRef(setPendingContextText);
+  const clearAllAttachmentsRef = useRef(clearAllAttachments);
+
+  useEffect(() => {
+    addSnipRef.current = addSnip;
+    setPendingContextTextRef.current = setPendingContextText;
+    clearAllAttachmentsRef.current = clearAllAttachments;
+  });
+
   // Listen for actions from other windows and extension
   useEffect(() => {
     let unlistenClear: any, unlistenSimulate: any, unlistenAddMsg: any, unlistenRestore: any, unlistenReset: any;
@@ -158,7 +168,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       setActiveTagId(null);
       setActiveNotebookId(null);
       setSessionTitle(null);
-      clearAllAttachments();
+      clearAllAttachmentsRef.current();
       setIsStreaming(false);
       setIsThinking(false);
     }).then((f) => (unlistenClear = f));
@@ -170,7 +180,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       setActiveTagId(null);
       setActiveNotebookId(null);
       setSessionTitle(null);
-      clearAllAttachments();
+      clearAllAttachmentsRef.current();
       setIsStreaming(false);
       setIsThinking(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
@@ -208,7 +218,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       setActiveTagId(resolvedTagId);
       setActiveNotebookId(notebookId || null);
       setSessionTitle(title || null);
-      clearAllAttachments();
+      clearAllAttachmentsRef.current();
       setIsStreaming(false);
       setIsThinking(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
@@ -247,7 +257,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       if (unlistenRestore) unlistenRestore();
       if (unlistenReset) unlistenReset();
     };
-  }, [clearAllAttachments]);
+  }, []);
 
   // AI response streaming & extension snip listeners
   useEffect(() => {
@@ -278,18 +288,18 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       try {
         const payload = JSON.parse(event.payload);
         if (payload.image) {
-          addSnip(payload.image);
+          addSnipRef.current(payload.image);
         }
         if (payload.extraImages && payload.extraImages.length > 0) {
           for (const img of payload.extraImages) {
-            addSnip(img);
+            addSnipRef.current(img);
           }
         }
         if (payload.text) {
-          setPendingContextText(payload.text);
+          setPendingContextTextRef.current(payload.text);
         }
       } catch {
-        addSnip(event.payload);
+        addSnipRef.current(event.payload);
       }
       invoke("show_panel", { label: "main" });
     });
@@ -298,7 +308,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       unlistenAi.then((f) => f());
       unlistenSnip.then((f) => f());
     };
-  }, [addSnip, setPendingContextText]);
+  }, []);
 
   const handleSnip = async (interactive: boolean = false) => {
     setIsCapturing(true);

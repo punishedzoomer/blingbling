@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { Search, MessageSquare, Trash2, Plus, X, RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 
 export interface ConversationListProps {
@@ -134,6 +134,167 @@ export function getRelativeDay(ts: number): string {
   return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+interface ItemProps {
+  session: any;
+  tags: any[];
+  compact?: boolean;
+  notebookColor?: string;
+  actionType: "delete" | "add" | "remove" | "restore" | "none";
+  secondaryActionType: "delete" | "none";
+  onSelectSession: (session: any) => void;
+  onActionClick?: (e: React.MouseEvent, session: any) => void;
+  onSecondaryActionClick?: (e: React.MouseEvent, session: any) => void;
+}
+
+const ConversationListItem = memo(function ConversationListItem({
+  session,
+  tags,
+  compact,
+  notebookColor,
+  actionType,
+  secondaryActionType,
+  onSelectSession,
+  onActionClick,
+  onSecondaryActionClick,
+}: ItemProps) {
+  const title = getSessionTitle(session);
+  const tagId = session.data?.tagId || session.data?.workflowId;
+  const tag = tags.find((t) => t.id === tagId);
+  const ts = session.ts !== undefined ? session.ts : getSessionTimestamp(session);
+
+  const formattedDate = ts
+    ? getRelativeDay(ts) === "Today"
+      ? formatTime(ts)
+      : new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" })
+    : "";
+
+  const hasDualActions = actionType !== "none" && secondaryActionType !== "none";
+
+  return (
+    <div
+      key={session.id}
+      className="history-item"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: compact ? "8px 10px" : "10px 12px",
+        cursor: "pointer",
+        borderRadius: 8,
+        position: "relative",
+        marginBottom: "2px",
+        transition: "all 0.12s ease",
+      }}
+      onClick={() => {
+        try {
+          onSelectSession(session);
+        } catch (err: any) {
+          console.error("onSelectSession failed:", err);
+        }
+      }}
+    >
+      <div
+        style={{
+          marginRight: compact ? 8 : 12,
+          color: notebookColor || "var(--tx-mut)",
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <MessageSquare size={compact ? 14 : 16} />
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+        <div
+          style={{
+            color: "rgba(255,255,255,0.92)",
+            fontSize: compact ? "13px" : "14px",
+            fontWeight: 500,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {title}
+        </div>
+
+        {tag && (
+          <div style={{ display: "inline-flex" }}>
+            <div
+              className="tag-pill"
+              style={{ "--tag-color": tag.color || "#3B82F6" } as any}
+            >
+              #{tag.name.toLowerCase()}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {formattedDate && (
+        <div
+          style={{
+            fontSize: "11px",
+            color: "var(--tx-mut)",
+            marginLeft: "10px",
+            marginRight: hasDualActions ? (compact ? "54px" : "64px") : actionType !== "none" ? (compact ? "24px" : "32px") : "6px",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          {formattedDate}
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: "4px", position: "absolute", right: compact ? 6 : 10 }}>
+        {/* Secondary Action (e.g. Permanent Delete in Trash) */}
+        {secondaryActionType === "delete" && onSecondaryActionClick && (
+          <button
+            className="history-del-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSecondaryActionClick(e, session);
+            }}
+            title="Delete Permanently"
+            style={{ position: "static", opacity: 0.85, transform: "scale(1)" }}
+          >
+            <Trash2 size={compact ? 13 : 14} color="#ef4444" />
+          </button>
+        )}
+
+        {/* Primary Action Button */}
+        {actionType !== "none" && onActionClick && (
+          <button
+            className="history-del-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onActionClick(e, session);
+            }}
+            title={
+              actionType === "delete"
+                ? "Move to Trash"
+                : actionType === "add"
+                ? "Add to Notebook"
+                : actionType === "restore"
+                ? "Restore Chat"
+                : "Remove from Notebook"
+            }
+            style={{
+              position: "static",
+              opacity: actionType === "add" || actionType === "restore" ? 0.85 : undefined,
+              transform: actionType === "add" || actionType === "restore" ? "scale(1)" : undefined,
+            }}
+          >
+            {actionType === "delete" && <Trash2 size={compact ? 13 : 14} />}
+            {actionType === "add" && <Plus size={compact ? 13 : 14} color="var(--accent)" />}
+            {actionType === "restore" && <RotateCcw size={compact ? 13 : 14} color="#10b981" />}
+            {actionType === "remove" && <X size={compact ? 13 : 14} />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
+
 export const ConversationList = memo(function ConversationList({
   sessions,
   tags,
@@ -153,9 +314,14 @@ export const ConversationList = memo(function ConversationList({
 }: ConversationListProps) {
   const [internalSearchQuery, setInternalSearchQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [visibleCount, setVisibleCount] = useState(40);
 
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery;
   const setSearchQuery = onSearchQueryChange || setInternalSearchQuery;
+
+  useEffect(() => {
+    setVisibleCount(40);
+  }, [searchQuery]);
 
   const isCollapsed = (group: string) => {
     if (collapsedGroups[group] !== undefined) return collapsedGroups[group];
@@ -182,10 +348,15 @@ export const ConversationList = memo(function ConversationList({
     return list.sort((a, b) => getSessionTimestamp(b) - getSessionTimestamp(a));
   }, [sessions, tags, searchQuery]);
 
-  // Group filtered sessions chronologically
+  // Lazy loaded slice of sessions for DOM rendering
+  const visibleSessions = useMemo(() => {
+    return filteredSessions.slice(0, visibleCount);
+  }, [filteredSessions, visibleCount]);
+
+  // Group visible sessions chronologically
   const { groupOrder, groupedSessions } = useMemo(() => {
     const map = new Map<string, any[]>();
-    filteredSessions.forEach((s) => {
+    visibleSessions.forEach((s) => {
       const ts = getSessionTimestamp(s);
       const group = getRelativeDay(ts);
       if (!map.has(group)) map.set(group, []);
@@ -201,145 +372,14 @@ export const ConversationList = memo(function ConversationList({
       groupOrder: Array.from(map.keys()),
       groupedSessions: groups,
     };
-  }, [filteredSessions]);
+  }, [visibleSessions]);
 
-  const renderItem = (session: any) => {
-    const title = getSessionTitle(session);
-    const tagId = session.data?.tagId || session.data?.workflowId;
-    const tag = tags.find((t) => t.id === tagId);
-    const ts = session.ts !== undefined ? session.ts : getSessionTimestamp(session);
-
-    const formattedDate = ts
-      ? getRelativeDay(ts) === "Today"
-        ? formatTime(ts)
-        : new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" })
-      : "";
-
-    const hasDualActions = actionType !== "none" && secondaryActionType !== "none";
-
-    return (
-      <div
-        key={session.id}
-        className="history-item"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: compact ? "8px 10px" : "10px 12px",
-          cursor: "pointer",
-          borderRadius: 8,
-          position: "relative",
-          marginBottom: "2px",
-          transition: "all 0.15s ease",
-        }}
-        onClick={() => {
-          try {
-            onSelectSession(session);
-          } catch (err: any) {
-            console.error("onSelectSession failed:", err);
-          }
-        }}
-      >
-        <div
-          style={{
-            marginRight: compact ? 8 : 12,
-            color: notebookColor || "var(--tx-mut)",
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <MessageSquare size={compact ? 14 : 16} />
-        </div>
-
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-          <div
-            style={{
-              color: "rgba(255,255,255,0.92)",
-              fontSize: compact ? "13px" : "14px",
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {title}
-          </div>
-
-          {tag && (
-            <div style={{ display: "inline-flex" }}>
-              <div
-                className="tag-pill"
-                style={{ "--tag-color": tag.color || "#3B82F6" } as any}
-              >
-                #{tag.name.toLowerCase()}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {formattedDate && (
-          <div
-            style={{
-              fontSize: "11px",
-              color: "var(--tx-mut)",
-              marginLeft: "10px",
-              marginRight: hasDualActions ? (compact ? "54px" : "64px") : actionType !== "none" ? (compact ? "24px" : "32px") : "6px",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
-          >
-            {formattedDate}
-          </div>
-        )}
-
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", position: "absolute", right: compact ? 6 : 10 }}>
-          {/* Secondary Action (e.g. Permanent Delete in Trash) */}
-          {secondaryActionType === "delete" && onSecondaryActionClick && (
-            <button
-              className="history-del-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSecondaryActionClick(e, session);
-              }}
-              title="Delete Permanently"
-              style={{ position: "static", opacity: 0.85, transform: "scale(1)" }}
-            >
-              <Trash2 size={compact ? 13 : 14} color="#ef4444" />
-            </button>
-          )}
-
-          {/* Primary Action Button */}
-          {actionType !== "none" && onActionClick && (
-            <button
-              className="history-del-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                onActionClick(e, session);
-              }}
-              title={
-                actionType === "delete"
-                  ? "Move to Trash"
-                  : actionType === "add"
-                  ? "Add to Notebook"
-                  : actionType === "restore"
-                  ? "Restore Chat"
-                  : "Remove from Notebook"
-              }
-              style={{
-                position: "static",
-                opacity: actionType === "add" || actionType === "restore" ? 0.85 : undefined,
-                transform: actionType === "add" || actionType === "restore" ? "scale(1)" : undefined,
-              }}
-            >
-              {actionType === "delete" && <Trash2 size={compact ? 13 : 14} />}
-              {actionType === "add" && <Plus size={compact ? 13 : 14} color="var(--accent)" />}
-              {actionType === "restore" && <RotateCcw size={compact ? 13 : 14} color="#10b981" />}
-              {actionType === "remove" && <X size={compact ? 13 : 14} />}
-            </button>
-          )}
-        </div>
-      </div>
-    );
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+    if (scrollBottom < 200 && visibleCount < filteredSessions.length) {
+      setVisibleCount((prev) => Math.min(prev + 30, filteredSessions.length));
+    }
   };
 
   return (
@@ -393,7 +433,10 @@ export const ConversationList = memo(function ConversationList({
         </div>
       )}
 
-      <div style={{ overflowY: "auto", flex: 1, minHeight: 0, paddingBottom: "12px" }}>
+      <div
+        style={{ overflowY: "auto", flex: 1, minHeight: 0, paddingBottom: "12px" }}
+        onScroll={handleScroll}
+      >
         {showGroups ? (
           <>
             {groupOrder.map((group) => {
@@ -433,7 +476,20 @@ export const ConversationList = memo(function ConversationList({
                   </div>
                   {!collapsed && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      {groupSess.map((s) => renderItem(s))}
+                      {groupSess.map((s) => (
+                        <ConversationListItem
+                          key={s.id}
+                          session={s}
+                          tags={tags}
+                          compact={compact}
+                          notebookColor={notebookColor}
+                          actionType={actionType}
+                          secondaryActionType={secondaryActionType}
+                          onSelectSession={onSelectSession}
+                          onActionClick={onActionClick}
+                          onSecondaryActionClick={onSecondaryActionClick}
+                        />
+                      ))}
                     </div>
                   )}
                 </div>
@@ -454,8 +510,21 @@ export const ConversationList = memo(function ConversationList({
           </>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {filteredSessions.map((s) => renderItem(s))}
-            {filteredSessions.length === 0 && (
+            {visibleSessions.map((s) => (
+              <ConversationListItem
+                key={s.id}
+                session={s}
+                tags={tags}
+                compact={compact}
+                notebookColor={notebookColor}
+                actionType={actionType}
+                secondaryActionType={secondaryActionType}
+                onSelectSession={onSelectSession}
+                onActionClick={onActionClick}
+                onSecondaryActionClick={onSecondaryActionClick}
+              />
+            ))}
+            {visibleSessions.length === 0 && (
               <div
                 style={{
                   textAlign: "center",

@@ -36,12 +36,14 @@ export async function fetchSessions(force = false): Promise<SessionItem[]> {
   isFetchingSessions = true;
   try {
     const raw: any = await invoke("load_sessions");
-    const sorted = (raw || []).sort(
-      (a: any, b: any) => getSessionTimestamp(b) - getSessionTimestamp(a)
-    );
-    cachedSessions = sorted;
+    const items = (raw || []).map((s: any) => ({
+      ...s,
+      ts: getSessionTimestamp(s),
+    }));
+    items.sort((a: any, b: any) => b.ts - a.ts);
+    cachedSessions = items;
     notifyListeners();
-    return sorted;
+    return items;
   } catch (err) {
     console.error("Failed to load sessions:", err);
     return cachedSessions || [];
@@ -59,12 +61,14 @@ export async function fetchTrash(force = false): Promise<SessionItem[]> {
   isFetchingTrash = true;
   try {
     const raw: any = await invoke("load_trash");
-    const sorted = (raw || []).sort(
-      (a: any, b: any) => getSessionTimestamp(b) - getSessionTimestamp(a)
-    );
-    cachedTrash = sorted;
+    const items = (raw || []).map((s: any) => ({
+      ...s,
+      ts: getSessionTimestamp(s),
+    }));
+    items.sort((a: any, b: any) => b.ts - a.ts);
+    cachedTrash = items;
     notifyListeners();
-    return sorted;
+    return items;
   } catch (err) {
     console.error("Failed to load trash:", err);
     return cachedTrash || [];

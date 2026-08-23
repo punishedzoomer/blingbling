@@ -26,6 +26,7 @@
         "alwaysOnTop": false,
         "visibleOnAllWorkspaces": false,
         "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "visible": true
       },
       {

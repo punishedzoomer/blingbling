@@ -62,17 +62,27 @@ pub fn run() {
                 use objc::{sel, sel_impl};
                 use tauri_nspanel::WebviewWindowExt;
                 
-                if initial_mode == "windowed" {
-                    app.set_activation_policy(tauri::ActivationPolicy::Regular);
-                    if let Some(shell) = app.get_webview_window("app-shell") {
+                if let Some(shell) = app.get_webview_window("app-shell") {
+                    if let Ok(ns_win_ptr) = shell.ns_window() {
+                        let ns_window = ns_win_ptr as cocoa::base::id;
+                        unsafe {
+                            // NSWindowTitleHidden = 1 (Hide native macOS title text in overlay title bar)
+                            let _: () = objc::msg_send![ns_window, setTitleVisibility: 1];
+                            let _: () = objc::msg_send![ns_window, setTitlebarAppearsTransparent: true];
+                        }
+                    }
+                    if initial_mode == "windowed" {
                         let _ = shell.show();
                         let _ = shell.set_focus();
-                    }
-                } else {
-                    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
-                    if let Some(shell) = app.get_webview_window("app-shell") {
+                    } else {
                         let _ = shell.hide();
                     }
+                }
+                
+                if initial_mode == "windowed" {
+                    app.set_activation_policy(tauri::ActivationPolicy::Regular);
+                } else {
+                    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
                 }
                 
                 // Swizzle all auxiliary/main windows into NSPanels on main thread, skipping app-shell

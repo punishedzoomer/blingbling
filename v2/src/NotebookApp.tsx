@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
-import { BookOpen, Pencil, Trash2, Check, X, Plus, History, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, Pencil, Trash2, Check, X, Plus, History, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import "./App.css";
 import { syncNotebookTag, updateNotebookTagName } from "./utils/notebookTags";
 import { ConfirmModal } from "./components/ConfirmModal";
@@ -32,12 +32,16 @@ function saveNotebooks(notebooks: any[]) {
 
 export function NotebookApp({
   isWindowed = false,
+  notebookId: propNotebookId,
   onOpenChat,
   onOpenHistory,
+  onBack,
 }: {
   isWindowed?: boolean;
+  notebookId?: number | null;
   onOpenChat?: () => void;
   onOpenHistory?: () => void;
+  onBack?: () => void;
 } = {}) {
   const [notebook, setNotebook] = useState<any | null>(null);
   const [allSessions, setAllSessions] = useState<any[]>([]);
@@ -76,44 +80,23 @@ export function NotebookApp({
   }, []);
 
   const loadNotebook = useCallback(async () => {
-    const id = getNotebookId();
-    if (!id) return;
+    const id = propNotebookId !== undefined ? propNotebookId : getNotebookId();
+    if (!id) {
+      setNotebook(null);
+      return;
+    }
     const nbs = loadNotebooks();
     const found = nbs.find((nb: any) => nb.id === id);
     if (found) {
       setNotebook(found);
-      const tag = syncNotebookTag(found);
+      syncNotebookTag(found);
       loadTags();
-
-      // Load sessions and auto-tag conversations already assigned to this notebook
-      try {
-        const rawSessions: any = await invoke("load_sessions");
-        const sorted = (rawSessions || []).sort(
-          (a: any, b: any) => getSessionTimestamp(b) - getSessionTimestamp(a)
-        );
-        setAllSessions(sorted);
-
-        let needsSync = false;
-        for (const s of sorted) {
-          if (s.data?.notebookId === found.id && s.data?.tagId !== tag.id) {
-            const normalized = normalizeSessionData(s.data);
-            const updatedData = { ...normalized, notebookId: found.id, tagId: tag.id };
-            await invoke("save_session", { sessionId: s.id, data: updatedData }).catch(console.error);
-            needsSync = true;
-          }
-        }
-        if (needsSync) {
-          await emit("history-sync", null);
-        }
-      } catch (err) {
-        console.error("Error checking notebook session tags:", err);
-      }
     } else {
       setNotebook(null);
     }
     setIsRenaming(false);
     setRenameValue("");
-  }, [loadTags]);
+  }, [propNotebookId, loadTags]);
 
   useEffect(() => {
     loadNotebook();
@@ -132,21 +115,18 @@ export function NotebookApp({
     };
     window.addEventListener("storage", onStorage);
 
-    const onFocus = () => {
-      loadNotebook();
-      loadAllSessions();
-      loadTags();
-    };
-    window.addEventListener("focus", onFocus);
-
+    let debounceTimer: any = null;
     const unlistenSync = listen("history-sync", () => {
-      loadAllSessions();
-      loadTags();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadAllSessions();
+        loadTags();
+      }, 150);
     });
 
     return () => {
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener("focus", onFocus);
+      if (debounceTimer) clearTimeout(debounceTimer);
       unlistenSync.then((f) => f());
     };
   }, [loadNotebook, loadAllSessions, loadTags]);
@@ -201,7 +181,8 @@ export function NotebookApp({
   };
 
   const handleDelete = async () => {
-    const updated = loadNotebooks().filter((nb: any) => String(nb.id) !== String(notebookId));
+    const id = propNotebookId !== undefined ? propNotebookId : getNotebookId();
+    const updated = loadNotebooks().filter((nb: any) => String(nb.id) !== String(id));
     saveNotebooks(updated);
 
     for (const session of notebookSessions) {
@@ -212,7 +193,9 @@ export function NotebookApp({
     }
 
     await emit("history-sync", null);
-    if (onOpenHistory) {
+    if (onBack) {
+      onBack();
+    } else if (onOpenHistory) {
       onOpenHistory();
     } else {
       await invoke("hide_notebook");
@@ -221,7 +204,7 @@ export function NotebookApp({
   };
 
   const assignSession = async (sessionId: string) => {
-    const notebookId = getNotebookId();
+    const notebookId = propNotebookId !== undefined ? propNotebookId : getNotebookId();
     if (!notebookId || !notebook) return;
 
     // Guard against adding already assigned session
@@ -280,20 +263,10 @@ export function NotebookApp({
 
   const openSession = async (session: any) => {
     try {
-      invoke("log_debug", {
-        code: "INFO-NB-001",
-        message: `openSession called for session id=${session.id}, notebookId=${notebook?.id}`,
-      }).catch(() => {});
-
       const currentSession = allSessions.find((s: any) => String(s.id) === String(session.id)) || session;
       const messages = extractMessages(currentSession.data);
       const tag = syncNotebookTag(notebook);
       const tagId = currentSession.data?.tagId || tag.id;
-
-      invoke("log_debug", {
-        code: "INFO-NB-002",
-        message: `Emitting restore-session: id=${currentSession.id}, messageCount=${messages.length}, tagId=${tagId}`,
-      }).catch(() => {});
 
       await emit("restore-session", {
         id: String(currentSession.id),
@@ -303,36 +276,18 @@ export function NotebookApp({
         title: currentSession.data?.title,
       });
 
-      invoke("log_debug", {
-        code: "INFO-NB-003",
-        message: "Invoking open_main_chat...",
-      }).catch(() => {});
-
       if (onOpenChat) {
         onOpenChat();
       } else {
         await invoke("open_main_chat");
       }
-
-      invoke("log_debug", {
-        code: "INFO-NB-004",
-        message: "open_main_chat invoke resolved successfully.",
-      }).catch(() => {});
     } catch (err: any) {
-      invoke("log_debug", {
-        code: "ERR-NB-001",
-        message: `Failed in openSession: ${String(err)}`,
-      }).catch(() => {});
+      console.error("Failed in openSession:", err);
     }
   };
 
   const handleNewChatInNotebook = async () => {
     try {
-      invoke("log_debug", {
-        code: "INFO-NB-010",
-        message: `handleNewChatInNotebook called for notebookId=${notebook?.id}`,
-      }).catch(() => {});
-
       const newSessionId = Date.now().toString();
       const tag = syncNotebookTag(notebook);
 
@@ -350,10 +305,7 @@ export function NotebookApp({
         await invoke("open_main_chat");
       }
     } catch (err: any) {
-      invoke("log_debug", {
-        code: "ERR-NB-010",
-        message: `Failed in handleNewChatInNotebook: ${String(err)}`,
-      }).catch(() => {});
+      console.error("Failed in handleNewChatInNotebook:", err);
     }
   };
 
@@ -478,6 +430,29 @@ export function NotebookApp({
           </div>
 
           <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
+            {onBack && (
+              <button
+                className="s-close"
+                style={{
+                  padding: "5px 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  color: "rgba(255,255,255,0.85)",
+                }}
+                onClick={onBack}
+                title="Back to all notebooks"
+              >
+                <ArrowLeft size={13} />
+                <span>All Notebooks</span>
+              </button>
+            )}
             {isRenaming ? (
               <>
                 <button

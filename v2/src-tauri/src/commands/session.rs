@@ -30,8 +30,9 @@ pub fn get_trash_dir() -> PathBuf {
 #[tauri::command]
 pub fn save_session(session_id: String, data: Value) -> Result<(), String> {
     let file_path = get_sessions_dir().join(format!("{}.json", session_id));
-    let json_str = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
-    fs::write(file_path, json_str).map_err(|e| e.to_string())?;
+    let file = fs::File::create(file_path).map_err(|e| e.to_string())?;
+    let writer = std::io::BufWriter::new(file);
+    serde_json::to_writer(writer, &data).map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -42,10 +43,12 @@ pub fn load_sessions() -> Result<Vec<Value>, String> {
     
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
-            if entry.path().extension().and_then(|s| s.to_str()) == Some("json") {
-                if let Some(file_stem) = entry.path().file_stem().and_then(|s| s.to_str()) {
-                    if let Ok(content) = fs::read_to_string(entry.path()) {
-                        if let Ok(json) = serde_json::from_str::<Value>(&content) {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    if let Ok(file) = fs::File::open(&path) {
+                        let reader = std::io::BufReader::new(file);
+                        if let Ok(json) = serde_json::from_reader::<_, Value>(reader) {
                             sessions.push(serde_json::json!({
                                 "id": file_stem,
                                 "data": json
@@ -83,10 +86,12 @@ pub fn load_trash() -> Result<Vec<Value>, String> {
     
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
-            if entry.path().extension().and_then(|s| s.to_str()) == Some("json") {
-                if let Some(file_stem) = entry.path().file_stem().and_then(|s| s.to_str()) {
-                    if let Ok(content) = fs::read_to_string(entry.path()) {
-                        if let Ok(json) = serde_json::from_str::<Value>(&content) {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    if let Ok(file) = fs::File::open(&path) {
+                        let reader = std::io::BufReader::new(file);
+                        if let Ok(json) = serde_json::from_reader::<_, Value>(reader) {
                             trash_items.push(serde_json::json!({
                                 "id": file_stem,
                                 "data": json

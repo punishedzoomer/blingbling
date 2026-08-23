@@ -1,5 +1,4 @@
 import { useState, useMemo, memo } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { Search, MessageSquare, Trash2, Plus, X, RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 
 export interface ConversationListProps {
@@ -58,9 +57,15 @@ export function normalizeSessionData(data: any): { history: any[]; tagId?: strin
 }
 
 export function getSessionTitle(session: any): string {
+  if (session.data?.title) return session.data.title;
+  if (session.title) return session.title;
   const messages = extractMessages(session.data);
   const first = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
-  return session.data?.title || String(first).replace(/\n/g, " ").slice(0, 60);
+  const title = String(first).replace(/\n/g, " ").slice(0, 60);
+  if (session.data && typeof session.data === "object" && !Array.isArray(session.data)) {
+    session.data.title = title;
+  }
+  return title;
 }
 
 export function getSessionTimestamp(session: any): number {
@@ -217,17 +222,10 @@ export const ConversationList = memo(function ConversationList({
           transition: "all 0.15s ease",
         }}
         onClick={() => {
-          invoke("log_debug", {
-            code: "INFO-CL-001",
-            message: `Conversation item clicked: id=${session.id}, title=${title}`,
-          }).catch(() => {});
           try {
             onSelectSession(session);
           } catch (err: any) {
-            invoke("log_debug", {
-              code: "ERR-CL-001",
-              message: `onSelectSession threw error: ${String(err)}`,
-            }).catch(() => {});
+            console.error("onSelectSession failed:", err);
           }
         }}
       >

@@ -10,10 +10,14 @@ import { ConfirmModal } from "./components/ConfirmModal";
 
 export function HistoryApp({
   isWindowed = false,
+  initialTab = "history",
   onOpenChat,
+  onSelectNotebook,
 }: {
   isWindowed?: boolean;
+  initialTab?: "history" | "notebooks" | "trash";
   onOpenChat?: () => void;
+  onSelectNotebook?: (id: number) => void;
 } = {}) {
   const [sessions, setSessions] = useState<any[]>([]);
   const [trashSessions, setTrashSessions] = useState<any[]>([]);
@@ -21,7 +25,7 @@ export function HistoryApp({
     const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
   });
-  const [activeTab, setActiveTab] = useState<"history" | "notebooks" | "trash">("history");
+  const [activeTab, setActiveTab] = useState<"history" | "notebooks" | "trash">(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [trashSearchQuery, setTrashSearchQuery] = useState("");
   const [showEmptyTrashConfirm, setShowEmptyTrashConfirm] = useState(false);
@@ -80,12 +84,18 @@ export function HistoryApp({
       }
     };
     window.addEventListener("storage", handleStorage);
-    window.addEventListener("focus", loadSessionsData);
 
-    const unlisten = listen("history-sync", () => loadSessionsData());
+    let debounceTimer: any = null;
+    const unlisten = listen("history-sync", () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadSessionsData();
+      }, 150);
+    });
+
     return () => {
       window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("focus", loadSessionsData);
+      if (debounceTimer) clearTimeout(debounceTimer);
       unlisten.then((f) => f());
     };
   }, []);
@@ -142,10 +152,6 @@ export function HistoryApp({
   };
 
   const handleSelectSession = async (session: any) => {
-    invoke("log_debug", {
-      code: "INFO-HIST-001",
-      message: `handleSelectSession in history: id=${session.id}`,
-    }).catch(() => {});
     const messages = extractMessages(session.data);
     await emit("restore-session", {
       id: String(session.id),
@@ -334,7 +340,7 @@ export function HistoryApp({
           </div>
 
           {/* 2. NOTEBOOKS PANE */}
-          <NotebookList setActiveTab={setActiveTab} />
+          <NotebookList setActiveTab={setActiveTab} onSelectNotebook={onSelectNotebook} />
 
           {/* 3. TRASH PANE */}
           <div className="view-pane">

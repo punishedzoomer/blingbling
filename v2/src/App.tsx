@@ -115,16 +115,20 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
     }
   }, [input]);
 
-  // Sync messages to History window and backend
+  // Sync messages to History window and backend when idle (not actively streaming)
   useEffect(() => {
+    if (isStreaming) return;
     if (messages.length > 0) {
       invoke("save_session", {
         sessionId,
         data: { history: messages, tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle },
-      }).catch(console.error);
+      })
+        .then(() => {
+          emit("history-sync", null);
+        })
+        .catch(console.error);
     }
-    emit("history-sync", messages);
-  }, [messages, sessionId, sessionTitle, activeTagId, activeNotebookId]);
+  }, [isStreaming, messages, sessionId, sessionTitle, activeTagId, activeNotebookId]);
 
   // Auto-generate session title after first assistant response
   useEffect(() => {
@@ -178,10 +182,6 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
 
     listen("restore-session", (e: any) => {
       const { id, data, tagId, notebookId, title } = e.payload;
-      invoke("log_debug", {
-        code: "INFO-APP-001",
-        message: `restore-session received in main window: id=${id}, messageCount=${Array.isArray(data) ? data.length : 0}, tagId=${tagId}, notebookId=${notebookId}, title=${title}`,
-      }).catch(() => {});
       try {
         const savedTags = localStorage.getItem("customTags");
         if (savedTags) {

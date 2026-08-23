@@ -4,7 +4,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { syncNotebookTag } from "../utils/notebookTags";
 
-export function NotebookList({ setActiveTab }: { setActiveTab: (tab: "history" | "notebooks") => void }) {
+export function NotebookList({
+  setActiveTab,
+  onSelectNotebook,
+}: {
+  setActiveTab?: (tab: "history" | "notebooks") => void;
+  onSelectNotebook?: (id: number) => void;
+}) {
   const [notebooks, setNotebooks] = useState<any[]>(() => {
     const saved = localStorage.getItem("customNotebooks");
     return saved ? JSON.parse(saved) : [];
@@ -36,13 +42,18 @@ export function NotebookList({ setActiveTab }: { setActiveTab: (tab: "history" |
       }
     };
     window.addEventListener("storage", onStorage);
-    window.addEventListener("focus", loadSessionsData);
 
-    const unlistenSync = listen("history-sync", () => loadSessionsData());
+    let debounceTimer: any = null;
+    const unlistenSync = listen("history-sync", () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadSessionsData();
+      }, 150);
+    });
 
     return () => {
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener("focus", loadSessionsData);
+      if (debounceTimer) clearTimeout(debounceTimer);
       unlistenSync.then((f) => f());
     };
   }, []);
@@ -60,12 +71,18 @@ export function NotebookList({ setActiveTab }: { setActiveTab: (tab: "history" |
 
     // Open the new notebook immediately
     openNotebookWindow(newNb.id);
-    setActiveTab("notebooks");
+    if (setActiveTab) {
+      setActiveTab("notebooks");
+    }
   };
 
   const openNotebookWindow = (id: number) => {
     localStorage.setItem("activeNotebookId", String(id));
-    invoke("show_notebook").catch(console.error);
+    if (onSelectNotebook) {
+      onSelectNotebook(id);
+    } else {
+      invoke("show_notebook").catch(console.error);
+    }
   };
 
   const getNotebookChatCount = (id: number): number => {

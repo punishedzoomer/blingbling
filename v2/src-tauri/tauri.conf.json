@@ -13,6 +13,22 @@
     "macOSPrivateApi": true,
     "windows": [
       {
+        "title": "Bling Bling",
+        "label": "app-shell",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 760,
+        "minHeight": 520,
+        "resizable": true,
+        "decorations": true,
+        "shadow": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "visibleOnAllWorkspaces": false,
+        "titleBarStyle": "Overlay",
+        "visible": false
+      },
+      {
         "title": "BlingBling",
         "label": "main",
         "width": 800,
@@ -83,22 +99,6 @@
         "shadow": false,
         "alwaysOnTop": true,
         "visibleOnAllWorkspaces": true,
-        "visible": false
-      },
-      {
-        "title": "Bling Bling",
-        "label": "app-shell",
-        "width": 1100,
-        "height": 760,
-        "minWidth": 760,
-        "minHeight": 520,
-        "resizable": true,
-        "decorations": true,
-        "shadow": true,
-        "transparent": false,
-        "alwaysOnTop": false,
-        "visibleOnAllWorkspaces": false,
-        "titleBarStyle": "Overlay",
         "visible": false
       }
     ],

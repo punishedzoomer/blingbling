@@ -44,5 +44,5 @@ export function useDynamicBounds(label: string = "main", enabled: boolean = true
       if (rafId.current) cancelAnimationFrame(rafId.current);
       resizeObserver.disconnect();
     };
-  }, [label]);
+  }, [label, enabled]);
 }

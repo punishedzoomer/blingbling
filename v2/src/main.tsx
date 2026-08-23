@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import App from "./App";
-import { AppShell } from "./AppShell";
+import { AppShell } from "./windowed/AppShell";
 import { SettingsApp } from "./SettingsApp";
 import { HistoryApp } from "./HistoryApp";
 import { SnipApp } from "./SnipApp";

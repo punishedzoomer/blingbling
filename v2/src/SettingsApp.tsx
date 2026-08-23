@@ -114,9 +114,7 @@ export function SettingsApp({
   isWindowed?: boolean;
   onDone?: () => void;
 } = {}) {
-  if (!isWindowed) {
-    useDynamicBounds("settings");
-  }
+  useDynamicBounds("settings", !isWindowed);
 
   const [activeTab, setActiveTab] = useState("general");
   const [appMode, setAppMode] = useState<"widget" | "windowed">(isWindowed ? "windowed" : "widget");

@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
-export function useDynamicBounds(label: string = "main") {
+export function useDynamicBounds(label: string = "main", enabled: boolean = true) {
   const lastDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
   const rafId = useRef<number | null>(null);
 
   useEffect(() => {
-    if (label === "app-shell") return;
+    if (!enabled || label === "app-shell") return;
 
     const el = document.body;
     if (!el) return;

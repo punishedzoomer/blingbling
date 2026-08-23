@@ -80,9 +80,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
     buildSendPayload,
   } = useAttachments();
 
-  if (!isWindowed) {
-    useDynamicBounds("main");
-  }
+  useDynamicBounds("main", !isWindowed);
 
   useEffect(() => {
     localStorage.setItem("aiMode", aiMode);

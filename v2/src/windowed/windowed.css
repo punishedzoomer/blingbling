@@ -1,0 +1,371 @@
+/* ============================ Windowed Mode Core Styles ============================ */
+
+body[data-mode="windowed"],
+html:has(body[data-mode="windowed"]),
+body[data-mode="windowed"] #root {
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #111216 !important;
+  overflow: hidden !important;
+}
+
+.windowed-shell-root {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: #111216;
+  color: rgba(255, 255, 255, 0.92);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+}
+
+/* ---------------- Sidebar ---------------- */
+
+.windowed-sidebar {
+  width: 220px;
+  min-width: 220px;
+  height: 100%;
+  background: #15171e;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: width 0.18s cubic-bezier(0.2, 0, 0, 1), min-width 0.18s cubic-bezier(0.2, 0, 0, 1);
+  z-index: 10;
+  user-select: none;
+}
+
+.windowed-sidebar.collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+
+.windowed-sidebar-top {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.windowed-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.windowed-brand-compact {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.windowed-brand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3C83F5;
+  box-shadow: 0 0 8px rgba(60, 131, 245, 0.8);
+  flex-shrink: 0;
+}
+
+.windowed-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.windowed-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.windowed-sidebar.collapsed .windowed-nav-btn {
+  justify-content: center;
+  padding: 9px 0;
+}
+
+.windowed-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.windowed-nav-btn.active {
+  background: rgba(60, 131, 245, 0.18);
+  border-color: rgba(60, 131, 245, 0.3);
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.windowed-nav-icon {
+  flex-shrink: 0;
+}
+
+.windowed-sidebar-footer {
+  padding: 10px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.windowed-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+.windowed-sidebar.collapsed .windowed-mode-btn {
+  padding: 7px 0;
+}
+
+.windowed-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ---------------- Main Content & TitleBar ---------------- */
+
+.windowed-shell-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #121319;
+  position: relative;
+  overflow: hidden;
+}
+
+.windowed-titlebar {
+  height: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #15171e;
+  user-select: none;
+  cursor: default;
+}
+
+.windowed-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.windowed-title-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.windowed-titlebar-center {
+  flex: 1;
+  height: 100%;
+}
+
+.windowed-titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.windowed-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.windowed-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.windowed-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.windowed-action-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ---------------- Surfaces Viewport ---------------- */
+
+.windowed-container {
+  flex: 1;
+  height: calc(100% - 44px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.windowed-surface-chat {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.windowed-surface-aux {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  padding: 16px 20px;
+  box-sizing: border-box;
+}
+
+/* ---------------- Chat Component Overrides in Windowed Mode ---------------- */
+
+#app.windowed-app {
+  width: 100% !important;
+  max-width: 960px !important;
+  height: 100% !important;
+  margin: 0 auto !important;
+  padding: 12px 20px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+}
+
+#panel-wrap.windowed-panel-wrap {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  overflow: hidden !important;
+}
+
+#panel.windowed-panel {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.windowed-app #panel-columns {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.windowed-app #panel-main {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.windowed-app #messages {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  padding-bottom: 12px !important;
+}
+
+.windowed-app #composer {
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  background: rgba(22, 24, 32, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+.windowed-pane {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: auto !important;
+  overflow: hidden !important;
+}
+
+.windowed-card {
+  background: rgba(25, 27, 35, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}

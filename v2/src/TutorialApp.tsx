@@ -1,34 +1,46 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Sparkles, Scan, CheckCircle2 } from "lucide-react";
 import "./App.css";
 
 const SLIDES = [
   {
-    icon: "👋",
+    icon: Sparkles,
     title: "Welcome to Bling Bling",
     body: "This is your new AI assistant. It sees what you see and helps you work faster."
   },
   {
-    icon: "🔍",
+    icon: Scan,
     title: "Context Aware",
-    body: "Press ⌘⏎ anytime to let the AI scan your screen and anticipate what you need."
+    body: "Press Cmd+Enter anytime to let the AI scan your screen and anticipate what you need."
   },
   {
-    icon: "🚀",
+    icon: CheckCircle2,
     title: "Ready to go",
     body: "You're all set! Click Done to return to the main window and get started."
   }
 ];
 
-export function TutorialApp() {
+export function TutorialApp({
+  isWindowed = false,
+  onDone,
+}: {
+  isWindowed?: boolean;
+  onDone?: () => void;
+}) {
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
-    // Focus the window on load
-    invoke("focus_panel", { label: "tutorial" }).catch(console.error);
-  }, []);
+    if (!isWindowed) {
+      invoke("focus_panel", { label: "tutorial" }).catch(console.error);
+    }
+  }, [isWindowed]);
 
   const handleClose = async () => {
+    if (onDone) {
+      onDone();
+      return;
+    }
     await invoke("hide_panel", { label: "tutorial" });
   };
 
@@ -41,16 +53,48 @@ export function TutorialApp() {
   };
 
   const current = SLIDES[slide];
+  const IconComponent = current.icon;
 
   return (
-    <div id="onboard" className="glass" style={{ margin: "20px", display: "flex", flexDirection: "column", height: "calc(100vh - 40px)", borderRadius: "16px", padding: "30px", boxSizing: "border-box", overflow: "hidden" }}>
+    <div
+      id="onboard"
+      className={isWindowed ? "windowed-card" : "glass"}
+      style={{
+        margin: isWindowed ? "0 auto" : "20px",
+        maxWidth: isWindowed ? "560px" : undefined,
+        display: "flex",
+        flexDirection: "column",
+        height: isWindowed ? "100%" : "calc(100vh - 40px)",
+        maxHeight: isWindowed ? "460px" : undefined,
+        borderRadius: "16px",
+        padding: "30px",
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
+    >
       <div className="ob-dots" id="ob-dots">
         {SLIDES.map((_, i) => (
           <span key={i} className={i === slide ? "on" : ""}></span>
         ))}
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div className="ob-icon" id="ob-icon">{current.icon}</div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+        <div
+          className="ob-icon"
+          id="ob-icon"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "56px",
+            height: "56px",
+            borderRadius: "14px",
+            background: "rgba(255,255,255,0.08)",
+            color: "var(--tx-1)",
+            marginBottom: "16px",
+          }}
+        >
+          <IconComponent size={28} />
+        </div>
         <div className="ob-title" id="ob-title" style={{ textAlign: "center" }}>{current.title}</div>
         <div className="ob-body" id="ob-body" style={{ textAlign: "center" }}>{current.body}</div>
       </div>

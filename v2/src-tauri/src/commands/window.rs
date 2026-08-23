@@ -1,7 +1,105 @@
-use tauri::{AppHandle, Manager};
+use std::fs;
+use std::path::PathBuf;
+use directories::ProjectDirs;
+use tauri::{AppHandle, Emitter, Manager};
+
+pub fn get_app_mode_file() -> PathBuf {
+    if let Some(proj_dirs) = ProjectDirs::from("", "", "BlingBling") {
+        let dir = proj_dirs.data_dir();
+        fs::create_dir_all(&dir).unwrap_or_default();
+        dir.join("app_mode.txt")
+    } else {
+        let dir = std::env::current_dir().unwrap();
+        dir.join("app_mode.txt")
+    }
+}
+
+pub fn read_app_mode() -> String {
+    let path = get_app_mode_file();
+    if let Ok(mode) = fs::read_to_string(path) {
+        let trimmed = mode.trim().to_string();
+        if trimmed == "windowed" || trimmed == "widget" {
+            return trimmed;
+        }
+    }
+    "widget".to_string()
+}
+
+pub fn write_app_mode(mode: &str) {
+    let path = get_app_mode_file();
+    let _ = fs::write(path, mode);
+}
+
+#[tauri::command]
+pub fn get_app_mode() -> String {
+    read_app_mode()
+}
+
+#[tauri::command]
+pub fn set_app_mode(mode: String, app: AppHandle) {
+    write_app_mode(&mode);
+    let _ = app.emit("app-mode-changed", &mode);
+
+    #[cfg(target_os = "macos")]
+    {
+        let is_windowed = mode == "windowed";
+        let _ = app.run_on_main_thread(move || {
+            use objc::{sel, sel_impl, class};
+            unsafe {
+                let ns_app: cocoa::base::id = objc::msg_send![class!(NSApplication), sharedApplication];
+                let policy = if is_windowed {
+                    tauri::ActivationPolicy::Regular
+                } else {
+                    tauri::ActivationPolicy::Accessory
+                };
+                let _: bool = objc::msg_send![ns_app, setActivationPolicy: policy as i64];
+            }
+        });
+    }
+
+    if mode == "windowed" {
+        // Hide all widget mode panels
+        for label in &["main", "history", "notebook", "settings", "tutorial"] {
+            if let Some(w) = app.get_webview_window(label) {
+                #[cfg(target_os = "macos")]
+                {
+                    use tauri_nspanel::WebviewWindowExt;
+                    if let Ok(panel) = w.to_panel() {
+                        panel.order_out(None);
+                    } else {
+                        let _ = w.hide();
+                    }
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    let _ = w.hide();
+                }
+            }
+        }
+        // Show and focus app-shell
+        if let Some(shell) = app.get_webview_window("app-shell") {
+            let _ = shell.show();
+            let _ = shell.set_focus();
+        }
+    } else {
+        // Hide app-shell
+        if let Some(shell) = app.get_webview_window("app-shell") {
+            let _ = shell.hide();
+        }
+        // Show main chat panel
+        show_panel("main".to_string(), app.clone());
+    }
+}
 
 #[tauri::command]
 pub fn hide_window(app: AppHandle) {
+    let mode = read_app_mode();
+    if mode == "windowed" {
+        if let Some(shell) = app.get_webview_window("app-shell") {
+            shell.hide().unwrap_or_default();
+        }
+        return;
+    }
     if let Some(window) = app.get_webview_window("main") {
         window.hide().unwrap_or_default();
     }
@@ -74,6 +172,16 @@ pub fn set_debug_mode(debug: bool, app: AppHandle) {
 
 #[tauri::command]
 pub fn show_panel(label: String, app: AppHandle) {
+    let mode = read_app_mode();
+    if mode == "windowed" {
+        if let Some(shell) = app.get_webview_window("app-shell") {
+            let _ = shell.show();
+            let _ = shell.set_focus();
+            let _ = app.emit("set-active-surface", &label);
+        }
+        return;
+    }
+
     if label != "main" {
         hide_panel("main".to_string(), app.clone());
     }
@@ -185,6 +293,16 @@ pub fn log_debug(code: String, message: String) {
 
 #[tauri::command]
 pub fn open_main_chat(app: AppHandle) {
+    let mode = read_app_mode();
+    if mode == "windowed" {
+        if let Some(shell) = app.get_webview_window("app-shell") {
+            let _ = shell.show();
+            let _ = shell.set_focus();
+            let _ = app.emit("set-active-surface", "chat");
+        }
+        return;
+    }
+
     println!("[INFO-WIN-001] open_main_chat invoked");
     #[cfg(target_os = "macos")]
     {

@@ -2,7 +2,7 @@ import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers } from "lucide-react";
+import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers, Layout, AppWindow } from "lucide-react";
 import "./App.css";
 import { useDynamicBounds } from "./useDynamicBounds";
 
@@ -107,9 +107,19 @@ function ModelSelect({ value, onChange, models, disabled }: { value: string, onC
   );
 }
 
-export function SettingsApp() {
+export function SettingsApp({
+  isWindowed = false,
+  onDone,
+}: {
+  isWindowed?: boolean;
+  onDone?: () => void;
+} = {}) {
+  if (!isWindowed) {
+    useDynamicBounds("settings");
+  }
 
   const [activeTab, setActiveTab] = useState("general");
+  const [appMode, setAppMode] = useState<"widget" | "windowed">(isWindowed ? "windowed" : "widget");
   const [buttons, setButtons] = useState(() => {
     const saved = localStorage.getItem("buttonConfigs");
     return saved ? JSON.parse(saved) : [
@@ -135,9 +145,6 @@ export function SettingsApp() {
     localStorage.setItem("customTags", JSON.stringify(newTags));
   };
 
-
-  useDynamicBounds("settings");
-
   const [openRouterKey, setOpenRouterKey] = useState("");
   const [keyUsage, setKeyUsage] = useState<number | null>(null);
   const [keyLimit, setKeyLimit] = useState<number | null>(null);
@@ -149,6 +156,19 @@ export function SettingsApp() {
 
   const [allModels, setAllModels] = useState<OpenRouterModel[]>([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+
+  useEffect(() => {
+    invoke<string>("get_app_mode").then((mode) => {
+      if (mode === "windowed" || mode === "widget") {
+        setAppMode(mode);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleModeChange = async (newMode: "widget" | "windowed") => {
+    setAppMode(newMode);
+    await invoke("set_app_mode", { mode: newMode });
+  };
 
   useEffect(() => {
     setOpenRouterKey(localStorage.getItem("openRouterKey") || "");
@@ -222,47 +242,75 @@ export function SettingsApp() {
 
   const simulateLLMResponse = async () => {
     // We emit an event to the main window to simulate a response
-        await emit("simulate-llm");
-        await invoke("hide_panel", { label: "settings" });
+    await emit("simulate-llm");
+    if (!isWindowed) {
+      await invoke("hide_panel", { label: "settings" });
+    }
   };
 
   const testCaptureScreen = async () => {
     try {
-                  const base64Img = await invoke<string>("capture_screen");
+      const base64Img = await invoke<string>("capture_screen");
       await emit("add-message", { 
         role: "assistant", 
         content: `**Screenshot Captured!**\n\n![Screenshot](${base64Img})` 
       });
-      await invoke("hide_panel", { label: "settings" });
+      if (!isWindowed) {
+        await invoke("hide_panel", { label: "settings" });
+      }
     } catch (e) {
       alert("Capture failed: " + e);
     }
   };
 
   return (
-    <div id="settings-window" className="glass" style={{ width: "480px", height: "fit-content", minHeight: "400px", display: "flex", flexDirection: "column", padding: "16px", boxSizing: "border-box" }}>
-      {/* Drag handle for the whole window */}
-      <div 
-        data-tauri-drag-region 
-        style={{ position: "absolute", top: 0, left: 0, right: 0, height: "40px", cursor: "grab", zIndex: 100 }} 
-        onMouseDown={(e) => {
-          if (e.buttons === 1 && !(e.target as HTMLElement).closest('button, input, select')) {
-            getCurrentWindow().startDragging();
-          }
-        }}
-      />
+    <div
+      id="settings-window"
+      className={isWindowed ? "windowed-pane" : "glass"}
+      style={{
+        width: isWindowed ? "100%" : "480px",
+        maxWidth: isWindowed ? "680px" : undefined,
+        margin: isWindowed ? "0 auto" : undefined,
+        height: isWindowed ? "100%" : "fit-content",
+        minHeight: "400px",
+        display: "flex",
+        flexDirection: "column",
+        padding: "16px",
+        boxSizing: "border-box",
+        position: "relative",
+      }}
+    >
+      {/* Drag handle for widget mode */}
+      {!isWindowed && (
+        <div 
+          data-tauri-drag-region 
+          style={{ position: "absolute", top: 0, left: 0, right: 0, height: "40px", cursor: "grab", zIndex: 100 }} 
+          onMouseDown={(e) => {
+            if (e.buttons === 1 && !(e.target as HTMLElement).closest('button, input, select')) {
+              getCurrentWindow().startDragging();
+            }
+          }}
+        />
+      )}
       <div 
         id="settings" 
-        style={{ border: "none", boxShadow: "none", width: "100%", height: "fit-content", paddingTop: "30px", margin: 0, padding: 0 }}
+        style={{ border: "none", boxShadow: "none", width: "100%", height: "100%", paddingTop: isWindowed ? "8px" : "30px", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}
         onMouseEnter={() => { 
-          invoke("focus_panel", { label: "settings" }).catch(console.error)
+          if (!isWindowed) {
+            invoke("focus_panel", { label: "settings" }).catch(console.error);
+          }
         }} 
       >
         <div className="s-head">
           <div className="s-title">Settings</div>
-          <button id="s-close" className="s-close" onClick={async () => {
-                        await invoke("hide_panel", { label: "settings" });
-          }} style={{ zIndex: 101 }}>Done</button>
+          {!isWindowed && (
+            <button id="s-close" className="s-close" onClick={async () => {
+              await invoke("hide_panel", { label: "settings" });
+            }} style={{ zIndex: 101 }}>Done</button>
+          )}
+          {isWindowed && onDone && (
+            <button className="s-close" onClick={onDone} style={{ zIndex: 101 }}>Done</button>
+          )}
         </div>
 
         <div className="s-tabs" style={{ zIndex: 101, position: "relative" }}>
@@ -282,10 +330,60 @@ export function SettingsApp() {
             )}
         </div>
 
-        <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "12px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101 }}>
+        <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "14px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101 }}>
             
             {activeTab === 'general' && (
               <>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>App Window Mode</label>
+                  <div style={{ display: "flex", gap: "8px", background: "rgba(0,0,0,0.25)", padding: "4px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange("widget")}
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        padding: "8px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: appMode === "widget" ? "rgba(255,255,255,0.12)" : "transparent",
+                        color: appMode === "widget" ? "#fff" : "var(--tx-mut)",
+                        fontSize: "12px",
+                        fontWeight: appMode === "widget" ? 600 : 400,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <Layout size={14} /> Floating Widget
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange("windowed")}
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        padding: "8px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: appMode === "windowed" ? "rgba(255,255,255,0.12)" : "transparent",
+                        color: appMode === "windowed" ? "#fff" : "var(--tx-mut)",
+                        fontSize: "12px",
+                        fontWeight: appMode === "windowed" ? 600 : 400,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <AppWindow size={14} /> Full Windowed
+                    </button>
+                  </div>
+                </div>
+
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>OpenRouter API Key</label>

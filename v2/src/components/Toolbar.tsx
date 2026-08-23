@@ -1,4 +1,4 @@
-import { Square, X, ChevronDown } from "lucide-react";
+import { Square, X, ChevronDown, AppWindow } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -28,6 +28,10 @@ export function Toolbar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
         });
       }}>
         <LogoIcon size={16} />
+      </button>
+      <div className="tb-divider"></div>
+      <button className="tb-mode" id="mode-btn" title="Switch to Full Windowed Mode" onClick={() => invoke("set_app_mode", { mode: "windowed" })}>
+        <AppWindow size={14} />
       </button>
       <div className="tb-divider"></div>
       <button className={`tb-hide ${isCollapsed ? "collapsed" : ""}`} id="hide-btn" onClick={() => setIsCollapsed(!isCollapsed)}>

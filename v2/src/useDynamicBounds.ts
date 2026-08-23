@@ -6,6 +6,8 @@ export function useDynamicBounds(label: string = "main") {
   const rafId = useRef<number | null>(null);
 
   useEffect(() => {
+    if (label === "app-shell") return;
+
     const el = document.body;
     if (!el) return;
 

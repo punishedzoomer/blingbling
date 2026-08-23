@@ -8,7 +8,13 @@ import { NotebookList } from "./components/NotebookList";
 import { ConversationList, extractMessages } from "./components/ConversationList";
 import { ConfirmModal } from "./components/ConfirmModal";
 
-export function HistoryApp() {
+export function HistoryApp({
+  isWindowed = false,
+  onOpenChat,
+}: {
+  isWindowed?: boolean;
+  onOpenChat?: () => void;
+} = {}) {
   const [sessions, setSessions] = useState<any[]>([]);
   const [trashSessions, setTrashSessions] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>(() => {
@@ -148,23 +154,34 @@ export function HistoryApp() {
       notebookId: session.data?.notebookId,
       title: session.data?.title,
     });
-    await invoke("open_main_chat");
+    if (onOpenChat) {
+      onOpenChat();
+    } else {
+      await invoke("open_main_chat");
+    }
   };
 
   return (
     <div
       id="history-window"
+      className={isWindowed ? "windowed-pane" : undefined}
       style={{
-        width: "100vw",
-        height: "100vh",
+        width: isWindowed ? "100%" : "100vw",
+        maxWidth: isWindowed ? "800px" : undefined,
+        margin: isWindowed ? "0 auto" : undefined,
+        height: isWindowed ? "100%" : "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
         overflow: "hidden",
-        pointerEvents: "none",
+        pointerEvents: isWindowed ? "auto" : "none",
         position: "relative",
       }}
-      onMouseEnter={() => invoke("focus_panel", { label: "history" }).catch(console.error)}
+      onMouseEnter={() => {
+        if (!isWindowed) {
+          invoke("focus_panel", { label: "history" }).catch(console.error);
+        }
+      }}
     >
       <div
         id="transcript-sidebar"
@@ -242,14 +259,25 @@ export function HistoryApp() {
               title="New Chat"
               onClick={async () => {
                 await emit("reset-session");
-                await invoke("hide_panel", { label: "history" });
+                if (onOpenChat) {
+                  onOpenChat();
+                } else {
+                  await invoke("hide_panel", { label: "history" });
+                }
               }}
             >
               <PenSquare size={16} />
             </button>
-            <button className="s-close" onClick={() => invoke("hide_panel", { label: "history" })}>
-              Done
-            </button>
+            {!isWindowed && (
+              <button className="s-close" onClick={() => invoke("hide_panel", { label: "history" })}>
+                Done
+              </button>
+            )}
+            {isWindowed && onOpenChat && (
+              <button className="s-close" onClick={onOpenChat}>
+                Done
+              </button>
+            )}
           </div>
         </div>
 

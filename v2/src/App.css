@@ -1011,3 +1011,221 @@ button:focus { outline: none; }
 .katex { color: var(--tx-1, #e8e8e8); font-size: 1em; }
 .katex-display { overflow-x: auto; overflow-y: hidden; padding: 8px 0; }
 .katex-display > .katex { text-align: left; }
+
+/* ============================ Full Windowed Mode ============================ */
+body[data-mode="windowed"],
+html:has(body[data-mode="windowed"]),
+body[data-mode="windowed"] #root {
+  width: 100% !important;
+  height: 100% !important;
+  background: #101216 !important;
+}
+
+.app-shell-root {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: #101216;
+  color: var(--tx-1);
+  overflow: hidden;
+  font-family: var(--font);
+}
+
+.app-shell-sidebar {
+  width: 220px;
+  min-width: 220px;
+  height: 100%;
+  background: rgba(18, 20, 26, 0.98);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 20;
+}
+
+.sidebar-drag-region {
+  height: 38px;
+  width: 100%;
+  -webkit-app-region: drag;
+}
+
+.sidebar-header {
+  padding: 0 16px 14px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.brand-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 10px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.sidebar-nav-item.active {
+  background: rgba(60, 131, 245, 0.16);
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.sidebar-nav-icon {
+  flex-shrink: 0;
+}
+
+.sidebar-footer {
+  padding: 12px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-mode-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--tx-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.app-shell-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #13151b;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-shell-topbar {
+  height: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 0 80px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-app-region: drag;
+}
+
+.app-shell-title-pill {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.app-shell-main-area {
+  flex: 1;
+  height: calc(100% - 44px);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.windowed-app {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 920px !important;
+  margin: 0 auto !important;
+  padding: 16px 20px !important;
+  pointer-events: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  box-sizing: border-box !important;
+}
+
+.windowed-panel-wrap {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+}
+
+.windowed-panel {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+  background: rgba(22, 24, 31, 0.85) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.windowed-pane {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  pointer-events: auto !important;
+  overflow: hidden;
+}
+
+.windowed-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+

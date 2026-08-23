@@ -45,6 +45,8 @@ pub fn run() {
             commands::window::unfocus_panel,
             commands::window::open_main_chat,
             commands::window::log_debug,
+            commands::window::get_app_mode,
+            commands::window::set_app_mode,
             commands::file::pick_files
         ])
         .setup(|app| {
@@ -52,49 +54,67 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 websocket::start_server(ws_handle).await;
             });
+
+            let initial_mode = commands::window::read_app_mode();
             
             #[cfg(target_os = "macos")]
             {
                 use objc::{sel, sel_impl};
-
                 use tauri_nspanel::WebviewWindowExt;
                 
-                // 1. Make app act as an accessory
-                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                if initial_mode == "windowed" {
+                    app.set_activation_policy(tauri::ActivationPolicy::Regular);
+                } else {
+                    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                }
                 
-                // Swizzle all windows into NSPanels
-                for window in app.webview_windows().values() {
-                    let panel = window.to_panel().unwrap();
-                    
-                    let behavior = cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces |
-                                   cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary |
-                                   cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary;
-                    
-                    panel.set_collection_behaviour(behavior);
-                    panel.set_level(1000); // NSScreenSaverWindowLevel
-                    
-                    let ns_window = window.ns_window().unwrap() as cocoa::base::id;
-                    unsafe {
-                        let _: () = objc::msg_send![ns_window, setSharingType: 0];
-                        let _: () = objc::msg_send![ns_window, setAcceptsMouseMovedEvents:true];
-                        let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
-                        let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
-                        let clear_color: cocoa::base::id = objc::msg_send![objc::class!(NSColor), clearColor];
-                        let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
-                        let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
-
+                // Swizzle all auxiliary/main windows into NSPanels, skipping app-shell
+                for (label, window) in app.webview_windows() {
+                    if label == "app-shell" {
+                        continue;
                     }
 
-                    // Only show the main panel by default
-                    if window.label() == "main" {
-                        panel.show();
+                    if let Ok(panel) = window.to_panel() {
+                        let behavior = cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                       cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary |
+                                       cocoa::appkit::NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary;
+                        
+                        panel.set_collection_behaviour(behavior);
+                        panel.set_level(1000); // NSScreenSaverWindowLevel
+                        
+                        let ns_window = window.ns_window().unwrap() as cocoa::base::id;
+                        unsafe {
+                            let _: () = objc::msg_send![ns_window, setSharingType: 0];
+                            let _: () = objc::msg_send![ns_window, setAcceptsMouseMovedEvents:true];
+                            let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
+                            let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
+                            let clear_color: cocoa::base::id = objc::msg_send![objc::class!(NSColor), clearColor];
+                            let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
+                            let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
+                        }
+
+                        // Only show the main panel by default when in widget mode
+                        if label == "main" && initial_mode != "windowed" {
+                            panel.show();
+                        }
+                    }
+                }
+
+                if initial_mode == "windowed" {
+                    if let Some(shell) = app.get_webview_window("app-shell") {
+                        let _ = shell.show();
+                        let _ = shell.set_focus();
                     }
                 }
             }
 
             #[cfg(not(target_os = "macos"))]
             {
-                if let Some(window) = app.get_webview_window("main") {
+                if initial_mode == "windowed" {
+                    if let Some(shell) = app.get_webview_window("app-shell") {
+                        shell.show().unwrap();
+                    }
+                } else if let Some(window) = app.get_webview_window("main") {
                     window.show().unwrap();
                 }
             }
@@ -103,7 +123,10 @@ pub fn run() {
         })
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                if window.label() != "main" {
+                if window.label() == "app-shell" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                } else if window.label() != "main" {
                     api.prevent_close();
                     #[cfg(target_os = "macos")]
                     {

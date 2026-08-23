@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import App from "./App";
+import { AppShell } from "./AppShell";
 import { SettingsApp } from "./SettingsApp";
 import { HistoryApp } from "./HistoryApp";
 import { SnipApp } from "./SnipApp";
@@ -17,7 +18,9 @@ function Router() {
 
   if (!label) return null;
 
-  if (label === "settings") {
+  if (label === "app-shell") {
+    return <AppShell />;
+  } else if (label === "settings") {
     return <SettingsApp />;
   } else if (label === "history") {
     return <HistoryApp />;

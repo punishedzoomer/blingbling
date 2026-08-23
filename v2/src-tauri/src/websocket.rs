@@ -24,7 +24,7 @@ pub async fn start_server(app: AppHandle) {
                         if msg.is_text() {
                             let text = msg.to_text().unwrap();
                             // When the extension sends a Base64 image, we forward it to the main React frontend
-                            if let Err(e) = app_handle.emit_to("main", "extension-snip-received", text) {
+                            if let Err(e) = app_handle.emit("extension-snip-received", text) {
                                 eprintln!("Failed to emit extension snip: {}", e);
                             }
                         }

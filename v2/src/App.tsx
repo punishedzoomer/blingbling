@@ -27,7 +27,7 @@ export interface Message {
   attachments?: Attachment[];
 }
 
-function App() {
+function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState(() => Date.now().toString());
   const [sessionTitle, setSessionTitle] = useState<string | null>(null);
@@ -80,7 +80,9 @@ function App() {
     buildSendPayload,
   } = useAttachments();
 
-  useDynamicBounds("main");
+  if (!isWindowed) {
+    useDynamicBounds("main");
+  }
 
   useEffect(() => {
     localStorage.setItem("aiMode", aiMode);
@@ -448,16 +450,17 @@ function App() {
   return (
     <div
       id="app"
+      className={isWindowed ? "windowed-app" : undefined}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <Toolbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      {!isWindowed && <Toolbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />}
 
-      <div id="panel-wrap">
-        <span id="live-dot" className="off"></span>
-        <div id="panel" className={`glass no-drag ${isCollapsed ? "collapsed" : ""}`}>
+      <div id="panel-wrap" className={isWindowed ? "windowed-panel-wrap" : undefined}>
+        {!isWindowed && <span id="live-dot" className="off"></span>}
+        <div id="panel" className={`${isWindowed ? "windowed-panel" : "glass"} no-drag ${isCollapsed ? "collapsed" : ""}`}>
           <div id="panel-columns">
             <div id="panel-main" style={{ position: "relative" }}>
               <DropZoneOverlay isDragging={isDragging} />

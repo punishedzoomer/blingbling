@@ -30,7 +30,15 @@ function saveNotebooks(notebooks: any[]) {
   localStorage.setItem("customNotebooks", JSON.stringify(notebooks));
 }
 
-export function NotebookApp() {
+export function NotebookApp({
+  isWindowed = false,
+  onOpenChat,
+  onOpenHistory,
+}: {
+  isWindowed?: boolean;
+  onOpenChat?: () => void;
+  onOpenHistory?: () => void;
+} = {}) {
   const [notebook, setNotebook] = useState<any | null>(null);
   const [allSessions, setAllSessions] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>(() => {
@@ -184,6 +192,10 @@ export function NotebookApp() {
   };
 
   const handleDone = async () => {
+    if (onOpenHistory) {
+      onOpenHistory();
+      return;
+    }
     await invoke("hide_notebook");
     await invoke("show_panel", { label: "history" });
   };
@@ -200,8 +212,12 @@ export function NotebookApp() {
     }
 
     await emit("history-sync", null);
-    await invoke("hide_notebook");
-    await invoke("show_panel", { label: "history" });
+    if (onOpenHistory) {
+      onOpenHistory();
+    } else {
+      await invoke("hide_notebook");
+      await invoke("show_panel", { label: "history" });
+    }
   };
 
   const assignSession = async (sessionId: string) => {
@@ -292,7 +308,11 @@ export function NotebookApp() {
         message: "Invoking open_main_chat...",
       }).catch(() => {});
 
-      await invoke("open_main_chat");
+      if (onOpenChat) {
+        onOpenChat();
+      } else {
+        await invoke("open_main_chat");
+      }
 
       invoke("log_debug", {
         code: "INFO-NB-004",
@@ -324,7 +344,11 @@ export function NotebookApp() {
         title: null,
       });
 
-      await invoke("open_main_chat");
+      if (onOpenChat) {
+        onOpenChat();
+      } else {
+        await invoke("open_main_chat");
+      }
     } catch (err: any) {
       invoke("log_debug", {
         code: "ERR-NB-010",
@@ -336,17 +360,24 @@ export function NotebookApp() {
   return (
     <div
       id="notebook-window"
+      className={isWindowed ? "windowed-pane" : undefined}
       style={{
-        width: "100vw",
-        height: "100vh",
+        width: isWindowed ? "100%" : "100vw",
+        maxWidth: isWindowed ? "800px" : undefined,
+        margin: isWindowed ? "0 auto" : undefined,
+        height: isWindowed ? "100%" : "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
         overflow: "hidden",
-        pointerEvents: "none",
+        pointerEvents: isWindowed ? "auto" : "none",
         position: "relative",
       }}
-      onMouseEnter={() => invoke("focus_panel", { label: "notebook" }).catch(console.error)}
+      onMouseEnter={() => {
+        if (!isWindowed) {
+          invoke("focus_panel", { label: "notebook" }).catch(console.error);
+        }
+      }}
     >
       <div
         style={{

@@ -13,6 +13,7 @@ body[data-mode="windowed"] #root {
 
 .windowed-shell-root {
   display: flex;
+  flex-direction: column;
   width: 100vw;
   height: 100vh;
   background: #111216;
@@ -22,13 +23,104 @@ body[data-mode="windowed"] #root {
   user-select: none;
 }
 
+.windowed-shell-body {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - 48px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ---------------- Unified TitleBar ---------------- */
+
+.windowed-titlebar {
+  height: 48px;
+  min-height: 48px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 0 78px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #15171e;
+  user-select: none;
+  cursor: default;
+  box-sizing: border-box;
+  z-index: 20;
+}
+
+.windowed-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.windowed-title-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.windowed-titlebar-center {
+  flex: 1;
+  height: 100%;
+}
+
+.windowed-titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.windowed-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.windowed-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.windowed-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.windowed-action-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
 /* ---------------- Sidebar ---------------- */
 
 .windowed-sidebar {
-  width: 220px;
-  min-width: 220px;
+  width: 200px;
+  min-width: 200px;
   height: 100%;
-  background: #15171e;
+  background: #14161d;
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
@@ -43,26 +135,11 @@ body[data-mode="windowed"] #root {
   min-width: 60px;
 }
 
-.windowed-sidebar-top {
-  height: 48px;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  user-select: none;
-}
-
-.windowed-sidebar.collapsed .windowed-sidebar-top {
-  height: 48px;
-  min-height: 48px;
-}
-
 .windowed-nav {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 8px 8px;
+  padding: 12px 8px;
   flex: 1;
   overflow-y: auto;
 }
@@ -111,128 +188,12 @@ body[data-mode="windowed"] #root {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.windowed-mode-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 7px 10px;
-  border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  box-sizing: border-box;
-}
-
-.windowed-sidebar.collapsed .windowed-mode-btn {
-  padding: 7px 0;
-}
-
-.windowed-mode-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* ---------------- Main Content & TitleBar ---------------- */
-
-.windowed-shell-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: #121319;
-  position: relative;
-  overflow: hidden;
-}
-
-.windowed-titlebar {
-  height: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: #15171e;
-  user-select: none;
-  cursor: default;
-}
-
-.windowed-titlebar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.windowed-title-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.windowed-titlebar-center {
-  flex: 1;
-  height: 100%;
-}
-
-.windowed-titlebar-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.windowed-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.windowed-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-.windowed-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 9px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.windowed-action-btn:hover {
-  background: rgba(255, 255, 255, 0.09);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
 /* ---------------- Surfaces Viewport ---------------- */
 
 .windowed-container {
   flex: 1;
-  height: calc(100% - 44px);
+  height: 100%;
+  background: #111216;
   overflow: hidden;
   display: flex;
   flex-direction: column;

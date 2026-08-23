@@ -16,21 +16,20 @@ export function AppShell() {
 
   return (
     <div className="windowed-shell-root">
-      <Sidebar
+      <TitleBar
         surface={surface}
-        onChange={setSurface}
-        collapsed={sidebarCollapsed}
+        setSurface={setSurface}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={toggleSidebar}
         onStartDragging={handleStartDragging}
+        onSwitchToWidget={switchToWidgetMode}
       />
 
-      <div className="windowed-shell-main">
-        <TitleBar
+      <div className="windowed-shell-body">
+        <Sidebar
           surface={surface}
-          setSurface={setSurface}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={toggleSidebar}
-          onStartDragging={handleStartDragging}
-          onSwitchToWidget={switchToWidgetMode}
+          onChange={setSurface}
+          collapsed={sidebarCollapsed}
         />
 
         <WindowedContainer surface={surface} setSurface={setSurface} />

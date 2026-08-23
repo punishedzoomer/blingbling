@@ -35,10 +35,7 @@ export function TitleBar({
 
   return (
     <header className="windowed-titlebar" onMouseDown={onStartDragging}>
-      <div
-        className="windowed-titlebar-left"
-        style={{ paddingLeft: sidebarCollapsed ? "24px" : "4px" }}
-      >
+      <div className="windowed-titlebar-left">
         <button
           type="button"
           className="windowed-icon-btn"

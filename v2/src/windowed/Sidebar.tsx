@@ -5,7 +5,6 @@ interface SidebarProps {
   surface: Surface;
   onChange: (surface: Surface) => void;
   collapsed: boolean;
-  onStartDragging: (e: React.MouseEvent) => void;
 }
 
 const navItems: { id: Surface; label: string; icon: typeof MessageSquare }[] = [
@@ -18,18 +17,11 @@ export function Sidebar({
   surface,
   onChange,
   collapsed,
-  onStartDragging,
 }: SidebarProps) {
   const isSettingsActive = surface === "settings";
 
   return (
-    <aside
-      className={`windowed-sidebar ${collapsed ? "collapsed" : ""}`}
-      onMouseDown={onStartDragging}
-    >
-      {/* Top drag/spacing clearance area for macOS traffic lights - No title/text */}
-      <div className="windowed-sidebar-top" />
-
+    <aside className={`windowed-sidebar ${collapsed ? "collapsed" : ""}`}>
       <nav className="windowed-nav" data-no-drag>
         {navItems.map((item) => {
           const Icon = item.icon;

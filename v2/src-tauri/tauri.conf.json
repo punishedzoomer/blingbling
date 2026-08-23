@@ -22,7 +22,7 @@
         "resizable": true,
         "decorations": true,
         "shadow": true,
-        "transparent": false,
+        "transparent": true,
         "alwaysOnTop": false,
         "visibleOnAllWorkspaces": false,
         "titleBarStyle": "Overlay",

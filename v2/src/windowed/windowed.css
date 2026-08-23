@@ -7,7 +7,7 @@ body[data-mode="windowed"] #root {
   height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
-  background: #111216 !important;
+  background: var(--windowed-bg) !important;
   overflow: hidden !important;
 }
 
@@ -16,7 +16,9 @@ body[data-mode="windowed"] #root {
   flex-direction: column;
   width: 100vw;
   height: 100vh;
-  background: #111216;
+  background: var(--windowed-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   color: rgba(255, 255, 255, 0.92);
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
@@ -43,7 +45,9 @@ body[data-mode="windowed"] #root {
   justify-content: space-between;
   padding: 0 16px 0 78px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: #15171e;
+  background: var(--windowed-titlebar-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   user-select: none;
   cursor: default;
   box-sizing: border-box;
@@ -120,7 +124,9 @@ body[data-mode="windowed"] #root {
   width: 200px;
   min-width: 200px;
   height: 100%;
-  background: #14161d;
+  background: var(--windowed-sidebar-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
@@ -193,7 +199,7 @@ body[data-mode="windowed"] #root {
 .windowed-container {
   flex: 1;
   height: 100%;
-  background: #111216;
+  background: transparent;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -357,7 +363,9 @@ body[data-mode="windowed"] #root {
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  background: rgba(22, 25, 33, 0.96) !important;
+  background: var(--windowed-composer-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 14px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
@@ -383,10 +391,10 @@ body[data-mode="windowed"] #root {
 }
 
 .windowed-card {
-  background: rgba(25, 27, 35, 0.95) !important;
+  background: var(--windowed-card-bg) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 12px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
 }

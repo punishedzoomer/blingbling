@@ -158,7 +158,13 @@ export function SettingsApp({
     setGlassOpacity(val);
     localStorage.setItem("glassOpacity", val.toString());
     const alpha = Math.max(0.1, Math.min(1.0, val / 100));
-    document.documentElement.style.setProperty("--glass-bg", `rgba(20, 22, 28, ${alpha})`);
+    const docStyle = document.documentElement.style;
+    docStyle.setProperty("--glass-bg", `rgba(20, 22, 28, ${alpha})`);
+    docStyle.setProperty("--windowed-bg", `rgba(17, 18, 22, ${alpha})`);
+    docStyle.setProperty("--windowed-titlebar-bg", `rgba(21, 23, 30, ${alpha})`);
+    docStyle.setProperty("--windowed-sidebar-bg", `rgba(20, 22, 29, ${alpha})`);
+    docStyle.setProperty("--windowed-card-bg", `rgba(25, 27, 35, ${alpha})`);
+    docStyle.setProperty("--windowed-composer-bg", `rgba(22, 25, 33, ${Math.min(1, alpha + 0.02)})`);
     emit("glass-opacity-changed", { opacity: val }).catch(console.error);
   };
 
@@ -463,7 +469,7 @@ export function SettingsApp({
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-1)", margin: 0 }}>
-                      Widget Glass Opacity
+                      App Glass Opacity (Widget & Windowed)
                     </label>
                     <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent)" }}>
                       {glassOpacity}%

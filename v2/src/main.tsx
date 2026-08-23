@@ -12,10 +12,17 @@ import { NotebookApp } from "./NotebookApp";
 
 function applyGlassOpacity(opacityPercent: number) {
   const alpha = Math.max(0.1, Math.min(1.0, opacityPercent / 100));
-  document.documentElement.style.setProperty(
-    "--glass-bg",
-    `rgba(20, 22, 28, ${alpha})`
-  );
+  const docStyle = document.documentElement.style;
+  
+  // Widget tokens
+  docStyle.setProperty("--glass-bg", `rgba(20, 22, 28, ${alpha})`);
+  
+  // Windowed mode tokens
+  docStyle.setProperty("--windowed-bg", `rgba(17, 18, 22, ${alpha})`);
+  docStyle.setProperty("--windowed-titlebar-bg", `rgba(21, 23, 30, ${alpha})`);
+  docStyle.setProperty("--windowed-sidebar-bg", `rgba(20, 22, 29, ${alpha})`);
+  docStyle.setProperty("--windowed-card-bg", `rgba(25, 27, 35, ${alpha})`);
+  docStyle.setProperty("--windowed-composer-bg", `rgba(22, 25, 33, ${Math.min(1, alpha + 0.02)})`);
 }
 
 // Initial opacity from localStorage

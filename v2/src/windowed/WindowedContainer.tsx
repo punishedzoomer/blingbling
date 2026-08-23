@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import App from "../App";
 import { HistoryApp } from "../HistoryApp";
 import { NotebookApp } from "../NotebookApp";
@@ -18,6 +18,9 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
     return saved ? parseInt(saved, 10) : null;
   });
 
+  const visitedSurfaces = useRef<Set<Surface>>(new Set(["chat"]));
+  visitedSurfaces.current.add(surface);
+
   const handleSelectNotebook = useCallback(
     (id: number) => {
       setActiveNotebookId(id);
@@ -29,7 +32,7 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
 
   return (
     <main className="windowed-container">
-      {/* Persistently mounted Chat surface */}
+      {/* 1. Persistently mounted Chat surface */}
       <div
         className="windowed-surface-chat"
         style={{ display: surface === "chat" ? "flex" : "none" }}
@@ -37,9 +40,12 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
         <App isWindowed={true} />
       </div>
 
-      {/* Auxiliary surfaces */}
-      {surface === "history" && (
-        <div className="windowed-surface-aux">
+      {/* 2. History surface (lazy-mounted on first visit, then cached) */}
+      {visitedSurfaces.current.has("history") && (
+        <div
+          className="windowed-surface-aux"
+          style={{ display: surface === "history" ? "flex" : "none" }}
+        >
           <HistoryApp
             isWindowed={true}
             onOpenChat={() => setSurface("chat")}
@@ -48,8 +54,12 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
         </div>
       )}
 
-      {surface === "notebook" && (
-        <div className="windowed-surface-aux">
+      {/* 3. Notebooks surface (lazy-mounted on first visit, then cached) */}
+      {visitedSurfaces.current.has("notebook") && (
+        <div
+          className="windowed-surface-aux"
+          style={{ display: surface === "notebook" ? "flex" : "none" }}
+        >
           {activeNotebookId ? (
             <NotebookApp
               isWindowed={true}
@@ -78,14 +88,22 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
         </div>
       )}
 
-      {surface === "settings" && (
-        <div className="windowed-surface-aux">
+      {/* 4. Settings surface (lazy-mounted on first visit, then cached) */}
+      {visitedSurfaces.current.has("settings") && (
+        <div
+          className="windowed-surface-aux"
+          style={{ display: surface === "settings" ? "flex" : "none" }}
+        >
           <SettingsApp isWindowed={true} onDone={() => setSurface("chat")} />
         </div>
       )}
 
-      {surface === "tutorial" && (
-        <div className="windowed-surface-aux">
+      {/* 5. Tutorial surface (lazy-mounted on first visit, then cached) */}
+      {visitedSurfaces.current.has("tutorial") && (
+        <div
+          className="windowed-surface-aux"
+          style={{ display: surface === "tutorial" ? "flex" : "none" }}
+        >
           <TutorialApp isWindowed={true} onDone={() => setSurface("chat")} />
         </div>
       )}

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { emit, listen } from "@tauri-apps/api/event";
+import { emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Clock, Book, Trash2, PenSquare } from "lucide-react";
 import "./App.css";
 import { NotebookList } from "./components/NotebookList";
 import { ConversationList, extractMessages } from "./components/ConversationList";
 import { ConfirmModal } from "./components/ConfirmModal";
+import { useSessionsStore } from "./utils/sessionStore";
 
 export function HistoryApp({
   isWindowed = false,
@@ -19,8 +20,15 @@ export function HistoryApp({
   onOpenChat?: () => void;
   onSelectNotebook?: (id: number) => void;
 } = {}) {
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [trashSessions, setTrashSessions] = useState<any[]>([]);
+  const {
+    sessions,
+    trashSessions,
+    deleteSessionToTrash,
+    restoreSessionFromTrash,
+    permanentlyDeleteSession,
+    emptyAllTrash,
+  } = useSessionsStore();
+
   const [tags, setTags] = useState<any[]>(() => {
     const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
@@ -30,50 +38,7 @@ export function HistoryApp({
   const [trashSearchQuery, setTrashSearchQuery] = useState("");
   const [showEmptyTrashConfirm, setShowEmptyTrashConfirm] = useState(false);
 
-  const loadSessionsData = () => {
-    try {
-      const saved = localStorage.getItem("customTags");
-      if (saved) {
-        setTags(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error("Failed to parse tags", e);
-    }
-
-    invoke("load_sessions")
-      .then((data: any) => {
-        const sorted = (data || []).sort((a: any, b: any) => {
-          const getTime = (s: any) => {
-            const idStr = String(s.id);
-            if (idStr.length === 13 && /^1\d{12}$/.test(idStr)) return parseInt(idStr, 10);
-            if (s.data && s.data.updated_at) return new Date(s.data.updated_at).getTime();
-            return 0;
-          };
-          return getTime(b) - getTime(a);
-        });
-        setSessions(sorted);
-      })
-      .catch(console.error);
-
-    invoke("load_trash")
-      .then((data: any) => {
-        const sorted = (data || []).sort((a: any, b: any) => {
-          const getTime = (s: any) => {
-            const idStr = String(s.id);
-            if (idStr.length === 13 && /^1\d{12}$/.test(idStr)) return parseInt(idStr, 10);
-            if (s.data && s.data.updated_at) return new Date(s.data.updated_at).getTime();
-            return 0;
-          };
-          return getTime(b) - getTime(a);
-        });
-        setTrashSessions(sorted);
-      })
-      .catch(console.error);
-  };
-
   useEffect(() => {
-    loadSessionsData();
-
     const handleStorage = (e: StorageEvent) => {
       if ((e.key === "customTags" || e.key === "customWorkflows") && e.newValue) {
         try {
@@ -84,71 +49,27 @@ export function HistoryApp({
       }
     };
     window.addEventListener("storage", handleStorage);
-
-    let debounceTimer: any = null;
-    const unlisten = listen("history-sync", () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        loadSessionsData();
-      }, 150);
-    });
-
     return () => {
       window.removeEventListener("storage", handleStorage);
-      if (debounceTimer) clearTimeout(debounceTimer);
-      unlisten.then((f) => f());
     };
   }, []);
 
   const handleDeleteToTrash = async (e: any, id: string) => {
     e.stopPropagation();
-    const item = sessions.find((s) => s.id === id);
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-    if (item) {
-      setTrashSessions((prev) => [item, ...prev]);
-    }
-    try {
-      await invoke("delete_session", { sessionId: id });
-    } catch (err) {
-      console.error("Failed to delete session to trash:", err);
-      loadSessionsData();
-    }
+    await deleteSessionToTrash(id);
   };
 
   const handleRestoreFromTrash = async (id: string) => {
-    const item = trashSessions.find((s) => s.id === id);
-    setTrashSessions((prev) => prev.filter((s) => s.id !== id));
-    if (item) {
-      setSessions((prev) => [item, ...prev]);
-    }
-    try {
-      await invoke("restore_session", { sessionId: id });
-      await emit("history-sync", null);
-    } catch (err) {
-      console.error("Failed to restore session from trash:", err);
-      loadSessionsData();
-    }
+    await restoreSessionFromTrash(id);
   };
 
   const handlePermanentDelete = async (id: string) => {
-    setTrashSessions((prev) => prev.filter((s) => s.id !== id));
-    try {
-      await invoke("permanently_delete_session", { sessionId: id });
-    } catch (err) {
-      console.error("Failed to permanently delete session:", err);
-      loadSessionsData();
-    }
+    await permanentlyDeleteSession(id);
   };
 
   const handleEmptyTrash = async () => {
-    setTrashSessions([]);
     setShowEmptyTrashConfirm(false);
-    try {
-      await invoke("empty_trash");
-    } catch (err) {
-      console.error("Failed to empty trash:", err);
-      loadSessionsData();
-    }
+    await emptyAllTrash();
   };
 
   const handleSelectSession = async (session: any) => {

@@ -83,6 +83,32 @@ export function getSessionTimestamp(session: any): number {
   return 0;
 }
 
+const ONE_DAY_MS = 86400000;
+let lastMidnightCalc = 0;
+let cachedStartOfToday = 0;
+let cachedStartOfYesterday = 0;
+let cachedStartOfWeek = 0;
+let cachedStartOfMonth = 0;
+let cachedStartOfYear = 0;
+
+function updateDateBoundaries() {
+  const now = Date.now();
+  if (now - lastMidnightCalc < 60000) return;
+  lastMidnightCalc = now;
+
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  cachedStartOfToday = d.getTime();
+  cachedStartOfYesterday = cachedStartOfToday - ONE_DAY_MS;
+  cachedStartOfWeek = cachedStartOfToday - (d.getDay() === 0 ? 6 : d.getDay() - 1) * ONE_DAY_MS;
+
+  d.setDate(1);
+  cachedStartOfMonth = d.getTime();
+
+  d.setMonth(0);
+  cachedStartOfYear = d.getTime();
+}
+
 export function formatTime(ts: number): string {
   if (!ts) return "";
   const d = new Date(ts);
@@ -91,36 +117,20 @@ export function formatTime(ts: number): string {
 
 export function getRelativeDay(ts: number): string {
   if (!ts) return "Earlier";
+  updateDateBoundaries();
+
+  if (ts >= cachedStartOfToday) return "Today";
+  if (ts >= cachedStartOfYesterday) return "Yesterday";
+  if (ts >= cachedStartOfWeek) return "This Week";
+  if (ts >= cachedStartOfMonth) return "This Month";
+
   const d = new Date(ts);
-  const now = new Date();
-
-  const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffDays = Math.floor((nowDate.getTime() - dDate.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return "This Week";
-
-  const isCurrentYear = d.getFullYear() === now.getFullYear();
-  const isCurrentMonth = isCurrentYear && d.getMonth() === now.getMonth();
-
-  if (isCurrentMonth) return "This Month";
-
-  let lastMonth = now.getMonth() - 1;
-  let lastMonthYear = now.getFullYear();
-  if (lastMonth < 0) {
-    lastMonth = 11;
-    lastMonthYear -= 1;
-  }
-  if (d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear) return "Last Month";
-
+  const isCurrentYear = ts >= cachedStartOfYear;
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
   if (isCurrentYear) return monthNames[d.getMonth()];
-
   return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
 }
 

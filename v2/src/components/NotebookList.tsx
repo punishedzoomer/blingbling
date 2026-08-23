@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { BookOpen, Layers, Plus, Search, ChevronRight, X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { syncNotebookTag } from "../utils/notebookTags";
+import { useSessionsStore } from "../utils/sessionStore";
 
 export function NotebookList({
   setActiveTab,
@@ -11,11 +11,11 @@ export function NotebookList({
   setActiveTab?: (tab: "history" | "notebooks") => void;
   onSelectNotebook?: (id: number) => void;
 }) {
+  const { sessions } = useSessionsStore();
   const [notebooks, setNotebooks] = useState<any[]>(() => {
     const saved = localStorage.getItem("customNotebooks");
     return saved ? JSON.parse(saved) : [];
   });
-  const [sessions, setSessions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const activeNotebookId = parseInt(localStorage.getItem("activeNotebookId") || "0", 10);
 
@@ -23,15 +23,7 @@ export function NotebookList({
     localStorage.setItem("customNotebooks", JSON.stringify(notebooks));
   }, [notebooks]);
 
-  const loadSessionsData = () => {
-    invoke("load_sessions")
-      .then((data: any) => setSessions(data || []))
-      .catch(console.error);
-  };
-
   useEffect(() => {
-    loadSessionsData();
-
     const onStorage = (e: StorageEvent) => {
       if (e.key === "customNotebooks" && e.newValue) {
         try {
@@ -42,19 +34,8 @@ export function NotebookList({
       }
     };
     window.addEventListener("storage", onStorage);
-
-    let debounceTimer: any = null;
-    const unlistenSync = listen("history-sync", () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        loadSessionsData();
-      }, 150);
-    });
-
     return () => {
       window.removeEventListener("storage", onStorage);
-      if (debounceTimer) clearTimeout(debounceTimer);
-      unlistenSync.then((f) => f());
     };
   }, []);
 
@@ -85,8 +66,19 @@ export function NotebookList({
     }
   };
 
+  const chatCounts = useMemo(() => {
+    const map = new Map<number, number>();
+    sessions.forEach((s) => {
+      const nbId = s.data?.notebookId;
+      if (nbId) {
+        map.set(Number(nbId), (map.get(Number(nbId)) || 0) + 1);
+      }
+    });
+    return map;
+  }, [sessions]);
+
   const getNotebookChatCount = (id: number): number => {
-    return sessions.filter((s: any) => s.data?.notebookId === id).length;
+    return chatCounts.get(Number(id)) || 0;
   };
 
   const filteredNotebooks = useMemo(() => {

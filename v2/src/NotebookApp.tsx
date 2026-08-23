@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
-import { emit, listen } from "@tauri-apps/api/event";
+import { emit } from "@tauri-apps/api/event";
 import { BookOpen, Pencil, Trash2, Check, X, Plus, History, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import "./App.css";
 import { syncNotebookTag, updateNotebookTagName } from "./utils/notebookTags";
 import { ConfirmModal } from "./components/ConfirmModal";
+import { useSessionsStore } from "./utils/sessionStore";
 import {
   ConversationList,
   extractMessages,
   normalizeSessionData,
-  getSessionTimestamp,
 } from "./components/ConversationList";
 
 function getNotebookId(): number | null {
@@ -43,8 +43,8 @@ export function NotebookApp({
   onOpenHistory?: () => void;
   onBack?: () => void;
 } = {}) {
+  const { sessions: allSessions, updateSessionData } = useSessionsStore();
   const [notebook, setNotebook] = useState<any | null>(null);
-  const [allSessions, setAllSessions] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("customTags") || "[]");
@@ -68,17 +68,6 @@ export function NotebookApp({
     }
   }, []);
 
-  const loadAllSessions = useCallback(() => {
-    invoke("load_sessions")
-      .then((data: any) => {
-        const sorted = (data || []).sort(
-          (a: any, b: any) => getSessionTimestamp(b) - getSessionTimestamp(a)
-        );
-        setAllSessions(sorted);
-      })
-      .catch(console.error);
-  }, []);
-
   const loadNotebook = useCallback(async () => {
     const id = propNotebookId !== undefined ? propNotebookId : getNotebookId();
     if (!id) {
@@ -100,7 +89,6 @@ export function NotebookApp({
 
   useEffect(() => {
     loadNotebook();
-    loadAllSessions();
     loadTags();
 
     const onStorage = (e: StorageEvent) => {
@@ -114,22 +102,10 @@ export function NotebookApp({
       }
     };
     window.addEventListener("storage", onStorage);
-
-    let debounceTimer: any = null;
-    const unlistenSync = listen("history-sync", () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        loadAllSessions();
-        loadTags();
-      }, 150);
-    });
-
     return () => {
       window.removeEventListener("storage", onStorage);
-      if (debounceTimer) clearTimeout(debounceTimer);
-      unlistenSync.then((f) => f());
     };
-  }, [loadNotebook, loadAllSessions, loadTags]);
+  }, [loadNotebook, loadTags]);
 
   if (!notebook) {
     return (
@@ -207,7 +183,6 @@ export function NotebookApp({
     const notebookId = propNotebookId !== undefined ? propNotebookId : getNotebookId();
     if (!notebookId || !notebook) return;
 
-    // Guard against adding already assigned session
     if (notebookSessions.some((s: any) => String(s.id) === String(sessionId))) {
       setShowAddPanel(false);
       return;
@@ -224,19 +199,8 @@ export function NotebookApp({
       tagId: tag.id,
     };
 
-    // Optimistically update React state immediately for instant 0ms feedback
-    setAllSessions((prev) =>
-      prev.map((s) => (String(s.id) === String(sessionId) ? { ...s, data: updatedData } : s))
-    );
     setShowAddPanel(false);
-
-    try {
-      await invoke("save_session", { sessionId: String(sessionId), data: updatedData });
-      await emit("history-sync", null);
-    } catch (err) {
-      console.error("Failed to save session on assign:", err);
-      loadAllSessions();
-    }
+    await updateSessionData(String(sessionId), updatedData);
   };
 
   const removeSession = async (sessionId: string) => {
@@ -247,18 +211,7 @@ export function NotebookApp({
     const updatedData = { ...normalized };
     delete updatedData.notebookId;
 
-    // Optimistically update React state immediately for instant 0ms feedback
-    setAllSessions((prev) =>
-      prev.map((s) => (String(s.id) === String(sessionId) ? { ...s, data: updatedData } : s))
-    );
-
-    try {
-      await invoke("save_session", { sessionId: String(sessionId), data: updatedData });
-      await emit("history-sync", null);
-    } catch (err) {
-      console.error("Failed to save session on remove:", err);
-      loadAllSessions();
-    }
+    await updateSessionData(String(sessionId), updatedData);
   };
 
   const openSession = async (session: any) => {

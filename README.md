@@ -111,59 +111,7 @@ Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and l
 - `Esc` = cancel streaming / close panels.
 - Global shortcut to summon/hide (set in Settings).
 
----
 
-## Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Tauri 2.0 App                            │
-├─────────────────────┬─────────────────────┬─────────────────────┤
-│   Frontend (React)  │   Backend (Rust)    │   Native (macOS)    │
-├─────────────────────┼─────────────────────┼─────────────────────┤
-│ • App.tsx (main)    │ • stream_ai_response│ • NSPanel swizzle   │
-│ • NotebookApp       │   (OpenRouter SSE)  │   (lib.rs)          │
-│ • HistoryApp        │ • capture_screen    │ • screencapture     │
-│ • SettingsApp       │   (screencapture +  │   binary            │
-│ • SnipApp           │    image crate)     │                     │
-│ • Components        │ • session CRUD      │ • Global shortcut   │
-│   – MessageList     │   (JSON files)      │   (plugin)          │
-│   – InputArea       │ • WebSocket server  │                     │
-│   – Toolbar         │   (extension)       │                     │
-│   – MarkdownRenderer│                     │                     │
-└─────────────────────┴─────────────────────┴─────────────────────┘
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │  Browser Extension│
-                    │  (Manifest V3)    │
-                    │ • content.js      │
-                    │ • background.js   │
-                    └───────────────────┘
-```
-
-**Windows (NSPanels):** `main` (chat), `history`, `notebook`, `settings`, `snip`, `tutorial` — each a transparent, frameless, always-on-top panel.
-
-**IPC:** Tauri commands (`invoke`) + events (`emit`/`listen`) for cross-window sync.
-
----
-
-## Tech Stack
-
-| Layer | Choices |
-|---|---|
-| **Framework** | Tauri 2.0 (Rust + WebView) |
-| **Frontend** | React 19, TypeScript, Vite 7 |
-| **Styling** | Tailwind CSS 4 + custom CSS variables (glassmorphism) |
-| **Markdown** | `react-markdown` + `remark-gfm` + `remark-math` + `rehype-katex` |
-| **Syntax Highlight** | `react-syntax-highlighter` (Prism) |
-| **Icons** | `lucide-react` |
-| **State** | React hooks + `localStorage` + Tauri events |
-| **Backend** | Rust: `reqwest` (OpenRouter), `image` (capture), `serde_json`, `tauri::Emitter` |
-| **Native** | `cocoa`/`objc` FFI for NSPanel behavior |
-| **Extension** | Manifest V3, WebSocket, `html2canvas` for element crop |
-
----
 
 ## Installation
 
@@ -265,23 +213,6 @@ Bling Bling/
 - [ ] Semantic search over history (local embeddings)
 - [ ] Sync via iCloud / Git / custom WebDAV
 - [ ] Voice input (Whisper local)
-
----
-
-## Contributing
-
-1. Fork → branch → PR.
-2. Run `npm run build` and `cargo test` (if any) before pushing.
-3. Follow existing code style (TypeScript strict, Rust `clippy`).
-4. No emojis in code/commits (project convention).
-
-**High-impact areas:**
-- Cross-platform window management (`v2/src-tauri/src/lib.rs`)
-- Virtualized lists for history/notebooks
-- Moving PDF extraction to Rust (`v2/src/utils/fileProcessor.ts`)
-- Session index for faster `load_sessions`
-
----
 
 ## License
 

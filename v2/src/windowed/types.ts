@@ -1,4 +1,4 @@
-export type Surface = "chat" | "history" | "notebook" | "settings" | "tutorial";
+export type Surface = "chat" | "history" | "notebook" | "settings";
 
 export interface NavItemConfig {
   id: Surface;

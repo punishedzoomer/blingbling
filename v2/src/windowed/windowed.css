@@ -265,10 +265,10 @@ body[data-mode="windowed"] #root {
 
 #app.windowed-app {
   width: 100% !important;
-  max-width: 960px !important;
+  max-width: 860px !important;
   height: 100% !important;
   margin: 0 auto !important;
-  padding: 12px 20px 16px !important;
+  padding: 16px 24px 20px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-end !important;
@@ -311,6 +311,7 @@ body[data-mode="windowed"] #root {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
+  position: relative !important;
 }
 
 .windowed-app #messages {
@@ -319,15 +320,24 @@ body[data-mode="windowed"] #root {
   max-height: 100% !important;
   overflow-y: auto !important;
   min-height: 0 !important;
-  padding-bottom: 12px !important;
+  padding: 12px 0 16px !important;
+  scrollbar-gutter: stable;
 }
 
 .windowed-app #composer {
   flex-shrink: 0 !important;
   width: 100% !important;
-  background: rgba(22, 24, 32, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  background: rgba(22, 25, 33, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+  box-sizing: border-box !important;
+  margin-top: 8px !important;
+}
+
+.windowed-app #composer textarea {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
 }
 
 .windowed-pane {
@@ -345,6 +355,7 @@ body[data-mode="windowed"] #root {
 .windowed-card {
   background: rgba(25, 27, 35, 0.95) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;

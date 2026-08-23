@@ -16,7 +16,6 @@ const titles: Record<Surface, string> = {
   history: "Conversation History",
   notebook: "Notebooks",
   settings: "Settings",
-  tutorial: "Welcome & Tutorial",
 };
 
 export function TitleBar({

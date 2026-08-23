@@ -4,7 +4,6 @@ import { HistoryApp } from "../HistoryApp";
 import { NotebookApp } from "../NotebookApp";
 import { NotebookList } from "../components/NotebookList";
 import { SettingsApp } from "../SettingsApp";
-import { TutorialApp } from "../TutorialApp";
 import { Surface } from "./types";
 
 interface WindowedContainerProps {
@@ -52,7 +51,6 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
           <HistoryApp
             isWindowed={true}
             onOpenChat={() => setSurface("chat")}
-            onSelectNotebook={handleSelectNotebook}
           />
         </div>
       )}
@@ -98,16 +96,6 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
           style={{ display: surface === "settings" ? "flex" : "none" }}
         >
           <SettingsApp isWindowed={true} onDone={() => setSurface("chat")} />
-        </div>
-      )}
-
-      {/* 5. Tutorial surface (lazy-mounted on first visit, then cached) */}
-      {visitedSurfaces.current.has("tutorial") && (
-        <div
-          className="windowed-surface-aux"
-          style={{ display: surface === "tutorial" ? "flex" : "none" }}
-        >
-          <TutorialApp isWindowed={true} onDone={() => setSurface("chat")} />
         </div>
       )}
     </main>

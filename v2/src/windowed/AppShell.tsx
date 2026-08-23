@@ -21,7 +21,6 @@ export function AppShell() {
         onChange={setSurface}
         collapsed={sidebarCollapsed}
         onStartDragging={handleStartDragging}
-        onSwitchToWidget={switchToWidgetMode}
       />
 
       <div className="windowed-shell-main">

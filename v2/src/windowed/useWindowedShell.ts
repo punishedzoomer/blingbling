@@ -60,8 +60,6 @@ export function useWindowedShell() {
         setSurface("notebook");
       } else if (target === "settings") {
         setSurface("settings");
-      } else if (target === "tutorial") {
-        setSurface("tutorial");
       }
     }).then((f) => (unlistenActive = f));
 

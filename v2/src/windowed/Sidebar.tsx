@@ -1,4 +1,4 @@
-import { MessageSquare, Clock, BookOpen, Settings, Sparkles, Layout } from "lucide-react";
+import { MessageSquare, Clock, BookOpen, Settings } from "lucide-react";
 import { Surface } from "./types";
 
 interface SidebarProps {
@@ -6,15 +6,12 @@ interface SidebarProps {
   onChange: (surface: Surface) => void;
   collapsed: boolean;
   onStartDragging: (e: React.MouseEvent) => void;
-  onSwitchToWidget: () => void;
 }
 
 const navItems: { id: Surface; label: string; icon: typeof MessageSquare }[] = [
   { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "history", label: "History", icon: Clock },
   { id: "notebook", label: "Notebooks", icon: BookOpen },
-  { id: "tutorial", label: "Tutorial", icon: Sparkles },
-  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar({
@@ -22,14 +19,15 @@ export function Sidebar({
   onChange,
   collapsed,
   onStartDragging,
-  onSwitchToWidget,
 }: SidebarProps) {
+  const isSettingsActive = surface === "settings";
+
   return (
     <aside
       className={`windowed-sidebar ${collapsed ? "collapsed" : ""}`}
       onMouseDown={onStartDragging}
     >
-      {/* Top spacing area for macOS traffic lights */}
+      {/* Top drag/spacing clearance area for macOS traffic lights - No title/text */}
       <div className="windowed-sidebar-top" />
 
       <nav className="windowed-nav" data-no-drag>
@@ -52,16 +50,17 @@ export function Sidebar({
         })}
       </nav>
 
+      {/* Footer Settings Button */}
       <div className="windowed-sidebar-footer" data-no-drag>
         <button
           type="button"
-          className="windowed-mode-btn"
-          title="Switch to Floating Widget Mode"
-          onClick={onSwitchToWidget}
+          className={`windowed-nav-btn ${isSettingsActive ? "active" : ""}`}
+          title={collapsed ? "Settings" : undefined}
+          onClick={() => onChange("settings")}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <Layout size={15} />
-          {!collapsed && <span>Widget Mode</span>}
+          <Settings size={16} className="windowed-nav-icon" />
+          {!collapsed && <span className="windowed-nav-label">Settings</span>}
         </button>
       </div>
     </aside>

@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Clock, Book, Trash2, PenSquare } from "lucide-react";
+import { Clock, Trash2, PenSquare } from "lucide-react";
 import "./App.css";
-import { NotebookList } from "./components/NotebookList";
 import { ConversationList, extractMessages } from "./components/ConversationList";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { useSessionsStore } from "./utils/sessionStore";
@@ -13,12 +12,10 @@ export function HistoryApp({
   isWindowed = false,
   initialTab = "history",
   onOpenChat,
-  onSelectNotebook,
 }: {
   isWindowed?: boolean;
-  initialTab?: "history" | "notebooks" | "trash";
+  initialTab?: "history" | "trash";
   onOpenChat?: () => void;
-  onSelectNotebook?: (id: number) => void;
 } = {}) {
   const {
     sessions,
@@ -33,7 +30,7 @@ export function HistoryApp({
     const saved = localStorage.getItem("customTags");
     return saved ? JSON.parse(saved) : [];
   });
-  const [activeTab, setActiveTab] = useState<"history" | "notebooks" | "trash">(initialTab);
+  const [activeTab, setActiveTab] = useState<"history" | "trash">(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [trashSearchQuery, setTrashSearchQuery] = useState("");
   const [showEmptyTrashConfirm, setShowEmptyTrashConfirm] = useState(false);
@@ -127,7 +124,7 @@ export function HistoryApp({
           display: "flex",
           flexDirection: "column",
           boxSizing: "border-box",
-          borderRadius: "16px",
+          borderRadius: isWindowed ? 0 : "16px",
           overflow: "hidden",
           pointerEvents: "auto",
         }}
@@ -140,12 +137,12 @@ export function HistoryApp({
           .history-del-btn:hover { color: #ef4444 !important; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
           .tag-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 12px; font-size: 10px; font-weight: 700; background: color-mix(in srgb, var(--tag-color) 15%, transparent); color: var(--tag-color); flex-shrink: 0; white-space: nowrap; }
           .segment-container { display: flex; position: relative; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 4px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2); }
-          .segment-pill { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(33.333% - 3px); background: rgba(255,255,255,0.08); border-radius: 8px; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 8px rgba(0,0,0,0.2); pointer-events: none; }
+          .segment-pill-2 { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); background: rgba(255,255,255,0.08); border-radius: 8px; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 8px rgba(0,0,0,0.2); pointer-events: none; }
           .segment-btn { flex: 1; padding: 7px 4px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--tx-mut); z-index: 1; transition: color 0.2s; white-space: nowrap; }
           .segment-btn.active { color: #fff; }
           .search-input::placeholder { color: var(--tx-mut); }
-          .views-container { display: flex; width: 300%; flex-shrink: 0; flex: 1; overflow: hidden; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-          .view-pane { width: 33.3333%; height: 100%; display: flex; flex-direction: column; padding: 0 16px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
+          .views-container-2 { display: flex; width: 200%; flex-shrink: 0; flex: 1; overflow: hidden; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+          .view-pane-2 { width: 50%; height: 100%; display: flex; flex-direction: column; padding: 0 16px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
         `}</style>
 
         {/* Header (widget mode only) */}
@@ -199,31 +196,20 @@ export function HistoryApp({
           </div>
         )}
 
-        {/* 3-Tab Segmented Control */}
+        {/* 2-Tab Segmented Control (History / Trash) */}
         <div style={{ padding: "0 16px", marginBottom: "16px", zIndex: 100 }}>
           <div className="segment-container">
             <div
-              className="segment-pill"
+              className="segment-pill-2"
               style={{
-                transform:
-                  activeTab === "history"
-                    ? "translateX(0)"
-                    : activeTab === "notebooks"
-                    ? "translateX(100%)"
-                    : "translateX(200%)",
+                transform: activeTab === "history" ? "translateX(0)" : "translateX(100%)",
               }}
             />
             <div
               className={`segment-btn ${activeTab === "history" ? "active" : ""}`}
               onClick={() => setActiveTab("history")}
             >
-              <Clock size={14} /> History
-            </div>
-            <div
-              className={`segment-btn ${activeTab === "notebooks" ? "active" : ""}`}
-              onClick={() => setActiveTab("notebooks")}
-            >
-              <Book size={14} /> Notebooks
+              <Clock size={14} /> History ({sessions.length})
             </div>
             <div
               className={`segment-btn ${activeTab === "trash" ? "active" : ""}`}
@@ -234,20 +220,15 @@ export function HistoryApp({
           </div>
         </div>
 
-        {/* Sliding Views Container */}
+        {/* 2-Pane Container */}
         <div
-          className="views-container"
+          className="views-container-2"
           style={{
-            transform:
-              activeTab === "history"
-                ? "translateX(0)"
-                : activeTab === "notebooks"
-                ? "translateX(-33.3333%)"
-                : "translateX(-66.6666%)",
+            transform: activeTab === "history" ? "translateX(0)" : "translateX(-50%)",
           }}
         >
           {/* 1. HISTORY PANE */}
-          <div className="view-pane">
+          <div className="view-pane-2">
             <ConversationList
               sessions={sessions}
               tags={tags}
@@ -260,11 +241,8 @@ export function HistoryApp({
             />
           </div>
 
-          {/* 2. NOTEBOOKS PANE */}
-          <NotebookList setActiveTab={setActiveTab} onSelectNotebook={onSelectNotebook} />
-
-          {/* 3. TRASH PANE */}
-          <div className="view-pane">
+          {/* 2. TRASH PANE */}
+          <div className="view-pane-2">
             <div
               style={{
                 display: "flex",

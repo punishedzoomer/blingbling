@@ -64,13 +64,15 @@ export function MessageList({
   return (
     <div id="messages" ref={containerRef}>
       {messages.length === 0 && (
-        <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--tx-mut)" }}>
-          <h3 style={{ color: "var(--tx-1)", fontSize: "16px", fontWeight: 600, marginBottom: "8px" }}>
-            Hi There!
-          </h3>
-          <p style={{ fontSize: "13px", lineHeight: 1.5 }}>
-            How can I help you today? Try taking a snip, attaching a file, or asking a question.
-          </p>
+        <div className="windowed-empty-state">
+          <div className="windowed-empty-hero">
+            <h2 className="windowed-empty-title">
+              What would you like to explore?
+            </h2>
+            <p className="windowed-empty-subtitle">
+              Ask questions, analyze problems, attach documents, or capture screenshots.
+            </p>
+          </div>
         </div>
       )}
 

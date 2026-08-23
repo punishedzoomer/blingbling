@@ -29,7 +29,8 @@ export function TitleBar({
   const handleNewChat = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setSurface("chat");
-    await emit("reset-session");
+    window.dispatchEvent(new CustomEvent("app-reset-session"));
+    emit("reset-session").catch(() => {});
   };
 
   return (

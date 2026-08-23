@@ -163,7 +163,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       setIsThinking(false);
     }).then((f) => (unlistenClear = f));
 
-    listen("reset-session", () => {
+    const handleAppReset = () => {
       setSessionId(Date.now().toString());
       setMessages([]);
       setInput("");
@@ -174,7 +174,10 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
       setIsStreaming(false);
       setIsThinking(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
-    }).then((f) => (unlistenReset = f));
+    };
+
+    window.addEventListener("app-reset-session", handleAppReset);
+    listen("reset-session", handleAppReset).then((f) => (unlistenReset = f));
 
     listen("add-message", (e: any) => setMessages((prev) => [...prev, e.payload])).then(
       (f) => (unlistenAddMsg = f)
@@ -236,6 +239,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
     }).then((f) => (unlistenSimulate = f));
 
     return () => {
+      window.removeEventListener("app-reset-session", handleAppReset);
       window.removeEventListener("app-restore-session", handleCustomRestore);
       if (unlistenClear) unlistenClear();
       if (unlistenAddMsg) unlistenAddMsg();

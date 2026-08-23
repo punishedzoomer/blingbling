@@ -271,7 +271,6 @@ body[data-mode="windowed"] #root {
   padding: 16px 24px 20px !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: flex-end !important;
   box-sizing: border-box !important;
   pointer-events: auto !important;
 }
@@ -280,9 +279,9 @@ body[data-mode="windowed"] #root {
   width: 100% !important;
   height: 100% !important;
   max-height: 100% !important;
+  margin-top: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: flex-end !important;
   overflow: hidden !important;
 }
 
@@ -290,6 +289,7 @@ body[data-mode="windowed"] #root {
   width: 100% !important;
   height: 100% !important;
   max-height: 100% !important;
+  padding: 0 !important;
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
@@ -320,8 +320,51 @@ body[data-mode="windowed"] #root {
   max-height: 100% !important;
   overflow-y: auto !important;
   min-height: 0 !important;
-  padding: 12px 0 16px !important;
+  padding: 16px 0 !important;
   scrollbar-gutter: stable;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.windowed-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  user-select: none;
+}
+
+.windowed-empty-hero {
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.windowed-empty-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.96);
+  margin: 0;
+}
+
+.windowed-empty-subtitle {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.windowed-app #action-row {
+  margin-bottom: 8px !important;
+  display: flex !important;
+  justify-content: center !important;
+  gap: 8px !important;
 }
 
 .windowed-app #composer {
@@ -332,7 +375,7 @@ body[data-mode="windowed"] #root {
   border-radius: 14px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
   box-sizing: border-box !important;
-  margin-top: 8px !important;
+  margin-top: 4px !important;
 }
 
 .windowed-app #composer textarea {

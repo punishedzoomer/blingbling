@@ -298,11 +298,11 @@ export function NotebookApp({
           flexDirection: "column",
           borderRadius: "16px",
           overflow: "hidden",
-          background: "rgba(20, 22, 28, 0.94)",
-          WebkitBackdropFilter: "blur(40px) saturate(180%)",
-          backdropFilter: "blur(40px) saturate(180%)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
+          background: "var(--glass-bg)",
+          WebkitBackdropFilter: "var(--glass-blur)",
+          backdropFilter: "var(--glass-blur)",
+          border: "1px solid var(--glass-border)",
+          boxShadow: "var(--glass-shadow)",
           pointerEvents: "auto",
         }}
       >

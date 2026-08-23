@@ -57,9 +57,9 @@ function ModelSelect({ value, onChange, models, disabled }: { value: string, onC
       {isOpen && (
         <div style={{
           position: "absolute", top: "100%", left: 0, right: 0, marginTop: "4px",
-          background: "rgba(30,30,30,0.95)", border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "var(--r-8)", backdropFilter: "blur(12px)", zIndex: 1000,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column",
+          background: "var(--glass-bg)", border: "1px solid var(--glass-border)",
+          borderRadius: "var(--r-8)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)", zIndex: 1000,
+          boxShadow: "var(--glass-shadow)", display: "flex", flexDirection: "column",
           maxHeight: "260px", overflow: "hidden"
         }}>
           <div style={{ padding: "8px", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", gap: "8px" }}>

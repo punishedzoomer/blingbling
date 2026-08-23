@@ -17,11 +17,11 @@
 
 ---
 
-## ✨ Why Bling Bling?
+## Why Bling Bling?
 
 Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and locked to one provider. Bling Bling is different:
 
-| 🎯 **Design Goal** | 🛠 **How Bling Bling Does It** |
+| **Design Goal** | **How Bling Bling Does It** |
 |---|---|
 | **Zero friction** | Global hotkey → instant overlay. No Dock icon, no app switcher clutter. |
 | **Model freedom** | Bring your own OpenRouter key. Switch between 100+ models (Claude, GPT, Gemini, DeepSeek, Llama, Mistral, …) in one click. |
@@ -31,7 +31,7 @@ Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and l
 
 ---
 
-## 🖼 Screenshots
+## Screenshots
 
 > **Add your screenshots here!** Replace the placeholder paths below with actual images in a `docs/assets/` folder.
 
@@ -49,63 +49,63 @@ Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and l
 
 ---
 
-## 🚀 Core Features
+## Core Features
 
-### 🪟 True Accessory Mode (macOS)
+### True Accessory Mode (macOS)
 - Runs as an **NSPanel** — floats above all windows, visible on all Spaces, no Dock icon, no Cmd+Tab entry.
 - Summoned instantly via global shortcut (configured in Settings).
 - Auto-resizes to content; glassmorphism backdrop blends with macOS.
 
-### 🧠 Multi-Model via OpenRouter
+### Multi-Model via OpenRouter
 - **One API key → 100+ models.** No vendor lock-in.
 - Three model slots: **Quick** (fast/cheap), **Smart** (balanced), **Ultra** (reasoning-heavy).
 - Settings fetches live model list from OpenRouter with pricing, searchable dropdown.
 - Real-time API usage/cost tracking in Settings.
 
-### 📚 Notebooks — Project-Centric Conversations
+### Notebooks — Project-Centric Conversations
 - Create notebooks with custom colors.
 - Each notebook gets an auto-managed **tag** — conversations tagged with it are locked to that notebook.
 - **New Chat** button starts a conversation pre-tagged.
 - **Add from History** drawer lets you assign existing chats to a notebook.
 - Sessions persist with `notebookId` + `tagId`; restore opens the main chat with context intact.
 
-### 🏷️ Tag System (Inline & Persistent)
+### Tag System (Inline & Persistent)
 - Type `/tag #name` in chat to create/assign tags instantly.
 - Tags sync across windows via `localStorage` + Tauri events.
 - Color-coded chips in conversation lists.
 - Notebook tags are **locked** — cannot be removed while inside that notebook.
 
-### ✂️ Native Screen Capture
+### Native Screen Capture
 - **Full-screen** (`capture_screen`) or **interactive region** (`capture_screen_interactive`) via macOS `screencapture`.
 - Images compressed to JPEG (max 1920px wide) → base64 → sent inline with your prompt.
 - No Electron `desktopCapturer` overhead — pure Rust + system binary.
 
-### 🌐 Browser Extension ("Widget")
+### Browser Extension ("Widget")
 - **Manifest V3** extension (Chrome/Firefox/Edge).
 - **Element picker**: hover any element → click → precise crop sent to desktop app.
 - **Visible-tab capture** + optional **harvested images** (product grids, galleries, etc.).
 - **Persistent queue**: snips survive browser restarts; flushed when desktop app reconnects.
 - WebSocket (`ws://127.0.0.1:14444`) for real-time push.
 
-### ⚡ Quick Action Buttons
+### Quick Action Buttons
 - Four customizable buttons under the composer (Solve, Explain, Optimize, Debug by default).
 - Each has a label + system prompt. Editable in Settings → Prompts.
 - One-click: captures screen (if needed) + sends preset prompt.
 
-### 💾 Local-First Persistence
+### Local-First Persistence
 - Conversations stored as JSON in `~/Library/Application Support/BlingBling/sessions/`.
 - Tags, notebooks, button configs in `localStorage` (synced across windows via `storage` event).
 - Trash/soft-delete with restore.
 - No telemetry, no forced cloud.
 
-### 🎨 Rich Markdown Rendering
+### Rich Markdown Rendering
 - **GFM** (tables, task lists, strikethrough).
 - **KaTeX** math (`$inline$`, `$$block$$`).
 - **Syntax highlighting** (Prism via `react-syntax-highlighter`).
 - Copy-to-clipboard on code blocks.
 - Collapsible context/attachment sections.
 
-### ⌨️ Keyboard-First UX
+### Keyboard-First UX
 - `Enter` = send, `Shift+Enter` = newline.
 - `/tag #name` inline tagging.
 - `Esc` = cancel streaming / close panels.
@@ -113,7 +113,7 @@ Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and l
 
 ---
 
-## 🏗 Architecture Overview
+## Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -148,7 +148,7 @@ Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and l
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Choices |
 |---|---|
@@ -165,7 +165,7 @@ Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and l
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Option 1: Download Release (macOS)
 1. Go to [**Releases**](../../releases)
@@ -189,7 +189,7 @@ npm run tauri build -- --bundles dmg
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 | Setting | Location | Description |
 |---|---|---|
@@ -204,7 +204,7 @@ npm run tauri build -- --bundles dmg
 
 ---
 
-## 🧪 Development
+## Development
 
 ```bash
 # Frontend dev server (with HMR)
@@ -257,7 +257,7 @@ Bling Bling/
 
 ---
 
-## 🗺 Roadmap / Planned
+## Roadmap / Planned
 
 - [ ] **Full Windowed Mode** — single `app-shell` window with sidebar (see `Docs/full_windowed_mode.md`)
 - [ ] Linux/Windows ports (NSPanel → layer-shell / Win32 toolwindow)
@@ -268,7 +268,7 @@ Bling Bling/
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork → branch → PR.
 2. Run `npm run build` and `cargo test` (if any) before pushing.
@@ -283,13 +283,13 @@ Bling Bling/
 
 ---
 
-## 📄 License
+## License
 
 MIT — see [LICENSE](LICENSE) (add one if missing).
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Tauri](https://tauri.app/) — for making Rust + WebView delightful
 - [OpenRouter](https://openrouter.ai/) — unified model access
@@ -299,5 +299,5 @@ MIT — see [LICENSE](LICENSE) (add one if missing).
 ---
 
 <p align="center">
-  Made with ❤️ for people who want AI on their terms.
+  Made for people who want AI on their terms.
 </p>

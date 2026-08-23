@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Search, MessageSquare, Trash2, Plus, X, RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -119,7 +119,7 @@ export function getRelativeDay(ts: number): string {
   return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export function ConversationList({
+export const ConversationList = memo(function ConversationList({
   sessions,
   tags,
   searchQuery: externalSearchQuery,
@@ -464,4 +464,4 @@ export function ConversationList({
       </div>
     </div>
   );
-}
+});

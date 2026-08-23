@@ -2,16 +2,43 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/prism-light";
+import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
+import typescript from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
+import javascript from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
+import rust from "react-syntax-highlighter/dist/esm/languages/prism/rust";
+import python from "react-syntax-highlighter/dist/esm/languages/prism/python";
+import bash from "react-syntax-highlighter/dist/esm/languages/prism/bash";
+import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
+import css from "react-syntax-highlighter/dist/esm/languages/prism/css";
+import markdown from "react-syntax-highlighter/dist/esm/languages/prism/markdown";
+import sql from "react-syntax-highlighter/dist/esm/languages/prism/sql";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Sparkles, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, memo } from "react";
 
-const PreBlock = ({ children }: any) => {
+SyntaxHighlighter.registerLanguage("tsx", tsx);
+SyntaxHighlighter.registerLanguage("typescript", typescript);
+SyntaxHighlighter.registerLanguage("ts", typescript);
+SyntaxHighlighter.registerLanguage("javascript", javascript);
+SyntaxHighlighter.registerLanguage("js", javascript);
+SyntaxHighlighter.registerLanguage("rust", rust);
+SyntaxHighlighter.registerLanguage("rs", rust);
+SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("py", python);
+SyntaxHighlighter.registerLanguage("bash", bash);
+SyntaxHighlighter.registerLanguage("sh", bash);
+SyntaxHighlighter.registerLanguage("json", json);
+SyntaxHighlighter.registerLanguage("css", css);
+SyntaxHighlighter.registerLanguage("markdown", markdown);
+SyntaxHighlighter.registerLanguage("md", markdown);
+SyntaxHighlighter.registerLanguage("sql", sql);
+
+const PreBlock = memo(({ children }: any) => {
   return <>{children}</>;
-};
+});
 
-const CodeBlock = ({ node, className, children, ...props }: any) => {
+const CodeBlock = memo(({ node, className, children, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || "");
   const rawCode = String(children || "");
   const code = rawCode.replace(/\n$/, "");
@@ -95,7 +122,7 @@ const CodeBlock = ({ node, className, children, ...props }: any) => {
       {children}
     </code>
   );
-};
+});
 
 export interface ParsedReasoning {
   hasReasoning: boolean;
@@ -159,7 +186,7 @@ export function parseReasoning(content: string): ParsedReasoning {
   };
 }
 
-export const MessageRenderer = ({ content }: { content: string }) => {
+export const MessageRenderer = memo(({ content }: { content: string }) => {
   const { hasReasoning, reasoningText, isStreamingReasoning, mainContent } = parseReasoning(content);
 
   if (hasReasoning) {
@@ -206,5 +233,5 @@ export const MessageRenderer = ({ content }: { content: string }) => {
       {content}
     </ReactMarkdown>
   );
-};
+});
 

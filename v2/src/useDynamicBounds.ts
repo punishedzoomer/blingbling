@@ -1,38 +1,45 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 export function useDynamicBounds(label: string = "main") {
+  const lastDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
+  const rafId = useRef<number | null>(null);
+
   useEffect(() => {
     const el = document.body;
     if (!el) return;
 
-    // Use a small debounce/throttle mechanism to avoid spamming IPC calls
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (timeout) clearTimeout(timeout);
-        
-        // Wait just a tiny bit for React/DOM to finish layout recalculations
-        timeout = setTimeout(async () => {
+        if (rafId.current) cancelAnimationFrame(rafId.current);
+
+        rafId.current = requestAnimationFrame(async () => {
           const rect = entry.target.getBoundingClientRect();
-          // We add 1 pixel to avoid fractional clipping issues
           const width = Math.ceil(rect.width) + 1;
           const height = Math.ceil(rect.height) + 1;
-          
+
+          if (
+            lastDimensions.current.width === width &&
+            lastDimensions.current.height === height
+          ) {
+            return;
+          }
+
+          lastDimensions.current = { width, height };
+
           try {
             await invoke("resize_panel", { label, width, height });
           } catch (e) {
             console.error("Failed to dynamically resize panel:", e);
           }
-        }, 10);
+        });
       }
     });
 
     resizeObserver.observe(el);
 
     return () => {
-      if (timeout) clearTimeout(timeout);
+      if (rafId.current) cancelAnimationFrame(rafId.current);
       resizeObserver.disconnect();
     };
   }, [label]);

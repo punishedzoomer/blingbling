@@ -46,17 +46,19 @@ export function MessageList({
   isThinking,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isAutoScrollingRef = useRef(false);
 
-  // Instantly place the user at the bottom of the conversation without animation jump
+  // Smooth and non-blocking scroll to bottom on message updates
   useLayoutEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
-      requestAnimationFrame(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight;
-        }
-      });
-    }
+    if (!containerRef.current || isAutoScrollingRef.current) return;
+
+    isAutoScrollingRef.current = true;
+    requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      }
+      isAutoScrollingRef.current = false;
+    });
   }, [messages, isThinking]);
 
   return (

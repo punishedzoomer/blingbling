@@ -69,6 +69,9 @@ pub fn run() {
                             // NSWindowTitleHidden = 1 (Hide native macOS title text in overlay title bar)
                             let _: () = objc::msg_send![ns_window, setTitleVisibility: 1];
                             let _: () = objc::msg_send![ns_window, setTitlebarAppearsTransparent: true];
+                            let clear_color: cocoa::base::id = objc::msg_send![objc::class!(NSColor), clearColor];
+                            let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
+                            let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
                         }
                     }
                     if initial_mode == "windowed" {

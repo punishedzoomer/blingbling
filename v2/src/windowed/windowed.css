@@ -1,5 +1,24 @@
 /* ============================ Windowed Mode Core Styles ============================ */
 
+/* Fullscreen and Backdrop resets to preserve transparency */
+::backdrop,
+:fullscreen::backdrop,
+:-webkit-full-screen::backdrop {
+  background: transparent !important;
+}
+
+:fullscreen,
+:-webkit-full-screen,
+html:fullscreen,
+body:fullscreen,
+body[data-mode="windowed"]:fullscreen,
+html:has(body[data-mode="windowed"]):fullscreen,
+.windowed-shell-root:fullscreen {
+  background: var(--windowed-bg) !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
 body[data-mode="windowed"],
 html:has(body[data-mode="windowed"]),
 body[data-mode="windowed"] #root {

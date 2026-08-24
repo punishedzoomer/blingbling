@@ -158,8 +158,15 @@ npm run tauri build -- --bundles dmg
 # Frontend dev server (with HMR)
 cd v2 && npm run dev
 
-# Tauri dev (opens app with devtools)
+# Tauri dev (Quiet mode - default, no debug spam)
 cd v2 && npm run tauri dev
+
+# Tauri dev (Debug mode - verbose window lifecycle and IPC logs)
+cd v2 && npm run dev:debug
+# OR
+cd v2 && npm run tauri dev -- --debug
+# OR
+cd v2 && DEBUG=1 npm run tauri dev
 
 # Type-check
 cd v2 && npx tsc --noEmit

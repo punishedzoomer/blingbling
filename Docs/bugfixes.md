@@ -2,6 +2,23 @@
 
 ## Architecture Context & Bug Log
 
+### 2026-08-24: Multi-Window NSPanel Stability, Child Window Synchronization & Debug CLI Flags
+- **Feature/Fix**: Fixed NSPanel teardown crashes, synced pill and chat-panel window positioning, fixed settings/tutorial layout clipping, and added selective `--debug` CLI logging.
+- **Root Cause & Rationale**:
+  1. `tauri-nspanel` crashes if `window.to_panel()` is invoked repeatedly on already-converted windows during `show_panel` / `hide_panel`.
+  2. The separated `chat-panel` detached from the `main` pill toolbar during drag because it was not attached as an AppKit child window.
+  3. `useDynamicBounds` caused an infinite width expansion loop on tab changes due to observing `document.body` with `Math.ceil(rect.width) + 1`.
+  4. The Tutorial modal was unclickable because `#onboard` was not in the `pointer-events: auto` whitelist.
+  5. Restoring a session showed the pill but left `chat-panel` hidden due to `isCollapsed` remaining `true`.
+  6. Repetitive debug logs spammed the console during normal development.
+- **Exact Fix**:
+  - Replaced `to_panel()` with `get_webview_panel()` for all post-startup panel lookups.
+  - Attached `chat-panel` to `main` via `[main_ns addChildWindow:chat_ns ordered:1]`, maintaining a rock-solid, hardware-locked gap without drift.
+  - Removed `useDynamicBounds` from modal windows and added jitter thresholds to prevent recursive resize loops.
+  - Enabled `pointer-events: auto` and added drag handles for the Tutorial modal.
+  - Updated `open_main_chat` and `applyRestoreSession` to auto-expand the pill and display `chat-panel` on session restore.
+  - Added `is_debug_mode()` in Rust checking for `--debug`, `-d`, or `DEBUG=1` / `BLING_DEBUG=1`, and added `npm run dev:debug`.
+
 ### 2026-08-21: Markdown Code Block Containerization & Copy Button Panning Fix
 - **Feature/Fix**: Restructured code block rendering in `MarkdownRenderer.tsx` and updated `.ai-text` layout rules in `App.css`.
 - **Root Cause & Rationale**: In `react-markdown` v10, default `<pre>` wrappers nested around custom code blocks allowed inner flex containers to expand to the width of the longest code line. Because `#messages` has `overflow-x: hidden`, this pushed the top-right "Copy" button out of viewport bounds. Furthermore, `.ai-text` lacked explicit full-width constraints inside flex containers, and code blocks without language tags lacked copy support.

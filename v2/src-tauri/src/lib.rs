@@ -33,6 +33,7 @@ pub fn run() {
             commands::session::restore_session,
             commands::session::permanently_delete_session,
             commands::session::empty_trash,
+            commands::window::console_log,
             commands::window::hide_window,
             commands::window::quit_app,
             commands::window::set_debug_mode,
@@ -139,7 +140,7 @@ pub fn run() {
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 if window.label() == "app-shell" || window.label() == "main" {
-                    std::process::exit(0);
+                    // std::process::exit(0);
                 } else {
                     api.prevent_close();
                     #[cfg(target_os = "macos")]
@@ -162,7 +163,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app_handle, event| {
+            println!("[RUST DEBUG] RunEvent: {:?}", event);
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                println!("[RUST DEBUG] PREVENTING EXIT REQUESTED!");
                 api.prevent_exit();
             }
         });

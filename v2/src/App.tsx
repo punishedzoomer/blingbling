@@ -27,7 +27,7 @@ export interface Message {
   attachments?: Attachment[];
 }
 
-function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
+function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolean, windowLabel?: string } = {}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState(() => Date.now().toString());
   const [sessionTitle, setSessionTitle] = useState<string | null>(null);
@@ -80,7 +80,58 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
     buildSendPayload,
   } = useAttachments();
 
-  useDynamicBounds("main", !isWindowed);
+  useDynamicBounds(windowLabel, !isWindowed);
+
+  useEffect(() => {
+    if (windowLabel === "main" && !isWindowed) {
+      setTimeout(() => {
+        if (!isCollapsed) {
+          invoke("show_panel", { label: "chat-panel" });
+        } else {
+          invoke("hide_panel", { label: "chat-panel" });
+        }
+      }, 100);
+    }
+  }, []);
+
+  // When switching from windowed to widget mode, the main pill is already mounted
+  // so the initial startup effect doesn't run. We must sync the chat-panel here.
+  useEffect(() => {
+    if (windowLabel === "main") {
+
+
+      let unlistenPromise: Promise<() => void>;
+      let unlistenSyncPromise: Promise<() => void>;
+      let timer: any;
+      
+      unlistenPromise = listen("app-mode-changed", (event: any) => {
+        if (timer) clearTimeout(timer);
+        if (event.payload === "widget") {
+          timer = setTimeout(() => {
+            if (!isCollapsed) {
+              invoke("show_panel", { label: "chat-panel" });
+            } else {
+              invoke("hide_panel", { label: "chat-panel" });
+            }
+          }, 150);
+        }
+      });
+      
+      unlistenSyncPromise = listen("sync-chat-panel", () => {
+        if (!isCollapsed) {
+          invoke("show_panel", { label: "chat-panel" });
+        } else {
+          invoke("hide_panel", { label: "chat-panel" });
+        }
+      });
+
+      return () => {
+        unlistenPromise.then((f) => f());
+        unlistenSyncPromise.then((f) => f());
+        if (timer) clearTimeout(timer);
+      };
+    }
+  }, [windowLabel, isCollapsed]);
 
   useEffect(() => {
     localStorage.setItem("aiMode", aiMode);
@@ -103,10 +154,16 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
   useEffect(() => {
     if (!isCollapsed) {
       document.getElementById("app")?.classList.remove("collapsed-mode");
+      if (!isWindowed && windowLabel === "main") {
+        invoke("show_panel", { label: "chat-panel" });
+      }
     } else {
       document.getElementById("app")?.classList.add("collapsed-mode");
+      if (!isWindowed && windowLabel === "main") {
+        invoke("hide_panel", { label: "chat-panel" });
+      }
     }
-  }, [isCollapsed]);
+  }, [isCollapsed, isWindowed, windowLabel]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -473,17 +530,18 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
   return (
     <div
       id="app"
-      className={isWindowed ? "windowed-app" : undefined}
+      className={`${isWindowed ? "windowed-app" : ""} ${windowLabel === "chat-panel" ? "is-chat-panel" : ""}`.trim()}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {!isWindowed && <Toolbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />}
+      {!isWindowed && windowLabel === "main" && <Toolbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />}
 
-      <div id="panel-wrap" className={isWindowed ? "windowed-panel-wrap" : undefined}>
-        <div id="panel" className={`${isWindowed ? "windowed-panel" : "glass"} no-drag ${isCollapsed ? "collapsed" : ""}`}>
-          <div id="panel-columns">
+      {(isWindowed || windowLabel === "chat-panel") && (
+        <div id="panel-wrap" className={isWindowed ? "windowed-panel-wrap" : undefined}>
+          <div id="panel" className={`${isWindowed ? "windowed-panel" : "glass"} no-drag`}>
+            <div id="panel-columns">
             <div id="panel-main" style={{ position: "relative" }}>
               <DropZoneOverlay isDragging={isDragging} />
 
@@ -588,6 +646,7 @@ function App({ isWindowed = false }: { isWindowed?: boolean } = {}) {
           </div>
         </div>
       </div>
+      )}
 
       <ImagePreviewModal previewImage={previewImage} onClose={() => setPreviewImage(null)} />
 

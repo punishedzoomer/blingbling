@@ -28,6 +28,7 @@ body[data-mode="windowed"] #root {
   padding: 0 !important;
   background: var(--windowed-bg) !important;
   overflow: hidden !important;
+  pointer-events: auto !important;
 }
 
 .windowed-shell-root {

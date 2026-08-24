@@ -58,14 +58,35 @@ pub fn set_app_mode(mode: String, app: AppHandle) {
     }
 
     if mode == "windowed" {
+        #[cfg(target_os = "macos")]
+        {
+            if let (Some(main_win), Some(panel_win)) = (app.get_webview_window("main"), app.get_webview_window("chat-panel")) {
+                let main_ns_win = main_win.ns_window().unwrap() as usize;
+                let panel_ns_win = panel_win.ns_window().unwrap() as usize;
+                let _ = app.run_on_main_thread(move || {
+                    let main_ns_win = main_ns_win as cocoa::base::id;
+                    let panel_ns_win = panel_ns_win as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl};
+                        let parent: cocoa::base::id = objc::msg_send![panel_ns_win, parentWindow];
+                        if parent == main_ns_win {
+                            let _: () = objc::msg_send![main_ns_win, removeChildWindow: panel_ns_win];
+                        }
+                    }
+                });
+            }
+        }
         // Hide all widget mode panels
-        for label in &["main", "history", "notebook", "settings", "tutorial"] {
+        for label in &["main", "history", "notebook", "settings", "tutorial", "chat-panel"] {
             if let Some(w) = app.get_webview_window(label) {
                 #[cfg(target_os = "macos")]
                 {
-                    use tauri_nspanel::WebviewWindowExt;
-                    if let Ok(panel) = w.to_panel() {
-                        panel.order_out(None);
+                    use tauri_nspanel::ManagerExt;
+                    let lbl = label.clone();
+                    if let Ok(panel) = app.get_webview_panel(&lbl) {
+                        let _ = app.run_on_main_thread(move || {
+                            panel.order_out(None);
+                        });
                     } else {
                         let _ = w.hide();
                     }
@@ -103,11 +124,15 @@ pub fn hide_window(app: AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         window.hide().unwrap_or_default();
     }
+    if let Some(window) = app.get_webview_window("chat-panel") {
+        window.hide().unwrap_or_default();
+    }
 }
 
 #[tauri::command]
 pub fn quit_app(_app: AppHandle) {
-    std::process::exit(0);
+    println!("[RUST DEBUG] quit_app CALLED!");
+    // std::process::exit(0);
 }
 
 #[tauri::command]
@@ -172,6 +197,8 @@ pub fn set_debug_mode(debug: bool, app: AppHandle) {
 
 #[tauri::command]
 pub fn show_panel(label: String, app: AppHandle) {
+    println!("[RUST DEBUG] show_panel called for label: {}", label);
+    
     let mode = read_app_mode();
     if mode == "windowed" {
         if let Some(shell) = app.get_webview_window("app-shell") {
@@ -182,14 +209,65 @@ pub fn show_panel(label: String, app: AppHandle) {
         return;
     }
 
-    if label != "main" {
-        hide_panel("main".to_string(), app.clone());
+    if label != "main" && label != "chat-panel" {
+        #[cfg(target_os = "macos")]
+        {
+            if let Some(main_win) = app.get_webview_window("main") {
+                let ptr = main_win.ns_window().unwrap() as usize;
+                let _ = app.run_on_main_thread(move || {
+                    let ns = ptr as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl};
+                        let _: () = objc::msg_send![ns, setAlphaValue: 0.0f64];
+                        let _: () = objc::msg_send![ns, setIgnoresMouseEvents: cocoa::base::YES];
+                    }
+                });
+            }
+            if let (Some(main_w), Some(chat_w)) = (app.get_webview_window("main"), app.get_webview_window("chat-panel")) {
+                let main_ptr = main_w.ns_window().unwrap() as usize;
+                let chat_ptr = chat_w.ns_window().unwrap() as usize;
+                let _ = app.run_on_main_thread(move || {
+                    let main_ns = main_ptr as cocoa::base::id;
+                    let chat_ns = chat_ptr as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl};
+                        let parent: cocoa::base::id = objc::msg_send![chat_ns, parentWindow];
+                        if parent == main_ns {
+                            let _: () = objc::msg_send![main_ns, removeChildWindow: chat_ns];
+                        }
+                        let _: () = objc::msg_send![chat_ns, orderOut: cocoa::base::nil];
+                    }
+                });
+            }
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            if let Some(w) = app.get_webview_window("main") { let _ = w.hide(); }
+            if let Some(w) = app.get_webview_window("chat-panel") { let _ = w.hide(); }
+        }
+    }
+    
+    if label == "chat-panel" {
+        if let (Some(main_win), Some(panel_win)) = (app.get_webview_window("main"), app.get_webview_window("chat-panel")) {
+            if let (Ok(pos), Ok(size), Ok(psize)) = (main_win.outer_position(), main_win.outer_size(), panel_win.outer_size()) {
+                let offset_x = (psize.width as i32 - size.width as i32) / 2;
+                let scale_factor = main_win.scale_factor().unwrap_or(1.0);
+                let gap = (12.0 * scale_factor) as i32;
+                let _ = panel_win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                    x: pos.x - offset_x,
+                    y: pos.y + size.height as i32 + gap,
+                }));
+            }
+        }
     }
     if let Some(window) = app.get_webview_window(&label) {
         #[cfg(target_os = "macos")]
         {
             let is_main = label == "main";
             let ns_window_ptr = window.ns_window().unwrap() as usize;
+            
+            let lbl = label.clone();
+            let app_clone = app.clone();
             
             let _ = app.run_on_main_thread(move || {
                 if is_main {
@@ -204,15 +282,34 @@ pub fn show_panel(label: String, app: AppHandle) {
                         let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
                     }
                 } else {
-                    let ns_window = ns_window_ptr as cocoa::base::id;
-                    unsafe {
-                        use objc::{sel, sel_impl, class};
-                        let _: () = objc::msg_send![ns_window, makeKeyAndOrderFront: cocoa::base::nil];
-                        let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
-                        let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
+                    use tauri_nspanel::ManagerExt;
+                    if let Some(win) = app_clone.get_webview_window(&lbl) {
+                        if let Ok(panel) = app_clone.get_webview_panel(&lbl) {
+                            let ns_window_ptr = win.ns_window().unwrap() as usize;
+                            let _ = app_clone.run_on_main_thread(move || {
+                                panel.show();
+                                unsafe {
+                                    use objc::{sel, sel_impl, class};
+                                    let ns_window = ns_window_ptr as cocoa::base::id;
+                                    
+                                    // Restore NSNonactivatingPanelMask
+                                    let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
+                                    let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
+                                    
+                                    let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::NO];
+                                    let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
+                                    let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
+                                }
+                            });
+                        }
                     }
                 }
             });
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = window.show();
+            let _ = window.set_focus();
         }
     }
 }
@@ -254,9 +351,38 @@ pub fn hide_notebook(app: AppHandle) {
 }
 
 #[tauri::command]
+pub fn console_log(msg: String) {
+    println!("[REACT CONSOLE] {}", msg);
+}
+
+#[tauri::command]
 pub fn hide_panel(label: String, app: AppHandle) {
-    if label != "main" {
+    println!("[RUST DEBUG] hide_panel called for label: {}", label);
+    
+    if label == "chat-panel" {
+        #[cfg(target_os = "macos")]
+        {
+            if let (Some(main_win), Some(panel_win)) = (app.get_webview_window("main"), app.get_webview_window("chat-panel")) {
+                let main_ns_win = main_win.ns_window().unwrap() as usize;
+                let panel_ns_win = panel_win.ns_window().unwrap() as usize;
+                let _ = app.run_on_main_thread(move || {
+                    let main_ns_win = main_ns_win as cocoa::base::id;
+                    let panel_ns_win = panel_ns_win as cocoa::base::id;
+                    unsafe {
+                        use objc::{sel, sel_impl};
+                        let parent: cocoa::base::id = objc::msg_send![panel_ns_win, parentWindow];
+                        if parent == main_ns_win {
+                            let _: () = objc::msg_send![main_ns_win, removeChildWindow: panel_ns_win];
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    if label != "main" && label != "chat-panel" {
         show_panel("main".to_string(), app.clone());
+        let _ = app.emit("sync-chat-panel", ());
     }
     if let Some(window) = app.get_webview_window(&label) {
         #[cfg(target_os = "macos")]
@@ -280,6 +406,10 @@ pub fn hide_panel(label: String, app: AppHandle) {
                     }
                 }
             });
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = window.hide();
         }
     }
 }
@@ -376,7 +506,7 @@ pub fn focus_panel(label: String, app: AppHandle) {
         }
         #[cfg(not(target_os = "macos"))]
         {
-            window.set_focus().unwrap_or_default();
+            let _ = window.set_focus();
         }
     }
 }

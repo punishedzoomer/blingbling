@@ -285,7 +285,7 @@ export function SettingsApp({
       {!isWindowed && (
         <div 
           data-tauri-drag-region 
-          style={{ position: "absolute", top: 0, left: 0, right: 0, height: "40px", cursor: "grab", zIndex: 100 }} 
+          style={{ position: "absolute", top: 0, left: 0, right: 0, height: "40px", cursor: "grab", zIndex: 100, backgroundColor: "rgba(0,0,0,0.01)" }} 
           onMouseDown={(e) => {
             if (e.buttons === 1 && !(e.target as HTMLElement).closest('button, input, select')) {
               getCurrentWindow().startDragging();
@@ -295,7 +295,7 @@ export function SettingsApp({
       )}
       <div 
         id="settings" 
-        style={{ border: "none", boxShadow: "none", width: "100%", height: "100%", paddingTop: isWindowed ? "0" : "30px", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}
+        style={{ border: "none", boxShadow: "none", paddingTop: isWindowed ? "0" : "30px", margin: 0, padding: 0, display: "flex", flexDirection: "column", backgroundColor: "rgba(0,0,0,0.01)" }}
         onMouseEnter={() => { 
           if (!isWindowed) {
             invoke("focus_panel", { label: "settings" }).catch(console.error);
@@ -306,6 +306,7 @@ export function SettingsApp({
           <div className="s-head">
             <div className="s-title">Settings</div>
             <button id="s-close" className="s-close" onClick={async () => {
+              console.log("[REACT DEBUG] Settings close button clicked");
               await invoke("hide_panel", { label: "settings" });
             }} style={{ zIndex: 101 }}>Done</button>
           </div>

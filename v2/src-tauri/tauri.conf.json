@@ -32,8 +32,20 @@
       {
         "title": "BlingBling",
         "label": "main",
-        "width": 800,
-        "height": 600,
+        "width": 320,
+        "height": 44,
+        "transparent": true,
+        "decorations": false,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
+        "visible": false
+      },
+      {
+        "title": "Chat Panel",
+        "label": "chat-panel",
+        "width": 640,
+        "height": 800,
         "transparent": true,
         "decorations": false,
         "shadow": false,

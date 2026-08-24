@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import App from "./App";
 import { AppShell } from "./windowed/AppShell";
 import { SettingsApp } from "./SettingsApp";
@@ -9,6 +10,17 @@ import { HistoryApp } from "./HistoryApp";
 import { SnipApp } from "./SnipApp";
 import { TutorialApp } from "./TutorialApp";
 import { NotebookApp } from "./NotebookApp";
+
+const originalLog = console.log;
+const originalError = console.error;
+console.log = (...args) => {
+  originalLog(...args);
+  invoke("console_log", { msg: args.join(" ") }).catch(() => {});
+};
+console.error = (...args) => {
+  originalError(...args);
+  invoke("console_log", { msg: "ERROR: " + args.join(" ") }).catch(() => {});
+};
 
 function applyGlassOpacity(opacityPercent: number) {
   const alpha = Math.max(0.1, Math.min(1.0, opacityPercent / 100));
@@ -65,9 +77,11 @@ function Router() {
     return <TutorialApp />;
   } else if (label === "notebook") {
     return <NotebookApp />;
+  } else if (label === "chat-panel") {
+    return <App windowLabel="chat-panel" />;
   }
   
-  return <App />;
+  return <App windowLabel="main" />;
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

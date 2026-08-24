@@ -303,7 +303,6 @@ export function SettingsApp({
           <div className="s-head">
             <div className="s-title">Settings</div>
             <button id="s-close" className="s-close" onClick={async () => {
-              console.log("[REACT DEBUG] Settings close button clicked");
               await invoke("hide_panel", { label: "settings" });
             }} style={{ zIndex: 101 }}>Done</button>
           </div>

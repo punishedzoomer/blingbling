@@ -14,6 +14,15 @@ pub fn get_app_mode_file() -> PathBuf {
     }
 }
 
+pub fn is_debug_mode() -> bool {
+    static DEBUG: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *DEBUG.get_or_init(|| {
+        std::env::args().any(|arg| arg == "--debug" || arg == "-d") ||
+        std::env::var("DEBUG").is_ok() ||
+        std::env::var("BLING_DEBUG").is_ok()
+    })
+}
+
 pub fn read_app_mode() -> String {
     let path = get_app_mode_file();
     if let Ok(mode) = fs::read_to_string(path) {
@@ -195,7 +204,9 @@ pub fn set_debug_mode(debug: bool, app: AppHandle) {
 
 #[tauri::command]
 pub fn show_panel(label: String, app: AppHandle) {
-    println!("[RUST DEBUG] show_panel called for label: {}", label);
+    if is_debug_mode() {
+        println!("[RUST DEBUG] show_panel called for label: {}", label);
+    }
     
     let mode = read_app_mode();
     if mode == "windowed" {
@@ -315,7 +326,9 @@ pub fn show_panel(label: String, app: AppHandle) {
                                 }
                             },
                             Err(e) => {
-                                println!("[RUST DEBUG] get_webview_panel failed for {}: {:?}", lbl, e);
+                                if is_debug_mode() {
+                                    println!("[RUST DEBUG] get_webview_panel failed for {}: {:?}", lbl, e);
+                                }
                             }
                         }
                     }
@@ -368,12 +381,16 @@ pub fn hide_notebook(app: AppHandle) {
 
 #[tauri::command]
 pub fn console_log(msg: String) {
-    println!("[REACT CONSOLE] {}", msg);
+    if is_debug_mode() {
+        println!("[REACT CONSOLE] {}", msg);
+    }
 }
 
 #[tauri::command]
 pub fn hide_panel(label: String, app: AppHandle) {
-    println!("[RUST DEBUG] hide_panel called for label: {}", label);
+    if is_debug_mode() {
+        println!("[RUST DEBUG] hide_panel called for label: {}", label);
+    }
     
     if label == "chat-panel" {
         #[cfg(target_os = "macos")]
@@ -434,7 +451,9 @@ pub fn hide_panel(label: String, app: AppHandle) {
 
 #[tauri::command]
 pub fn log_debug(code: String, message: String) {
-    println!("[{}] {}", code, message);
+    if is_debug_mode() {
+        println!("[{}] {}", code, message);
+    }
 }
 
 #[tauri::command]
@@ -449,7 +468,9 @@ pub fn open_main_chat(app: AppHandle) {
         return;
     }
 
-    println!("[INFO-WIN-001] open_main_chat invoked");
+    if is_debug_mode() {
+        println!("[INFO-WIN-001] open_main_chat invoked");
+    }
     #[cfg(target_os = "macos")]
     {
         for label in &["history", "notebook", "settings", "snip", "tutorial"] {

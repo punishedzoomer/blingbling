@@ -94,7 +94,7 @@ export function NotebookList({
     return (
       <div
         key={nb.id}
-        className={`history-item ${isSelected ? "selected-nb" : ""}`}
+        className="history-item"
         style={{
           display: "flex",
           alignItems: "center",
@@ -103,13 +103,17 @@ export function NotebookList({
           borderRadius: "10px",
           position: "relative",
           marginBottom: "4px",
-          border: isSelected
-            ? `1px solid color-mix(in srgb, ${nb.color || "var(--accent)"} 50%, transparent)`
-            : "1px solid rgba(255,255,255,0.04)",
-          background: isSelected
-            ? `color-mix(in srgb, ${nb.color || "var(--accent)"} 12%, transparent)`
-            : "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.04)",
+          background: "rgba(255,255,255,0.02)",
           transition: "all 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = `color-mix(in srgb, ${nb.color || "var(--accent)"} 12%, transparent)`;
+          e.currentTarget.style.borderColor = `color-mix(in srgb, ${nb.color || "var(--accent)"} 50%, transparent)`;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.02)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)";
         }}
         onClick={() => openNotebookWindow(nb.id)}
       >
@@ -147,12 +151,27 @@ export function NotebookList({
             <span style={{ color: "var(--tx-mut)", fontSize: "11px" }}>
               {chatCount} chat{chatCount === 1 ? "" : "s"}
             </span>
-            <span
-              className="tag-pill"
-              style={{ "--tag-color": nb.color || "#3B82F6" } as any}
+            <div
+              style={{ 
+                "--tag-color": nb.color || "#3B82F6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "18px",
+                padding: "0 8px",
+                borderRadius: "12px",
+                fontSize: "10px",
+                fontWeight: 700,
+                background: "color-mix(in srgb, var(--tag-color) 15%, transparent)",
+                color: "var(--tag-color)",
+                border: "1px solid color-mix(in srgb, var(--tag-color) 25%, transparent)",
+                boxSizing: "border-box",
+                whiteSpace: "nowrap",
+                flexShrink: 0
+              } as any}
             >
               #{nb.title.toLowerCase()}
-            </span>
+            </div>
           </div>
         </div>
 

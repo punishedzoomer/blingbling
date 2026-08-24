@@ -1,4 +1,4 @@
-import { PanelLeftClose, PanelLeftOpen, PenSquare, Layout } from "lucide-react";
+import { PenSquare, Layout } from "lucide-react";
 import { emit } from "@tauri-apps/api/event";
 import { Surface } from "./types";
 
@@ -44,7 +44,27 @@ export function TitleBar({
           onMouseDown={(e) => e.stopPropagation()}
           data-no-drag
         >
-          {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={16}
+            height={16}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path
+              d="M9 3v18"
+              style={{
+                transform: sidebarCollapsed ? "translateX(-2.5px)" : "translateX(0)",
+                opacity: sidebarCollapsed ? 0.6 : 1,
+                transition: "transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease",
+              }}
+            />
+          </svg>
         </button>
 
         <span className="windowed-title-text">{titles[surface]}</span>

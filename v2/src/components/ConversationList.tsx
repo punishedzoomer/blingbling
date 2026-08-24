@@ -57,11 +57,16 @@ export function normalizeSessionData(data: any): { history: any[]; tagId?: strin
 }
 
 export function getSessionTitle(session: any): string {
+  if (session._cachedTitle) return session._cachedTitle;
   if (session.data?.title) return session.data.title;
   if (session.title) return session.title;
+  
   const messages = extractMessages(session.data);
   const first = messages.find((m: any) => m.role === "user")?.content || "Empty Chat";
   const title = String(first).replace(/\n/g, " ").slice(0, 60);
+  
+  session._cachedTitle = title;
+  
   if (session.data && typeof session.data === "object" && !Array.isArray(session.data)) {
     session.data.title = title;
   }
@@ -219,10 +224,25 @@ const ConversationListItem = memo(function ConversationListItem({
         </div>
 
         {tag && (
-          <div style={{ display: "inline-flex" }}>
+          <div style={{ display: "flex", alignItems: "center", paddingBottom: "2px", paddingTop: "2px" }}>
             <div
-              className="tag-pill"
-              style={{ "--tag-color": tag.color || "#3B82F6" } as any}
+              style={{ 
+                "--tag-color": tag.color || "#3B82F6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "18px",
+                padding: "0 8px",
+                borderRadius: "12px",
+                fontSize: "10px",
+                fontWeight: 700,
+                background: "color-mix(in srgb, var(--tag-color) 15%, transparent)",
+                color: "var(--tag-color)",
+                border: "1px solid color-mix(in srgb, var(--tag-color) 25%, transparent)",
+                boxSizing: "border-box",
+                whiteSpace: "nowrap",
+                flexShrink: 0
+              } as any}
             >
               #{tag.name.toLowerCase()}
             </div>
@@ -334,18 +354,20 @@ export const ConversationList = memo(function ConversationList({
 
   // Filter and strictly sort sessions chronologically (newest first)
   const filteredSessions = useMemo(() => {
-    const list = sessions.filter((s) => {
+    if (!searchQuery) {
+      // Sessions are already sorted chronologically by sessionStore.
+      return sessions;
+    }
+
+    const q = searchQuery.toLowerCase();
+    return sessions.filter((s) => {
       const title = getSessionTitle(s);
       const tagId = s.data?.tagId || s.data?.workflowId;
       const tag = tags.find((t) => t.id === tagId);
       const tagName = tag?.name || "";
 
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
       return title.toLowerCase().includes(q) || tagName.toLowerCase().includes(q);
     });
-
-    return list.sort((a, b) => getSessionTimestamp(b) - getSessionTimestamp(a));
   }, [sessions, tags, searchQuery]);
 
   // Lazy loaded slice of sessions for DOM rendering

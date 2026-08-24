@@ -31,9 +31,19 @@ export function HistoryApp({
     return saved ? JSON.parse(saved) : [];
   });
   const [activeTab, setActiveTab] = useState<"history" | "trash">(initialTab);
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set([initialTab]));
   const [searchQuery, setSearchQuery] = useState("");
   const [trashSearchQuery, setTrashSearchQuery] = useState("");
   const [showEmptyTrashConfirm, setShowEmptyTrashConfirm] = useState(false);
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
@@ -113,25 +123,38 @@ export function HistoryApp({
     >
       <div
         id="transcript-sidebar"
-        className="transcript-sidebar"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100%",
-          height: "100%",
-          maxHeight: "100%",
-          margin: 0,
-          padding: 0,
-          display: "flex",
-          flexDirection: "column",
-          boxSizing: "border-box",
-          borderRadius: isWindowed ? 0 : "16px",
-          overflow: "hidden",
-          pointerEvents: "auto",
-        }}
+        className={isWindowed ? undefined : "transcript-sidebar"}
+        style={
+          isWindowed
+            ? {
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                width: "100%",
+                minWidth: 0,
+                minHeight: 0,
+                overflow: "hidden",
+                boxSizing: "border-box",
+              }
+            : {
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: "100%",
+                height: "100%",
+                maxHeight: "100%",
+                margin: 0,
+                padding: 0,
+                display: "flex",
+                flexDirection: "column",
+                boxSizing: "border-box",
+                borderRadius: "16px",
+                overflow: "hidden",
+                pointerEvents: "auto",
+              }
+        }
       >
         <style>{`
           .history-item { display: flex; align-items: center; padding: 10px 12px; cursor: pointer; border-radius: 8px; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -233,29 +256,33 @@ export function HistoryApp({
         >
           {/* 1. HISTORY PANE */}
           <div className="view-pane-2">
-            <ConversationList
-              sessions={sessions}
-              tags={tags}
-              searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
-              onSelectSession={handleSelectSession}
-              actionType="delete"
-              onActionClick={(e, s) => handleDeleteToTrash(e, s.id)}
-              emptyMessage="No chats found."
-            />
+            {visitedTabs.has("history") && (
+              <ConversationList
+                sessions={sessions}
+                tags={tags}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
+                onSelectSession={handleSelectSession}
+                actionType="delete"
+                onActionClick={(e, s) => handleDeleteToTrash(e, s.id)}
+                emptyMessage="No chats found."
+              />
+            )}
           </div>
 
           {/* 2. TRASH PANE */}
           <div className="view-pane-2">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "10px",
-                padding: "0 2px",
-              }}
-            >
+            {visitedTabs.has("trash") && (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "10px",
+                    padding: "0 2px",
+                  }}
+                >
               <span style={{ fontSize: "12px", color: "var(--tx-mut)" }}>
                 {trashSessions.length} deleted conversation{trashSessions.length === 1 ? "" : "s"}
               </span>
@@ -295,6 +322,8 @@ export function HistoryApp({
               showGroups={true}
               emptyMessage="Trash is empty."
             />
+            </>
+            )}
           </div>
         </div>
 

@@ -284,23 +284,28 @@ pub fn show_panel(label: String, app: AppHandle) {
                 } else {
                     use tauri_nspanel::ManagerExt;
                     if let Some(win) = app_clone.get_webview_window(&lbl) {
-                        if let Ok(panel) = app_clone.get_webview_panel(&lbl) {
-                            let ns_window_ptr = win.ns_window().unwrap() as usize;
-                            let _ = app_clone.run_on_main_thread(move || {
-                                panel.show();
-                                unsafe {
-                                    use objc::{sel, sel_impl, class};
-                                    let ns_window = ns_window_ptr as cocoa::base::id;
-                                    
-                                    // Restore NSNonactivatingPanelMask
-                                    let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
-                                    let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
-                                    
-                                    let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::NO];
-                                    let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
-                                    let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
-                                }
-                            });
+                        match app_clone.get_webview_panel(&lbl) {
+                            Ok(panel) => {
+                                let ns_window_ptr = win.ns_window().unwrap() as usize;
+                                let _ = app_clone.run_on_main_thread(move || {
+                                    panel.show();
+                                    unsafe {
+                                        use objc::{sel, sel_impl, class};
+                                        let ns_window = ns_window_ptr as cocoa::base::id;
+                                        
+                                        // Restore NSNonactivatingPanelMask
+                                        let style_mask: cocoa::foundation::NSUInteger = objc::msg_send![ns_window, styleMask];
+                                        let _: () = objc::msg_send![ns_window, setStyleMask: style_mask | 128];
+                                        
+                                        let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::NO];
+                                        let ns_app: cocoa::base::id = objc::msg_send![class!(NSRunningApplication), currentApplication];
+                                        let _: bool = objc::msg_send![ns_app, activateWithOptions: 2];
+                                    }
+                                });
+                            },
+                            Err(e) => {
+                                println!("[RUST DEBUG] get_webview_panel failed for {}: {:?}", lbl, e);
+                            }
                         }
                     }
                 }

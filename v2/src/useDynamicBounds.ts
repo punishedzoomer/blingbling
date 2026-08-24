@@ -6,9 +6,9 @@ export function useDynamicBounds(label: string = "main", enabled: boolean = true
   const rafId = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!enabled || label === "app-shell") return;
+    if (!enabled || label !== "main") return;
 
-    const el = document.body;
+    const el = document.getElementById("app") || document.getElementById("toolbar") || document.body;
     if (!el) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
@@ -17,12 +17,12 @@ export function useDynamicBounds(label: string = "main", enabled: boolean = true
 
         rafId.current = requestAnimationFrame(async () => {
           const rect = entry.target.getBoundingClientRect();
-          const width = Math.ceil(rect.width) + 1;
-          const height = Math.ceil(rect.height) + 1;
+          const width = Math.round(rect.width);
+          const height = Math.round(rect.height);
 
           if (
-            lastDimensions.current.width === width &&
-            lastDimensions.current.height === height
+            Math.abs(lastDimensions.current.width - width) < 2 &&
+            Math.abs(lastDimensions.current.height - height) < 2
           ) {
             return;
           }

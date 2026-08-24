@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers } from "lucide-react";
 import "./App.css";
-import { useDynamicBounds } from "./useDynamicBounds";
 
 interface OpenRouterModel {
   id: string;
@@ -113,8 +112,6 @@ export function SettingsApp({
   isWindowed?: boolean;
   onDone?: () => void;
 } = {}) {
-  useDynamicBounds("settings", !isWindowed);
-
   const [activeTab, setActiveTab] = useState("general");
   const [buttons, setButtons] = useState(() => {
     const saved = localStorage.getItem("buttonConfigs");

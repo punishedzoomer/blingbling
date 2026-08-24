@@ -130,8 +130,7 @@ pub fn hide_window(app: AppHandle) {
 
 #[tauri::command]
 pub fn quit_app(_app: AppHandle) {
-    println!("[RUST DEBUG] quit_app CALLED!");
-    // std::process::exit(0);
+    std::process::exit(0);
 }
 
 #[tauri::command]

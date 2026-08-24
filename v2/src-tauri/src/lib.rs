@@ -155,7 +155,7 @@ pub fn run() {
             }
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 if window.label() == "app-shell" || window.label() == "main" {
-                    // std::process::exit(0);
+                    std::process::exit(0);
                 } else {
                     api.prevent_close();
                     #[cfg(target_os = "macos")]
@@ -175,11 +175,5 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app_handle, event| {
-            println!("[RUST DEBUG] RunEvent: {:?}", event);
-            if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                println!("[RUST DEBUG] PREVENTING EXIT REQUESTED!");
-                api.prevent_exit();
-            }
-        });
+        .run(|_app_handle, _event| {});
 }

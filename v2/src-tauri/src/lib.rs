@@ -138,6 +138,21 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| match event {
+            tauri::WindowEvent::Moved(pos) => {
+                if window.label() == "main" {
+                    if let Some(chat_win) = window.app_handle().get_webview_window("chat-panel") {
+                        if let (Ok(size), Ok(psize)) = (window.outer_size(), chat_win.outer_size()) {
+                            let offset_x = (psize.width as i32 - size.width as i32) / 2;
+                            let scale_factor = window.scale_factor().unwrap_or(1.0);
+                            let gap = (12.0 * scale_factor) as i32;
+                            let _ = chat_win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                                x: pos.x - offset_x,
+                                y: pos.y + size.height as i32 + gap,
+                            }));
+                        }
+                    }
+                }
+            }
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 if window.label() == "app-shell" || window.label() == "main" {
                     // std::process::exit(0);
@@ -145,11 +160,9 @@ pub fn run() {
                     api.prevent_close();
                     #[cfg(target_os = "macos")]
                     {
-                        if let Some(webview_window) = window.app_handle().get_webview_window(window.label()) {
-                            use tauri_nspanel::WebviewWindowExt;
-                            if let Ok(panel) = webview_window.to_panel() {
-                                panel.order_out(None);
-                            }
+                        use tauri_nspanel::ManagerExt;
+                        if let Ok(panel) = window.app_handle().get_webview_panel(window.label()) {
+                            panel.order_out(None);
                         }
                     }
                     #[cfg(not(target_os = "macos"))]

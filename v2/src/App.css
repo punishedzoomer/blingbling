@@ -69,7 +69,7 @@ html, body, #root {
   padding-top: 0;
   pointer-events: none;                  /* only the actual UI blocks; gaps pass through */
 }
-#toolbar, #panel-wrap, #settings-scrim, #onboard-scrim, #consent-scrim, #settings, .s-drag-header, #notebook, .nb-drag-header, #history, .h-drag-header, #tutorial, .t-drag-header { pointer-events: auto; }
+#toolbar, #panel-wrap, #settings-scrim, #onboard-scrim, #consent-scrim, #settings, .s-drag-header, #notebook, .nb-drag-header, #history, .h-drag-header, #tutorial, .t-drag-header, #onboard, #onboard * { pointer-events: auto; }
 #toolbar { }   /* drag the top pill to move the window */
 #panel-wrap, #panel, #messages, #action-row, #composer, #input, textarea, button, .act, .smart-pill, .more-btn, #send-btn, .s-close, .s-seg button, .ob-buttons button, .ob-ghost, .ob-primary {  }
 
@@ -705,9 +705,7 @@ button:focus { outline: none; }
 
 
 /* ============================ Onboarding / tutorial ============================ */
-#onboard-scrim { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(0,0,0,0.45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-#onboard-scrim.hidden { display: none; }
-#onboard { width: 470px; padding: 26px 28px 18px; text-align: center; -webkit-app-region: no-drag; animation: overlayIn 240ms cubic-bezier(0.22,1,0.36,1); }
+#onboard { width: 100%; box-sizing: border-box; padding: 26px 28px 18px; text-align: center; -webkit-app-region: no-drag; pointer-events: auto; }
 .ob-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
 .ob-dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.20); transition: all 220ms ease; }
 .ob-dots span.on { background: var(--accent); width: 20px; border-radius: 4px; }

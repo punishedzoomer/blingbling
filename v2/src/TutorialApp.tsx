@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Sparkles, Scan, CheckCircle2 } from "lucide-react";
 import "./App.css";
 
@@ -60,18 +61,32 @@ export function TutorialApp({
       id="onboard"
       className={isWindowed ? "windowed-card" : "glass"}
       style={{
-        margin: isWindowed ? "0 auto" : "20px",
+        margin: isWindowed ? "0 auto" : "0",
         maxWidth: isWindowed ? "560px" : undefined,
+        width: "100%",
         display: "flex",
         flexDirection: "column",
-        height: isWindowed ? "100%" : "calc(100vh - 40px)",
+        height: isWindowed ? "100%" : "100vh",
         maxHeight: isWindowed ? "460px" : undefined,
-        borderRadius: "16px",
-        padding: "30px",
+        borderRadius: isWindowed ? "16px" : "20px",
+        padding: "24px 28px",
         boxSizing: "border-box",
         overflow: "hidden",
+        position: "relative",
+        pointerEvents: "auto",
       }}
     >
+      {!isWindowed && (
+        <div 
+          data-tauri-drag-region 
+          style={{ position: "absolute", top: 0, left: 0, right: 0, height: "36px", cursor: "grab", zIndex: 100, backgroundColor: "transparent" }} 
+          onMouseDown={(e) => {
+            if (e.buttons === 1 && !(e.target as HTMLElement).closest('button')) {
+              getCurrentWindow().startDragging();
+            }
+          }}
+        />
+      )}
       <div className="ob-dots" id="ob-dots">
         {SLIDES.map((_, i) => (
           <span key={i} className={i === slide ? "on" : ""}></span>

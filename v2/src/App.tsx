@@ -278,6 +278,7 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
       clearAllAttachmentsRef.current();
       setIsStreaming(false);
       setIsThinking(false);
+      setIsCollapsed(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
     };
 
@@ -289,6 +290,11 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
     listen("restore-session", (e: any) => {
       applyRestoreSession(e.payload);
     }).then((f) => (unlistenRestore = f));
+
+    let unlistenExpand: (() => void) | null = null;
+    listen("expand-chat", () => {
+      setIsCollapsed(false);
+    }).then((f) => (unlistenExpand = f));
 
     listen("simulate-llm", async () => {
       const mockResponse = `### LLM Mock Response\nHere is a test of **Markdown parsing**:\n1. Supports code & attachments\n\`\`\`rust\nfn main() {\n    println!("Hello, BlingBling!");\n}\n\`\`\`\nWorks cleanly!`;
@@ -313,6 +319,7 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
       if (unlistenSimulate) unlistenSimulate();
       if (unlistenRestore) unlistenRestore();
       if (unlistenReset) unlistenReset();
+      if (unlistenExpand) unlistenExpand();
     };
   }, []);
 

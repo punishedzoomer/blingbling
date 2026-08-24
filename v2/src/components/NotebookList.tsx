@@ -102,9 +102,8 @@ export function NotebookList({
           cursor: "pointer",
           borderRadius: "10px",
           position: "relative",
-          marginBottom: "4px",
-          border: "1px solid rgba(255,255,255,0.04)",
-          background: "rgba(255,255,255,0.02)",
+          border: isSelected ? `1px solid color-mix(in srgb, ${nb.color || "var(--accent)"} 60%, transparent)` : "1px solid rgba(255,255,255,0.04)",
+          background: isSelected ? `color-mix(in srgb, ${nb.color || "var(--accent)"} 16%, transparent)` : "rgba(255,255,255,0.02)",
           transition: "all 0.15s ease",
         }}
         onMouseEnter={(e) => {
@@ -112,8 +111,8 @@ export function NotebookList({
           e.currentTarget.style.borderColor = `color-mix(in srgb, ${nb.color || "var(--accent)"} 50%, transparent)`;
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)";
+          e.currentTarget.style.background = isSelected ? `color-mix(in srgb, ${nb.color || "var(--accent)"} 16%, transparent)` : "rgba(255,255,255,0.02)";
+          e.currentTarget.style.borderColor = isSelected ? `color-mix(in srgb, ${nb.color || "var(--accent)"} 60%, transparent)` : "rgba(255,255,255,0.04)";
         }}
         onClick={() => openNotebookWindow(nb.id)}
       >

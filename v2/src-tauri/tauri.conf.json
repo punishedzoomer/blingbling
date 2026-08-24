@@ -56,8 +56,8 @@
       {
         "title": "Settings",
         "label": "settings",
-        "width": 480,
-        "height": 500,
+        "width": 520,
+        "height": 580,
         "transparent": true,
         "decorations": false,
         "shadow": false,

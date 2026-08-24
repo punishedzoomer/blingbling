@@ -269,14 +269,14 @@ export function SettingsApp({
       id="settings-window"
       className={isWindowed ? "windowed-pane" : "glass"}
       style={{
-        width: isWindowed ? "100%" : "480px",
+        width: "100%",
         maxWidth: isWindowed ? "720px" : undefined,
         margin: isWindowed ? "0 auto" : undefined,
         height: isWindowed ? "100%" : "fit-content",
         minHeight: "400px",
         display: "flex",
         flexDirection: "column",
-        padding: isWindowed ? "0" : "16px",
+        padding: isWindowed ? "0" : "18px 20px 20px",
         boxSizing: "border-box",
         position: "relative",
       }}
@@ -295,7 +295,7 @@ export function SettingsApp({
       )}
       <div 
         id="settings" 
-        style={{ border: "none", boxShadow: "none", paddingTop: isWindowed ? "0" : "30px", margin: 0, padding: 0, display: "flex", flexDirection: "column", backgroundColor: "rgba(0,0,0,0.01)" }}
+        style={{ border: "none", boxShadow: "none", paddingTop: 0, margin: 0, padding: 0, display: "flex", flexDirection: "column", backgroundColor: "transparent", width: "100%", boxSizing: "border-box" }}
         onMouseEnter={() => { 
           if (!isWindowed) {
             invoke("focus_panel", { label: "settings" }).catch(console.error);

@@ -250,7 +250,7 @@ pub fn show_panel(label: String, app: AppHandle) {
             if let (Ok(pos), Ok(size), Ok(psize)) = (main_win.outer_position(), main_win.outer_size(), panel_win.outer_size()) {
                 let offset_x = (psize.width as i32 - size.width as i32) / 2;
                 let scale_factor = main_win.scale_factor().unwrap_or(1.0);
-                let gap = (12.0 * scale_factor) as i32;
+                let gap = (6.0 * scale_factor) as i32;
                 let _ = panel_win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
                     x: pos.x - offset_x,
                     y: pos.y + size.height as i32 + gap,

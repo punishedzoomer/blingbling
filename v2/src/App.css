@@ -61,12 +61,12 @@ html, body, #root {
   position: relative;
   z-index: 2;
   height: fit-content;
-  min-height: 40px;
+  min-height: 0;
   width: fit-content;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 14px;
+  padding-top: 0;
   pointer-events: none;                  /* only the actual UI blocks; gaps pass through */
 }
 #toolbar, #panel-wrap, #settings-scrim, #onboard-scrim, #consent-scrim, #settings, .s-drag-header, #notebook, .nb-drag-header, #history, .h-drag-header, #tutorial, .t-drag-header { pointer-events: auto; }
@@ -605,8 +605,7 @@ button:focus { outline: none; }
   display: grid; place-items: center;
   background: rgba(0,0,0,0.15); backdrop-filter: blur(8px);
 }
-#settings-scrim.hidden { display: none; }
-#settings { width: 480px; padding: 18px 20px 20px; -webkit-app-region: no-drag; max-height: 600px; display: flex; flex-direction: column; border-radius: var(--r-24); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); overflow: hidden; }
+#settings { width: 100%; box-sizing: border-box; padding: 0; -webkit-app-region: no-drag; max-height: 600px; display: flex; flex-direction: column; overflow: hidden; }
 .s-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-shrink: 0; }
 .s-title { font-size: 17px; font-weight: 600; color: var(--tx-1); }
 .s-close { border: none; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; padding: 6px 14px; border-radius: var(--r-pill); cursor: pointer; }

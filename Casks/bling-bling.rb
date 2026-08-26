@@ -1,6 +1,6 @@
 cask "bling-bling" do
-  version "0.1.0"
-  sha256 "8d9d45483afe3adb5ecbc804e3547fa6ee34fa29e3ce795987f11f80fef4efd1"
+  version "0.1.1"
+  sha256 "648c5c4cad498d584e9f2dcc0c999bb25958fdea7521dd19a95623d34572826d"
 
   url "https://github.com/punishedzoomer/blingbling/releases/download/v#{version}/Bling.Bling_#{version}_aarch64.dmg",
       verified: "github.com/punishedzoomer/blingbling/"

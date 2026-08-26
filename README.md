@@ -43,4 +43,16 @@ There is also windowed mode:
 
 ---
 
+## Installation
+
+### Via Homebrew (Recommended)
+```bash
+brew install --cask punishedzoomer/tap/bling-bling
+```
+
+### Manual Download
+Download the latest `.dmg` from [GitHub Releases](https://github.com/punishedzoomer/blingbling/releases/latest).
+
+---
+
 - **Live Article / Portfolio**: [notosansdiary.com](https://notosansdiary.com/Portfolio/Bling-Bling)

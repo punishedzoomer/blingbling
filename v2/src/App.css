@@ -17,17 +17,17 @@
   --fill-1: rgba(255,255,255,0.04);
   --fill-2: rgba(255,255,255,0.06);
 
-  --glass-alpha: 1.0;
-  --glass-bg: #14161d;
-  --modal-glass-bg: #14161d;
+  --glass-alpha: 0.85;
+  --glass-bg: rgba(18, 20, 26, var(--glass-alpha));
+  --modal-glass-bg: rgba(18, 20, 26, var(--glass-alpha));
   --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
-  --windowed-bg: #111216;
-  --windowed-titlebar-bg: #15171e;
-  --windowed-sidebar-bg: #14161d;
-  --windowed-card-bg: #191b23;
-  --windowed-composer-bg: #161921;
+  --windowed-bg: rgba(16, 18, 24, var(--glass-alpha));
+  --windowed-titlebar-bg: rgba(20, 22, 28, var(--glass-alpha));
+  --windowed-sidebar-bg: rgba(18, 20, 26, var(--glass-alpha));
+  --windowed-card-bg: rgba(24, 26, 34, var(--glass-alpha));
+  --windowed-composer-bg: rgba(20, 23, 30, var(--glass-alpha));
 
   --r-panel: 24px;
   --r-16: 16px;

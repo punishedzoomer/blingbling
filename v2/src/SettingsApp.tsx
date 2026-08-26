@@ -2,7 +2,8 @@ import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers } from "lucide-react";
+import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers, Sliders } from "lucide-react";
+import { getStoredGlassOpacity, setGlassOpacity as setGlobalGlassOpacity } from "./utils/theme";
 
 interface OpenRouterModel {
   id: string;
@@ -145,6 +146,12 @@ export function SettingsApp({
   const [modelSmart, setModelSmart] = useState("");
   const [modelUltra, setModelUltra] = useState("");
   const [allowSystemScreenshots, setAllowSystemScreenshots] = useState(false);
+  const [glassOpacity, setGlassOpacity] = useState<number>(getStoredGlassOpacity);
+
+  const handleOpacityChange = (val: number) => {
+    setGlassOpacity(val);
+    setGlobalGlassOpacity(val);
+  };
 
   const [allModels, setAllModels] = useState<OpenRouterModel[]>([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -368,6 +375,54 @@ export function SettingsApp({
                     models={allModels}
                     disabled={!modelsLoaded}
                   />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.06)", marginTop: "4px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <label className="s-label" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--tx-1)", margin: 0 }}>
+                      <Sliders size={13} style={{ color: "var(--accent)" }} /> Window Opacity
+                    </label>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent)" }}>
+                      {glassOpacity}%
+                    </span>
+                  </div>
+                  
+                  <input
+                    type="range"
+                    min="20"
+                    max="100"
+                    step="1"
+                    value={glassOpacity}
+                    onChange={(e) => handleOpacityChange(parseInt(e.target.value, 10))}
+                    style={{
+                      width: "100%",
+                      accentColor: "var(--accent)",
+                      cursor: "pointer",
+                      margin: "4px 0",
+                    }}
+                  />
+                  
+                  <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
+                    {[60, 75, 85, 95, 100].map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => handleOpacityChange(preset)}
+                        style={{
+                          flex: 1,
+                          padding: "4px 6px",
+                          fontSize: "11px",
+                          borderRadius: "6px",
+                          border: glassOpacity === preset ? "1px solid var(--accent)" : "1px solid rgba(255,255,255,0.1)",
+                          background: glassOpacity === preset ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "rgba(255,255,255,0.04)",
+                          color: glassOpacity === preset ? "var(--accent)" : "var(--tx-mut)",
+                          cursor: "pointer",
+                          fontWeight: glassOpacity === preset ? 600 : 400,
+                        }}
+                      >
+                        {preset === 85 ? "85% (Default)" : preset === 100 ? "Solid" : `${preset}%`}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

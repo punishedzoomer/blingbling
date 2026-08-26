@@ -18,24 +18,25 @@ export function getStoredGlassOpacity(): number {
   return DEFAULT_OPACITY;
 }
 
-export function applyThemeTokens(_opacityPercent?: number) {
+export function applyThemeTokens(opacityPercent: number = DEFAULT_OPACITY) {
+  const alpha = Math.max(0.2, Math.min(1.0, opacityPercent / 100));
   const docStyle = document.documentElement.style;
 
-  // Unified Alpha Token (Solid)
-  docStyle.setProperty("--glass-alpha", "1.0");
+  // Unified Alpha Token
+  docStyle.setProperty("--glass-alpha", alpha.toFixed(3));
 
-  // Surfaces (Solid, zero-flicker, zero ghost artifacts)
-  docStyle.setProperty("--glass-bg", "#14161d");
-  docStyle.setProperty("--modal-glass-bg", "#14161d");
-  docStyle.setProperty("--glass-border", "rgba(255, 255, 255, 0.12)");
-  docStyle.setProperty("--glass-shadow", "0 16px 40px rgba(0, 0, 0, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.08)");
+  // Surfaces (Translucent, zero-flicker, zero blur overhead)
+  docStyle.setProperty("--glass-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
+  docStyle.setProperty("--modal-glass-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
+  docStyle.setProperty("--glass-border", `rgba(255, 255, 255, ${Math.min(0.25, 0.08 + (1 - alpha) * 0.1).toFixed(3)})`);
+  docStyle.setProperty("--glass-shadow", `0 16px 40px rgba(0, 0, 0, ${(0.3 + alpha * 0.2).toFixed(2)}), inset 0 1px 0 rgba(255, 255, 255, 0.08)`);
 
-  // Windowed Mode Solid Tokens
-  docStyle.setProperty("--windowed-bg", "#111216");
-  docStyle.setProperty("--windowed-titlebar-bg", "#15171e");
-  docStyle.setProperty("--windowed-sidebar-bg", "#14161d");
-  docStyle.setProperty("--windowed-card-bg", "#191b23");
-  docStyle.setProperty("--windowed-composer-bg", "#161921");
+  // Windowed Mode Tokens
+  docStyle.setProperty("--windowed-bg", `rgba(16, 18, 24, ${alpha.toFixed(3)})`);
+  docStyle.setProperty("--windowed-titlebar-bg", `rgba(20, 22, 28, ${Math.min(1, alpha + 0.02).toFixed(3)})`);
+  docStyle.setProperty("--windowed-sidebar-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
+  docStyle.setProperty("--windowed-card-bg", `rgba(24, 26, 34, ${Math.min(1, alpha + 0.03).toFixed(3)})`);
+  docStyle.setProperty("--windowed-composer-bg", `rgba(20, 23, 30, ${Math.min(1, alpha + 0.04).toFixed(3)})`);
 }
 
 export function setGlassOpacity(percent: number, broadcast: boolean = true) {

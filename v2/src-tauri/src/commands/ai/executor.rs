@@ -95,12 +95,13 @@ fn extract_url_from_val(val: &Value) -> Option<String> {
 
 fn extract_output_markdown(json_res: &Value, model_kind: ModelKind) -> String {
     let mut output_markdown = String::new();
+    let mut image_urls = Vec::new();
 
     // 1. Top-level OpenAI / DALL-E format: { "data": [ { "url": "..." }, { "b64_json": "..." } ] }
     if let Some(data_array) = json_res.get("data").and_then(|d| d.as_array()) {
         for item in data_array {
             if let Some(url) = extract_url_from_val(item) {
-                append_image(&mut output_markdown, &url);
+                image_urls.push(url);
             }
         }
     }
@@ -108,46 +109,47 @@ fn extract_output_markdown(json_res: &Value, model_kind: ModelKind) -> String {
     if let Some(choice) = json_res.get("choices").and_then(|c| c.get(0)) {
         let message_obj = choice.get("message").unwrap_or(choice);
 
-        // 2. Extract content (String or Array)
-        if let Some(content_val) = message_obj.get("content") {
-            if let Some(text) = content_val.as_str() {
-                let trimmed = text.trim();
-                if is_raw_image_url(trimmed) {
-                    append_image(&mut output_markdown, trimmed);
-                } else {
-                    output_markdown.push_str(trimmed);
-                }
-            } else if let Some(content_array) = content_val.as_array() {
-                for item in content_array {
-                    if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
-                        if !output_markdown.is_empty() {
-                            output_markdown.push(' ');
-                        }
-                        output_markdown.push_str(text);
-                    }
-                    if let Some(url) = extract_url_from_val(item) {
-                        append_image(&mut output_markdown, &url);
-                    }
-                }
-            }
-        }
-
-        // 3. Extract choices[0].message.images (Array of Strings or Array of Objects)
+        // 2. Extract choices[0].message.images (Array of Strings or Array of Objects)
         let images_opt = message_obj.get("images")
             .or_else(|| choice.get("images"));
 
         if let Some(images_array) = images_opt.and_then(|img| img.as_array()) {
             for item in images_array {
                 if let Some(url) = extract_url_from_val(item) {
-                    append_image(&mut output_markdown, &url);
+                    image_urls.push(url);
                 }
             }
         }
 
-        // 4. Extract single image field choices[0].message.image
+        // 3. Extract single image field choices[0].message.image
         if let Some(single_img) = message_obj.get("image").or_else(|| choice.get("image")) {
             if let Some(url) = extract_url_from_val(single_img) {
-                append_image(&mut output_markdown, &url);
+                image_urls.push(url);
+            }
+        }
+
+        // 4. Extract content (String or Array)
+        if let Some(content_val) = message_obj.get("content") {
+            if let Some(text) = content_val.as_str() {
+                let trimmed = text.trim();
+                if is_raw_image_url(trimmed) {
+                    image_urls.push(trimmed.to_string());
+                } else if !trimmed.is_empty() && (model_kind != ModelKind::ImageGeneration || image_urls.is_empty()) {
+                    output_markdown.push_str(trimmed);
+                }
+            } else if let Some(content_array) = content_val.as_array() {
+                for item in content_array {
+                    if let Some(url) = extract_url_from_val(item) {
+                        image_urls.push(url);
+                    } else if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
+                        if model_kind != ModelKind::ImageGeneration || image_urls.is_empty() {
+                            if !output_markdown.is_empty() {
+                                output_markdown.push(' ');
+                            }
+                            output_markdown.push_str(text);
+                        }
+                    }
+                }
             }
         }
 
@@ -167,6 +169,11 @@ fn extract_output_markdown(json_res: &Value, model_kind: ModelKind) -> String {
                 output_markdown.push_str(&format!("[Audio Response](data:audio/wav;base64,{})", b64_data));
             }
         }
+    }
+
+    // Append all extracted images
+    for url in image_urls {
+        append_image(&mut output_markdown, &url);
     }
 
     if output_markdown.is_empty() {

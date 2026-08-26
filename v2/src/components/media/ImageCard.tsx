@@ -16,22 +16,58 @@ export function ImageCard({ src, alt }: ImageCardProps) {
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
+      let blob: Blob;
       if (src.startsWith("data:")) {
-        // Copy base64 image directly to clipboard as blob
         const res = await fetch(src);
-        const blob = await res.blob();
+        blob = await res.blob();
+      } else {
+        const res = await fetch(src);
+        blob = await res.blob();
+      }
+
+      // Universal clipboard copy as PNG image
+      if (blob.type === "image/png") {
         await navigator.clipboard.write([
-          new ClipboardItem({ [blob.type]: blob }),
+          new ClipboardItem({ "image/png": blob }),
         ]);
       } else {
-        await navigator.clipboard.writeText(src);
+        // Convert to PNG blob via canvas for universal OS paste compatibility
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.src = src;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+        const pngBlob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob(resolve, "image/png")
+        );
+        if (pngBlob) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": pngBlob }),
+          ]);
+        } else {
+          await navigator.clipboard.write([
+            new ClipboardItem({ [blob.type || "image/png"]: blob }),
+          ]);
+        }
       }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      await navigator.clipboard.writeText(src);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Clipboard copy failed, fallback to raw source:", err);
+      try {
+        await navigator.clipboard.writeText(src);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e2) {
+        console.error("Fallback clipboard write failed:", e2);
+      }
     }
   };
 
@@ -41,7 +77,9 @@ export function ImageCard({ src, alt }: ImageCardProps) {
     try {
       const a = document.createElement("a");
       a.href = src;
-      a.download = alt ? `${alt.replace(/[^a-zA-Z0-9_-]/g, "_")}.png` : `generated-image-${Date.now()}.png`;
+      a.download = alt && alt !== "Generated Image"
+        ? `${alt.replace(/[^a-zA-Z0-9_-]/g, "_")}.png`
+        : `generated-image-${Date.now()}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -55,24 +93,24 @@ export function ImageCard({ src, alt }: ImageCardProps) {
   return (
     <>
       <div
-        className="relative group my-3 inline-block max-w-full rounded-xl overflow-hidden border border-[rgba(255,255,255,0.12)] bg-[#12141a] shadow-lg transition-all hover:border-[rgba(255,255,255,0.25)]"
-        style={{ cursor: "zoom-in" }}
+        className="relative group my-2 inline-flex flex-col self-start w-fit max-w-full rounded-xl overflow-hidden border border-[rgba(255,255,255,0.14)] bg-transparent shadow-md transition-all hover:border-[rgba(255,255,255,0.3)]"
+        style={{ cursor: "zoom-in", width: "fit-content" }}
         onClick={() => setIsZoomed(true)}
       >
         <img
           src={src}
           alt={alt || "Generated Image"}
           loading="lazy"
-          className="max-w-full h-auto max-h-[480px] rounded-xl object-contain block select-none"
+          className="w-auto max-w-full h-auto max-h-[480px] rounded-xl object-contain block select-none"
         />
 
         {/* Hover action toolbar */}
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[rgba(18,20,26,0.85)] backdrop-blur-md px-2 py-1.5 rounded-lg border border-[rgba(255,255,255,0.12)] shadow-md">
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-[rgba(18,20,26,0.85)] backdrop-blur-md px-2 py-1.5 rounded-lg border border-[rgba(255,255,255,0.14)] shadow-lg">
           <button
             type="button"
             onClick={handleCopy}
-            className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
-            title={copied ? "Copied!" : "Copy image"}
+            className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.12)] rounded transition-colors cursor-pointer"
+            title={copied ? "Image Copied to Clipboard!" : "Copy Image Only"}
           >
             {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
           </button>
@@ -80,8 +118,8 @@ export function ImageCard({ src, alt }: ImageCardProps) {
           <button
             type="button"
             onClick={handleDownload}
-            className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
-            title="Download image"
+            className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.12)] rounded transition-colors cursor-pointer"
+            title="Download Image"
           >
             {downloading ? <Check size={14} className="text-blue-400" /> : <Download size={14} />}
           </button>
@@ -92,8 +130,8 @@ export function ImageCard({ src, alt }: ImageCardProps) {
               e.stopPropagation();
               setIsZoomed(true);
             }}
-            className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
-            title="Zoom full size"
+            className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.12)] rounded transition-colors cursor-pointer"
+            title="Zoom Full Size"
           >
             <Maximize2 size={14} />
           </button>
@@ -122,7 +160,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
               <button
                 type="button"
                 onClick={handleDownload}
-                className="flex items-center gap-1.5 text-xs text-gray-200 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs text-gray-200 hover:text-white transition-colors cursor-pointer"
               >
                 <Download size={14} /> Download
               </button>
@@ -130,9 +168,9 @@ export function ImageCard({ src, alt }: ImageCardProps) {
               <button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 text-xs text-gray-200 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs text-gray-200 hover:text-white transition-colors cursor-pointer"
               >
-                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />} {copied ? "Copied" : "Copy"}
+                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />} {copied ? "Image Copied!" : "Copy Image"}
               </button>
             </div>
           </div>

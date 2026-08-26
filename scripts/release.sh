@@ -175,9 +175,24 @@ if [[ -d "$TAP_DIR" ]]; then
   cd "$ROOT_DIR"
 fi
 
+# 13. Sync and Push to notosansdiary.com blog
+BLOG_DIR="/Users/home/Projects/notosansdiary.com"
+if [[ -d "$BLOG_DIR" ]]; then
+  echo "📝 Syncing and pushing to notosansdiary.com..."
+  cp "$ROOT_DIR/README.md" "$BLOG_DIR/content/Portfolio/Bling Bling.md"
+  if [[ -d "$BLOG_DIR/content/Portfolio/assets" ]]; then
+    cp -R "$ROOT_DIR/assets/"* "$BLOG_DIR/content/Portfolio/assets/" 2>/dev/null || true
+  fi
+  cd "$BLOG_DIR"
+  git add "content/Portfolio/Bling Bling.md" "content/Portfolio/assets"
+  git commit -m "docs: sync Bling Bling blog post with release v${NEW_VERSION}" || true
+  git push origin main || true
+  cd "$ROOT_DIR"
+fi
+
 echo ""
 echo "=============================================================================="
-echo "🎉 Release v${NEW_VERSION} is published and Homebrew Tap is live!"
+echo "🎉 Release v${NEW_VERSION} is published, Homebrew Tap is live, and Blog is synced!"
 echo "=============================================================================="
 echo "Users can now install/upgrade immediately via:"
 echo "  brew upgrade --cask bling-bling"

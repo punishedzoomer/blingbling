@@ -4,7 +4,7 @@
   <p align="center"><em>A unified desktop frontend for all AI models and agents.</em></p>
 </p>
 
-I decided to make my own AI agent. I was frustrated with the way there are so many agents, but currently no way to test them via one unified frontend unless you want to manually interact with each and every one of them via OpenRouter with API calls.
+I decided to make my own AI agent fronted . I was frustrated with the way there are so many agents, but currently no way to test them via one unified frontend unless you want to manually interact with each and every one of them via OpenRouter with API calls.
 
 But let's be realistic here: the average person does not know what an API even is, so that presents a barrier of entry. There are so many AI agents, but because of the way everything is fragmented, I was very frustrated. Luckily, OpenRouter had all of them listed and allows you to access all their models with the same API key.
 

@@ -7,10 +7,30 @@ import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Ter
 interface OpenRouterModel {
   id: string;
   name: string;
-  pricing: {
-    prompt: string;
-    completion: string;
+  pricing?: {
+    prompt?: string;
+    completion?: string;
+    image?: string;
+    request?: string;
   };
+}
+
+function formatPrice(pricing?: OpenRouterModel["pricing"]): string {
+  if (!pricing) return "Standard";
+  if (pricing.prompt) {
+    const p = parseFloat(pricing.prompt);
+    if (p === 0) return "Free";
+    return `$${(p * 1000000).toFixed(2)}/1M tokens`;
+  }
+  if (pricing.image) {
+    const p = parseFloat(pricing.image);
+    return `$${p.toFixed(3)}/image`;
+  }
+  if (pricing.request) {
+    const p = parseFloat(pricing.request);
+    return `$${p.toFixed(3)}/req`;
+  }
+  return "Standard";
 }
 
 function ModelSelect({ value, onChange, models, disabled }: { value: string, onChange: (v: string) => void, models: OpenRouterModel[], disabled: boolean }) {
@@ -65,18 +85,46 @@ function ModelSelect({ value, onChange, models, disabled }: { value: string, onC
             <input 
               autoFocus
               type="text" 
-              placeholder="Search models..." 
+              placeholder="Search models or type custom model ID..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (filteredModels.length > 0) {
+                    onChange(filteredModels[0].id);
+                    setIsOpen(false);
+                    setSearch("");
+                  } else if (search.trim()) {
+                    onChange(search.trim());
+                    setIsOpen(false);
+                    setSearch("");
+                  }
+                }
+              }}
               style={{ width: "100%", background: "transparent", border: "none", color: "var(--tx-1)", outline: "none", fontSize: "13px" }}
             />
           </div>
           <div style={{ overflowY: "auto", padding: "4px" }}>
-            {filteredModels.length === 0 ? (
+            {search.trim() && !models.some(m => m.id.toLowerCase() === search.trim().toLowerCase()) && (
+              <button
+                type="button"
+                onClick={() => { onChange(search.trim()); setIsOpen(false); setSearch(""); }}
+                style={{
+                  width: "100%", padding: "7px 9px", textAlign: "left", background: "rgba(59,130,246,0.12)",
+                  border: "1px dashed var(--accent)", borderRadius: "var(--r-6)", cursor: "pointer",
+                  display: "flex", flexDirection: "column", gap: "2px", marginBottom: "4px"
+                }}
+              >
+                <div style={{ color: "var(--accent)", fontSize: "11px", fontWeight: 600 }}>Use custom model:</div>
+                <div style={{ color: "var(--tx-1)", fontSize: "12px", fontFamily: "var(--mono)" }}>{search.trim()}</div>
+              </button>
+            )}
+
+            {filteredModels.length === 0 && !search.trim() ? (
               <div style={{ padding: "8px 12px", color: "var(--tx-mut)", fontSize: "12px", textAlign: "center" }}>No models found</div>
             ) : (
               filteredModels.map(m => {
-                const price = (parseFloat(m.pricing?.prompt || "0") * 1000000).toFixed(2);
+                const priceLabel = formatPrice(m.pricing);
                 return (
                   <button
                     key={m.id}
@@ -89,10 +137,10 @@ function ModelSelect({ value, onChange, models, disabled }: { value: string, onC
                     onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
                     onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                   >
-                    <div style={{ color: "var(--tx-1)", fontSize: "13px" }}>{m.name}</div>
+                    <div style={{ color: "var(--tx-1)", fontSize: "13px" }}>{m.name || m.id}</div>
                     <div style={{ color: "var(--tx-mut)", fontSize: "11px", display: "flex", justifyContent: "space-between" }}>
                       <span>{m.id.split('/')[0]}</span>
-                      <span>${price}/1M tokens</span>
+                      <span>{priceLabel}</span>
                     </div>
                   </button>
                 );
@@ -159,25 +207,24 @@ export function SettingsApp({
     fetch("https://openrouter.ai/api/v1/models")
       .then(res => res.json())
       .then(data => {
-        const allModels: OpenRouterModel[] = data.data;
+        const allModelsList: OpenRouterModel[] = data.data || [];
         
-        const majorProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'deepseek/', 'x-ai/', 'mistralai/', 'cohere/', 'moonshotai/'];
+        const majorProviders = [
+          'openai/', 'anthropic/', 'google/', 'meta-llama/', 'deepseek/',
+          'x-ai/', 'mistralai/', 'cohere/', 'qwen/', 'black-forest-labs/',
+          'stabilityai/', 'moonshotai/'
+        ];
 
-        const filtered = allModels.filter(model => {
-          if (!model.pricing || !model.pricing.prompt) return false;
-          if (model.id.includes("gemini-2.0")) return false;
-          if (model.id.endsWith(":free")) return false;
-          if (model.id.endsWith(":batch")) return false;
-          return true;
-        }).sort((a, b) => {
+        // Retain all valid models and sort popular providers to top
+        const sorted = allModelsList.filter(m => Boolean(m.id)).sort((a, b) => {
           const aMajor = majorProviders.some(p => a.id.startsWith(p));
           const bMajor = majorProviders.some(p => b.id.startsWith(p));
           if (aMajor && !bMajor) return -1;
           if (!aMajor && bMajor) return 1;
-          return a.name.localeCompare(b.name);
+          return (a.name || a.id).localeCompare(b.name || b.id);
         });
 
-        setAllModels(filtered);
+        setAllModels(sorted);
         setModelsLoaded(true);
       })
       .catch(err => {

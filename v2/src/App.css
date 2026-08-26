@@ -1237,6 +1237,47 @@ body[data-mode="windowed"] #root {
   background: rgba(22, 24, 31, 0.85) !important;
   display: flex !important;
   flex-direction: column !important;
+  box-sizing: border-box !important;
+  padding: 16px 20px !important;
+  overflow: hidden !important;
+}
+
+.windowed-panel #panel-columns {
+  height: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  flex: 1 1 0% !important;
+}
+
+.windowed-panel #panel-main {
+  height: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  flex: 1 1 0% !important;
+}
+
+.windowed-panel #messages {
+  flex: 1 1 0% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+.windowed-panel #action-row {
+  flex-shrink: 0 !important;
+  margin-top: 8px !important;
+}
+
+.windowed-panel #composer {
+  flex-shrink: 0 !important;
+  margin-top: 10px !important;
+  margin-bottom: 0 !important;
+  border-radius: var(--r-16) !important;
+  box-sizing: border-box !important;
 }
 
 .windowed-pane {

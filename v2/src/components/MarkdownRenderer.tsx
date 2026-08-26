@@ -225,7 +225,7 @@ export const MessageRenderer = memo(({ content }: { content: string }) => {
     const parenEnd = content.indexOf(")", parenStart);
     if (parenStart !== -1 && parenEnd !== -1) {
       const src = content.substring(parenStart + 2, parenEnd);
-      if (src.startsWith("data:image/") || src.startsWith("http")) {
+      if (src.startsWith("data:image/") || src.startsWith("http") || src.startsWith("asset:") || src.startsWith("file:")) {
         const textBefore = content.substring(0, imgStart).trim();
         const alt = content.substring(imgStart + 2, parenStart);
         const textAfter = content.substring(parenEnd + 1).trim();

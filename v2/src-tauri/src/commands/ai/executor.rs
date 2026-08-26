@@ -56,10 +56,18 @@ fn append_image(output: &mut String, url: &str) {
     if !output.is_empty() {
         output.push_str("\n\n");
     }
-    if url.starts_with("http") || url.starts_with("data:") {
-        output.push_str(&format!("![Generated Image]({})", url));
+
+    // Automatically cache any base64 image payload to a binary PNG on disk and use asset protocol URL
+    let resolved_url = if url.starts_with("data:image/") {
+        crate::commands::session::cache_base64_image(url).unwrap_or_else(|| url.to_string())
     } else {
-        output.push_str(&format!("![Generated Image](data:image/png;base64,{})", url));
+        url.to_string()
+    };
+
+    if resolved_url.starts_with("http") || resolved_url.starts_with("asset:") || resolved_url.starts_with("data:") {
+        output.push_str(&format!("![Generated Image]({})", resolved_url));
+    } else {
+        output.push_str(&format!("![Generated Image](asset://localhost{})", resolved_url));
     }
 }
 

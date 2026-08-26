@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use directories::ProjectDirs;
 use serde_json::Value;
+use base64::prelude::*;
 
 pub fn get_sessions_dir() -> PathBuf {
     if let Some(proj_dirs) = ProjectDirs::from("", "", "BlingBling") {
@@ -27,8 +28,108 @@ pub fn get_trash_dir() -> PathBuf {
     }
 }
 
+pub fn get_media_dir() -> PathBuf {
+    if let Some(proj_dirs) = ProjectDirs::from("", "", "BlingBling") {
+        let dir = proj_dirs.data_dir().join("media");
+        fs::create_dir_all(&dir).unwrap_or_default();
+        dir
+    } else {
+        let dir = std::env::current_dir().unwrap().join("media");
+        fs::create_dir_all(&dir).unwrap_or_default();
+        dir
+    }
+}
+
+/// Extracts any base64 image strings (data:image/...;base64,...), writes them to disk in media/,
+/// and returns a clean local asset protocol URL `asset://localhost/...`
+pub fn cache_base64_image(data_uri: &str) -> Option<String> {
+    if !data_uri.starts_with("data:image/") {
+        return None;
+    }
+
+    let comma_pos = data_uri.find(',')?;
+    let header = &data_uri[..comma_pos];
+    let b64_payload = &data_uri[comma_pos + 1..];
+
+    let ext = if header.contains("png") {
+        "png"
+    } else if header.contains("webp") {
+        "webp"
+    } else if header.contains("jpeg") || header.contains("jpg") {
+        "jpg"
+    } else if header.contains("gif") {
+        "gif"
+    } else {
+        "png"
+    };
+
+    let decoded_bytes = BASE64_STANDARD.decode(b64_payload.trim()).ok()?;
+
+    // Use a fast hash to name the file deterministically (avoids duplicate disk writes)
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    std::hash::Hash::hash(&decoded_bytes, &mut hasher);
+    let hash = std::hash::Hasher::finish(&hasher);
+
+    let filename = format!("img_{:016x}.{}", hash, ext);
+    let media_dir = get_media_dir();
+    let file_path = media_dir.join(&filename);
+
+    if !file_path.exists() {
+        let _ = fs::write(&file_path, &decoded_bytes);
+    }
+
+    // Return the standard local asset URL
+    Some(format!("asset://localhost{}", file_path.to_string_lossy()))
+}
+
+/// Recursively traverses a JSON Value, replacing any massive base64 image strings with tiny asset URLs
+pub fn sanitize_and_cache_json_media(val: &mut Value) -> bool {
+    let mut changed = false;
+    match val {
+        Value::String(s) => {
+            if s.contains("data:image/") {
+                // Check if string contains markdown image with base64: ![...](data:image/...;base64,...)
+                if let Some(start) = s.find("](data:image/") {
+                    if let Some(end) = s[start + 2..].find(')') {
+                        let data_uri = &s[start + 2..start + 2 + end];
+                        if let Some(asset_url) = cache_base64_image(data_uri) {
+                            let new_str = format!("{}{}{}", &s[..start + 2], asset_url, &s[start + 2 + end..]);
+                            *s = new_str;
+                            changed = true;
+                        }
+                    }
+                } else if s.starts_with("data:image/") {
+                    if let Some(asset_url) = cache_base64_image(s) {
+                        *s = asset_url;
+                        changed = true;
+                    }
+                }
+            }
+        }
+        Value::Array(arr) => {
+            for item in arr.iter_mut() {
+                if sanitize_and_cache_json_media(item) {
+                    changed = true;
+                }
+            }
+        }
+        Value::Object(obj) => {
+            for (_k, v) in obj.iter_mut() {
+                if sanitize_and_cache_json_media(v) {
+                    changed = true;
+                }
+            }
+        }
+        _ => {}
+    }
+    changed
+}
+
 #[tauri::command]
-pub fn save_session(session_id: String, data: Value) -> Result<(), String> {
+pub fn save_session(session_id: String, mut data: Value) -> Result<(), String> {
+    // Automatically cache any base64 images to real binary files on disk
+    sanitize_and_cache_json_media(&mut data);
+
     let file_path = get_sessions_dir().join(format!("{}.json", session_id));
     let file = fs::File::create(file_path).map_err(|e| e.to_string())?;
     let writer = std::io::BufWriter::new(file);
@@ -48,7 +149,14 @@ pub fn load_sessions() -> Result<Vec<Value>, String> {
                 if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
                     if let Ok(file) = fs::File::open(&path) {
                         let reader = std::io::BufReader::new(file);
-                        if let Ok(json) = serde_json::from_reader::<_, Value>(reader) {
+                        if let Ok(mut json) = serde_json::from_reader::<_, Value>(reader) {
+                            // If this session has un-migrated base64 data, migrate it and save back
+                            if sanitize_and_cache_json_media(&mut json) {
+                                if let Ok(save_file) = fs::File::create(&path) {
+                                    let writer = std::io::BufWriter::new(save_file);
+                                    let _ = serde_json::to_writer(writer, &json);
+                                }
+                            }
                             sessions.push(serde_json::json!({
                                 "id": file_stem,
                                 "data": json
@@ -91,7 +199,13 @@ pub fn load_trash() -> Result<Vec<Value>, String> {
                 if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
                     if let Ok(file) = fs::File::open(&path) {
                         let reader = std::io::BufReader::new(file);
-                        if let Ok(json) = serde_json::from_reader::<_, Value>(reader) {
+                        if let Ok(mut json) = serde_json::from_reader::<_, Value>(reader) {
+                            if sanitize_and_cache_json_media(&mut json) {
+                                if let Ok(save_file) = fs::File::create(&path) {
+                                    let writer = std::io::BufWriter::new(save_file);
+                                    let _ = serde_json::to_writer(writer, &json);
+                                }
+                            }
                             trash_items.push(serde_json::json!({
                                 "id": file_stem,
                                 "data": json

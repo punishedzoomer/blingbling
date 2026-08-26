@@ -41,7 +41,7 @@ pub fn get_media_dir() -> PathBuf {
 }
 
 /// Extracts any base64 image strings (data:image/...;base64,...), writes them to disk in media/,
-/// and returns a clean local asset protocol URL `asset://localhost/...`
+/// and returns the absolute local file path
 pub fn cache_base64_image(data_uri: &str) -> Option<String> {
     if !data_uri.starts_with("data:image/") {
         return None;
@@ -78,11 +78,11 @@ pub fn cache_base64_image(data_uri: &str) -> Option<String> {
         let _ = fs::write(&file_path, &decoded_bytes);
     }
 
-    // Return the standard local asset URL
-    Some(format!("asset://localhost{}", file_path.to_string_lossy()))
+    // Return the absolute local file path
+    Some(file_path.to_string_lossy().to_string())
 }
 
-/// Recursively traverses a JSON Value, replacing any massive base64 image strings with tiny asset URLs
+/// Recursively traverses a JSON Value, replacing any massive base64 image strings with clean file paths
 pub fn sanitize_and_cache_json_media(val: &mut Value) -> bool {
     let mut changed = false;
     match val {
@@ -92,15 +92,15 @@ pub fn sanitize_and_cache_json_media(val: &mut Value) -> bool {
                 if let Some(start) = s.find("](data:image/") {
                     if let Some(end) = s[start + 2..].find(')') {
                         let data_uri = &s[start + 2..start + 2 + end];
-                        if let Some(asset_url) = cache_base64_image(data_uri) {
-                            let new_str = format!("{}{}{}", &s[..start + 2], asset_url, &s[start + 2 + end..]);
+                        if let Some(file_path) = cache_base64_image(data_uri) {
+                            let new_str = format!("{}{}{}", &s[..start + 2], file_path, &s[start + 2 + end..]);
                             *s = new_str;
                             changed = true;
                         }
                     }
                 } else if s.starts_with("data:image/") {
-                    if let Some(asset_url) = cache_base64_image(s) {
-                        *s = asset_url;
+                    if let Some(file_path) = cache_base64_image(s) {
+                        *s = file_path;
                         changed = true;
                     }
                 }

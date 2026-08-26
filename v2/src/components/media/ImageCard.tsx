@@ -1,5 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Download, Copy, Check, Maximize2 } from "lucide-react";
+import { convertFileSrc } from "@tauri-apps/api/core";
+
+export function resolveImageSrc(src?: string): string {
+  if (!src) return "";
+  if (src.startsWith("data:") || src.startsWith("http://") || src.startsWith("https://")) {
+    return src;
+  }
+  let cleanPath = src;
+  if (cleanPath.startsWith("asset://localhost/")) {
+    cleanPath = "/" + cleanPath.slice("asset://localhost/".length);
+  } else if (cleanPath.startsWith("asset://localhost")) {
+    cleanPath = cleanPath.slice("asset://localhost".length);
+  } else if (cleanPath.startsWith("asset:/")) {
+    cleanPath = cleanPath.slice("asset:".length);
+  } else if (cleanPath.startsWith("file://")) {
+    cleanPath = cleanPath.slice("file://".length);
+  }
+
+  try {
+    return convertFileSrc(decodeURIComponent(cleanPath));
+  } catch {
+    return src;
+  }
+}
 
 interface ImageCardProps {
   src?: string;
@@ -11,19 +35,15 @@ export function ImageCard({ src, alt }: ImageCardProps) {
   const [downloading, setDownloading] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
+  const displaySrc = useMemo(() => resolveImageSrc(src), [src]);
+
   if (!src) return null;
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      let blob: Blob;
-      if (src.startsWith("data:")) {
-        const res = await fetch(src);
-        blob = await res.blob();
-      } else {
-        const res = await fetch(src);
-        blob = await res.blob();
-      }
+      const res = await fetch(displaySrc);
+      const blob = await res.blob();
 
       // Universal clipboard copy as PNG image
       if (blob.type === "image/png") {
@@ -34,7 +54,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
         // Convert to PNG blob via canvas for universal OS paste compatibility
         const img = new window.Image();
         img.crossOrigin = "anonymous";
-        img.src = src;
+        img.src = displaySrc;
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
@@ -62,7 +82,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
     } catch (err) {
       console.error("Clipboard copy failed, fallback to raw source:", err);
       try {
-        await navigator.clipboard.writeText(src);
+        await navigator.clipboard.writeText(displaySrc);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (e2) {
@@ -76,7 +96,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
     setDownloading(true);
     try {
       const a = document.createElement("a");
-      a.href = src;
+      a.href = displaySrc;
       a.download = alt && alt !== "Generated Image"
         ? `${alt.replace(/[^a-zA-Z0-9_-]/g, "_")}.png`
         : `generated-image-${Date.now()}.png`;
@@ -98,7 +118,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
         onClick={() => setIsZoomed(true)}
       >
         <img
-          src={src}
+          src={displaySrc}
           alt={alt || "Generated Image"}
           loading="lazy"
           className="w-auto max-w-full h-auto max-h-[480px] rounded-xl object-contain block select-none"
@@ -152,7 +172,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
         >
           <div className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center">
             <img
-              src={src}
+              src={displaySrc}
               alt={alt || "Fullsize Preview"}
               className="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain"
             />

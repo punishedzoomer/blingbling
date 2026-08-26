@@ -216,6 +216,39 @@ export function parseReasoning(content: string): ParsedReasoning {
 }
 
 export const MessageRenderer = memo(({ content }: { content: string }) => {
+  if (!content) return null;
+
+  // 1. Direct image extraction to prevent heavy markdown/math regex backtracking on multi-megabyte base64 strings
+  const imgStart = content.indexOf("![");
+  if (imgStart !== -1) {
+    const parenStart = content.indexOf("](", imgStart);
+    const parenEnd = content.indexOf(")", parenStart);
+    if (parenStart !== -1 && parenEnd !== -1) {
+      const src = content.substring(parenStart + 2, parenEnd);
+      if (src.startsWith("data:image/") || src.startsWith("http")) {
+        const textBefore = content.substring(0, imgStart).trim();
+        const alt = content.substring(imgStart + 2, parenStart);
+        const textAfter = content.substring(parenEnd + 1).trim();
+
+        return (
+          <div className="flex flex-col gap-1.5 w-full">
+            {textBefore && <MessageRenderer content={textBefore} />}
+            <ImageCard alt={alt} src={src} />
+            {textAfter && <MessageRenderer content={textAfter} />}
+          </div>
+        );
+      }
+    }
+  }
+
+  // 2. Direct audio response extraction
+  const trimmed = content.trim();
+  if (trimmed.startsWith("[Audio Response](") && trimmed.endsWith(")")) {
+    const src = trimmed.substring(17, trimmed.length - 1);
+    return <AudioPlayerCard src={src} title="Audio Response" />;
+  }
+
+  // 3. Normal reasoning and Markdown rendering flow
   const { hasReasoning, reasoningText, isStreamingReasoning, mainContent } = parseReasoning(content);
 
   if (hasReasoning) {
@@ -263,4 +296,3 @@ export const MessageRenderer = memo(({ content }: { content: string }) => {
     </ReactMarkdown>
   );
 });
-

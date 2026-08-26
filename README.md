@@ -22,7 +22,7 @@ There is also windowed mode:
 
 <div align="center">
 
-<img src="assets/windowedmode.png" alt="Windowed Mode">
+<img src="assets/windowedpromptdemo.png" alt="Windowed Mode">
 <div style="font-size: 0.85em; opacity: 0.75; margin-top: 6px; margin-bottom: 24px; text-align: center;"><em>Bling Bling running in windowed mode.</em></div>
 
 </div>
@@ -37,11 +37,11 @@ There is also windowed mode:
 <div align="center">
 
 <img src="assets/settings.png" alt="Settings">
-<div style="font-size: 0.85em; opacity: 0.75; margin-top: 6px; margin-bottom: 24px; text-align: center;"><em>You can select your favorite models from the settings, and thanks to OpenRouter you have access to countless models. You can also see the amount of credits you have used.</em></div>
+<div style="font-size: 0.85em; opacity: 0.75; margin-top: 6px; margin-bottom: 24px; text-align: center;"><em>Model Selection</em></div>
 
-</div>
+</div> 
 
----
+You can select your favorite models from the settings, and thanks to OpenRouter you have access to countless models. You can also see the amount of credits you have used.
 
 ## Installation
 

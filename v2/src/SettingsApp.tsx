@@ -250,13 +250,15 @@ export function SettingsApp({
         width: "100%",
         maxWidth: isWindowed ? "720px" : undefined,
         margin: isWindowed ? "0 auto" : undefined,
-        height: isWindowed ? "100%" : "fit-content",
-        minHeight: "400px",
+        height: isWindowed ? "100%" : "100vh",
+        maxHeight: isWindowed ? undefined : "100vh",
         display: "flex",
         flexDirection: "column",
         padding: isWindowed ? "0" : "18px 20px 20px",
         boxSizing: "border-box",
         position: "relative",
+        borderRadius: isWindowed ? undefined : "16px",
+        overflow: "hidden",
       }}
     >
       {/* Drag handle for widget mode */}
@@ -273,7 +275,7 @@ export function SettingsApp({
       )}
       <div 
         id="settings" 
-        style={{ border: "none", boxShadow: "none", paddingTop: 0, margin: 0, padding: 0, display: "flex", flexDirection: "column", backgroundColor: "transparent", width: "100%", boxSizing: "border-box" }}
+        style={{ border: "none", boxShadow: "none", paddingTop: 0, margin: 0, padding: 0, display: "flex", flexDirection: "column", backgroundColor: "transparent", width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", flex: 1, minHeight: 0 }}
         onMouseEnter={() => { 
           if (!isWindowed) {
             invoke("focus_panel", { label: "settings" }).catch(console.error);
@@ -304,7 +306,7 @@ export function SettingsApp({
             </button>
         </div>
 
-        <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "14px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101 }}>
+        <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "14px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101, minHeight: 0 }}>
             
             {activeTab === 'general' && (
               <>

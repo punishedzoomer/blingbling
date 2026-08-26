@@ -123,7 +123,7 @@ export function HistoryApp({
     >
       <div
         id="transcript-sidebar"
-        className={isWindowed ? undefined : "transcript-sidebar"}
+        className={isWindowed ? undefined : "glass"}
         style={
           isWindowed
             ? {

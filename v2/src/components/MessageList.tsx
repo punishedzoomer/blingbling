@@ -77,13 +77,27 @@ export function MessageList({
       )}
 
       {messages.map((msg, idx) => {
-        const hasContext = Boolean(
-          msg.contextText ||
-          (msg.contextImages && msg.contextImages.length > 0) ||
-          (msg.attachments && msg.attachments.length > 0)
-        );
+        // Collect and deduplicate attached images
+        const imageList: { id: string; url: string; name?: string }[] = [];
+        if (msg.attachments) {
+          for (const att of msg.attachments) {
+            if (att.type === "image") {
+              imageList.push({ id: att.id, url: att.previewUrl || att.content, name: att.name });
+            }
+          }
+        }
+        if (msg.contextImages) {
+          for (let i = 0; i < msg.contextImages.length; i++) {
+            const url = msg.contextImages[i];
+            if (!imageList.some((img) => img.url === url)) {
+              imageList.push({ id: `snip-${i}`, url, name: `Snip ${i + 1}` });
+            }
+          }
+        }
 
-        const attachmentsCount = (msg.attachments?.length || 0) + (msg.contextImages?.length || 0);
+        const fileCount = msg.attachments?.filter((a) => a.type === "file").length || 0;
+        const totalItemsCount = fileCount + imageList.length;
+        const hasContext = Boolean(msg.contextText || totalItemsCount > 0);
 
         return (
           <div
@@ -153,8 +167,8 @@ export function MessageList({
                         <FileText size={12} />
                       </span>
                       <span>
-                        {attachmentsCount > 0
-                          ? `Context (${attachmentsCount} item${attachmentsCount > 1 ? "s" : ""})`
+                        {totalItemsCount > 0
+                          ? `Context (${totalItemsCount} item${totalItemsCount > 1 ? "s" : ""})`
                           : "View Context"}
                       </span>
                       <span
@@ -218,10 +232,7 @@ export function MessageList({
                     {msg.contextText && (
                       <pre
                         style={{
-                          marginBottom:
-                            (msg.contextImages?.length || 0) + (msg.attachments?.filter((a) => a.type === "image").length || 0) > 0
-                              ? "12px"
-                              : 0,
+                          marginBottom: totalItemsCount > 0 ? "12px" : 0,
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-word",
                           fontSize: "11px",
@@ -240,47 +251,26 @@ export function MessageList({
                     )}
 
                     {/* Attached Images & Snips */}
-                    {((msg.contextImages && msg.contextImages.length > 0) ||
-                      (msg.attachments && msg.attachments.some((a) => a.type === "image"))) && (
+                    {imageList.length > 0 && (
                       <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
-                        {msg.contextImages?.map((img, i) => (
+                        {imageList.map((img) => (
                           <div
-                            key={`legacy-img-${i}`}
+                            key={img.id}
                             style={{ flexShrink: 0, cursor: "zoom-in" }}
-                            onClick={() => setPreviewImage(img)}
-                            title="Click to enlarge"
+                            onClick={() => setPreviewImage(img.url)}
+                            title={img.name ? `${img.name} (click to enlarge)` : "Click to enlarge"}
                           >
                             <img
-                              src={img}
+                              src={img.url}
                               style={{
                                 height: "48px",
                                 borderRadius: "6px",
                                 border: "1px solid rgba(255,255,255,0.12)",
                               }}
-                              alt="Context snip"
+                              alt={img.name || "Context image"}
                             />
                           </div>
                         ))}
-                        {msg.attachments
-                          ?.filter((a) => a.type === "image")
-                          .map((att) => (
-                            <div
-                              key={att.id}
-                              style={{ flexShrink: 0, cursor: "zoom-in" }}
-                              onClick={() => setPreviewImage(att.previewUrl || att.content)}
-                              title={`${att.name} (click to enlarge)`}
-                            >
-                              <img
-                                src={att.previewUrl || att.content}
-                                style={{
-                                  height: "48px",
-                                  borderRadius: "6px",
-                                  border: "1px solid rgba(255,255,255,0.12)",
-                                }}
-                                alt={att.name}
-                              />
-                            </div>
-                          ))}
                       </div>
                     )}
                   </div>

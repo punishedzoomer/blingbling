@@ -55,4 +55,4 @@ Download the latest `.dmg` from [GitHub Releases](https://github.com/punishedzoo
 
 ---
 
-- **Live Article / Portfolio**: [notosansdiary.com](https://notosansdiary.com/Portfolio/Bling-Bling)
+- **Live Article**: [notosansdiary.com](https://notosansdiary.com/Portfolio/Bling-Bling)

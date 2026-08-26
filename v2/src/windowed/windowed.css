@@ -389,6 +389,8 @@ body[data-mode="windowed"] #root {
 .windowed-app #composer textarea {
   font-size: 14px !important;
   line-height: 1.5 !important;
+  caret-color: var(--accent) !important;
+  cursor: text !important;
 }
 
 .windowed-pane {

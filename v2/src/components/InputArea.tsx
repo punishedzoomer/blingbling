@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { emit } from "@tauri-apps/api/event";
 
 interface InputAreaProps {
@@ -16,6 +17,27 @@ interface InputAreaProps {
 }
 
 export function InputArea({ input, setInput, isStreaming, textareaRef, handleSend, tags, setTags, activeTagId, setActiveTagId, isNotebookChat, onPaste }: InputAreaProps) {
+  useEffect(() => {
+    const handleFocus = () => {
+      textareaRef.current?.focus();
+    };
+    window.addEventListener("focus-prompt-input", handleFocus);
+    // Autofocus on initial mount and when becoming ready
+    const timer1 = setTimeout(handleFocus, 50);
+    const timer2 = setTimeout(handleFocus, 200);
+    return () => {
+      window.removeEventListener("focus-prompt-input", handleFocus);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isStreaming) {
+      textareaRef.current?.focus();
+    }
+  }, [isStreaming]);
+
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
     return `hsl(${hue}, 85%, 60%)`;

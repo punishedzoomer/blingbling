@@ -21,6 +21,11 @@ export function WindowedContainer({ surface, setSurface }: WindowedContainerProp
     if (surface !== "notebook") {
       setActiveNotebookId(null);
     }
+    if (surface === "chat") {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("focus-prompt-input"));
+      }, 50);
+    }
   }, [surface]);
 
   const handleSelectNotebook = useCallback(

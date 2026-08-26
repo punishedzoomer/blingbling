@@ -176,9 +176,12 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
   useEffect(() => {
     if (isStreaming) return;
     if (messages.length > 0) {
+      const cleanMessages = messages.filter((m) => m.role !== "assistant" || (m.content && m.content !== ""));
+      if (cleanMessages.length === 0) return;
+
       invoke("save_session", {
         sessionId,
-        data: { history: messages, tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle },
+        data: { history: cleanMessages, tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle },
       })
         .then(() => {
           emit("history-sync", null);
@@ -466,8 +469,7 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
       content: "",
     };
 
-    const updatedMessages = [...messages, userMessageRecord, assistantPlaceholder];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, userMessageRecord, assistantPlaceholder]);
     setInput("");
     clearAllAttachments();
     setIsThinking(true);
@@ -475,7 +477,12 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
 
     invoke("save_session", {
       sessionId,
-      data: { history: [...messages, userMessageRecord], tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle || userMsg.slice(0, 60) },
+      data: {
+        history: [...messages, userMessageRecord],
+        tagId: activeTagId,
+        notebookId: activeNotebookId,
+        title: sessionTitle || userMsg.slice(0, 60),
+      },
     }).catch(console.error);
 
     try {

@@ -76,7 +76,6 @@ pub fn run() {
                             let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
                         }
                     }
-                    vibrancy::apply_vibrancy(&shell, 14.0);
 
                     if initial_mode == "windowed" {
                         let _ = shell.show();
@@ -117,11 +116,6 @@ pub fn run() {
                                 let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
                                 let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
                             }
-                        }
-
-                        // Apply native macOS NSVisualEffectView vibrancy only to full-size modal panels
-                        if label == "settings" || label == "history" || label == "notebook" || label == "tutorial" {
-                            vibrancy::apply_vibrancy(&window, 16.0);
                         }
 
                         // Only show the main panel by default when in widget mode

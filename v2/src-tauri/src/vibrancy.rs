@@ -1,4 +1,5 @@
 #[cfg(target_os = "macos")]
+#[allow(dead_code)]
 pub fn apply_vibrancy(window: &tauri::WebviewWindow, corner_radius: f64) {
     use cocoa::base::{id, nil, YES};
     use objc::{class, msg_send, sel, sel_impl};

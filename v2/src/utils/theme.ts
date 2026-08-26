@@ -26,10 +26,11 @@ export function applyThemeTokens(opacityPercent: number = 85) {
   // Unified Alpha Token
   docStyle.setProperty("--glass-alpha", alpha.toFixed(3));
 
-  // Widget Mode Native Vibrancy Tint Tokens
-  docStyle.setProperty("--glass-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
+  // Widget Mode Floating Surfaces (Solid, zero-flicker, no background artifacts)
+  docStyle.setProperty("--glass-bg", "#14161d");
+  docStyle.setProperty("--modal-glass-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
   docStyle.setProperty("--glass-border", "rgba(255, 255, 255, 0.12)");
-  docStyle.setProperty("--glass-shadow", `0 16px 40px rgba(0, 0, 0, ${(0.3 + alpha * 0.2).toFixed(2)}), inset 0 1px 0 rgba(255, 255, 255, 0.08)`);
+  docStyle.setProperty("--glass-shadow", "0 16px 40px rgba(0, 0, 0, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.08)");
 
   // Windowed Mode Native Vibrancy Tint Tokens
   docStyle.setProperty("--windowed-bg", `rgba(16, 18, 24, ${Math.min(1, alpha + 0.15).toFixed(3)})`);

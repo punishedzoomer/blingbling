@@ -119,14 +119,9 @@ pub fn run() {
                             }
                         }
 
-                        // Apply native macOS NSVisualEffectView vibrancy
-                        if label != "snip" {
-                            let corner_radius = match label.as_str() {
-                                "main" => 22.0,
-                                "chat-panel" => 24.0,
-                                _ => 16.0,
-                            };
-                            vibrancy::apply_vibrancy(&window, corner_radius);
+                        // Apply native macOS NSVisualEffectView vibrancy only to full-size modal panels
+                        if label == "settings" || label == "history" || label == "notebook" || label == "tutorial" {
+                            vibrancy::apply_vibrancy(&window, 16.0);
                         }
 
                         // Only show the main panel by default when in widget mode

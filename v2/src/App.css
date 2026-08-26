@@ -17,10 +17,11 @@
   --fill-1: rgba(255,255,255,0.04);
   --fill-2: rgba(255,255,255,0.06);
 
-  --glass-alpha: 0.45;
-  --glass-bg: rgba(18, 20, 26, 0.45);
+  --glass-alpha: 1.0;
+  --glass-bg: #14161d;
+  --modal-glass-bg: rgba(18, 20, 26, 0.45);
   --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   --windowed-bg: rgba(16, 18, 24, 0.60);
   --windowed-titlebar-bg: rgba(20, 22, 28, 0.50);
@@ -203,6 +204,11 @@ button:focus { outline: none; }
   box-shadow: var(--glass-shadow);
   overflow: hidden;
   -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+
+#settings-window, #transcript-sidebar.glass, #notebook-window .glass, #onboard {
+  background: var(--modal-glass-bg);
+  border-radius: var(--r-16);
 }
 #panel { padding: 20px 22px; animation: overlayIn 260ms cubic-bezier(0.22,1,0.36,1); }
 #panel.collapsed { display: none; }

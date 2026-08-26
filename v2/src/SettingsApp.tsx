@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers } from "lucide-react";
-import "./App.css";
+import { getStoredGlassOpacity, setGlassOpacity as setGlobalGlassOpacity } from "./utils/theme";
 
 interface OpenRouterModel {
   id: string;
@@ -146,23 +146,11 @@ export function SettingsApp({
   const [modelSmart, setModelSmart] = useState("");
   const [modelUltra, setModelUltra] = useState("");
   const [allowSystemScreenshots, setAllowSystemScreenshots] = useState(false);
-  const [glassOpacity, setGlassOpacity] = useState<number>(() => {
-    const saved = localStorage.getItem("glassOpacity");
-    return saved ? parseFloat(saved) : 95;
-  });
+  const [glassOpacity, setGlassOpacity] = useState<number>(getStoredGlassOpacity);
 
   const handleOpacityChange = (val: number) => {
     setGlassOpacity(val);
-    localStorage.setItem("glassOpacity", val.toString());
-    const alpha = Math.max(0.1, Math.min(1.0, val / 100));
-    const docStyle = document.documentElement.style;
-    docStyle.setProperty("--glass-bg", `rgba(20, 22, 28, ${alpha})`);
-    docStyle.setProperty("--windowed-bg", `rgba(17, 18, 22, ${alpha})`);
-    docStyle.setProperty("--windowed-titlebar-bg", `rgba(21, 23, 30, ${alpha})`);
-    docStyle.setProperty("--windowed-sidebar-bg", `rgba(20, 22, 29, ${alpha})`);
-    docStyle.setProperty("--windowed-card-bg", `rgba(25, 27, 35, ${alpha})`);
-    docStyle.setProperty("--windowed-composer-bg", `rgba(22, 25, 33, ${Math.min(1, alpha + 0.02)})`);
-    emit("glass-opacity-changed", { opacity: val }).catch(console.error);
+    setGlobalGlassOpacity(val);
   };
 
   const [allModels, setAllModels] = useState<OpenRouterModel[]>([]);

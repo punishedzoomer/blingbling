@@ -141,8 +141,8 @@ EOF
 
 # 8. Commit & Tag
 echo "💾 Committing release and creating tag..."
-git commit -am "chore(release): v${NEW_VERSION} and update Homebrew tap"
-git tag "v${NEW_VERSION}"
+git commit -am "chore(release): v${NEW_VERSION} and update Homebrew tap" || true
+git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}" || true
 
 # 9. Sync changes back to dev branch
 echo "🔄 Syncing release commit to 'dev' branch..."
@@ -150,14 +150,35 @@ git checkout dev
 git merge main --no-edit
 git checkout main
 
-echo ""
-echo "=============================================================================="
-echo "🎉 Release v${NEW_VERSION} is ready!"
-echo "=============================================================================="
-echo "To publish the release and Homebrew tap to GitHub, run:"
-echo ""
-echo "  git push origin main dev --tags"
+# 10. Push to GitHub
+echo "🚀 Pushing branches and tags to GitHub..."
+git push origin main dev --tags
+
+# 11. Create GitHub Release with DMG attached
 if command -v gh &> /dev/null; then
-  echo "  gh release create v${NEW_VERSION} \"$DMG_PATH\" --title \"v${NEW_VERSION}\" --generate-notes"
+  echo "📦 Creating GitHub release v${NEW_VERSION}..."
+  gh release create "v${NEW_VERSION}" \
+    "${DMG_PATH}#Bling.Bling_${NEW_VERSION}_aarch64.dmg" \
+    --title "v${NEW_VERSION}" \
+    --generate-notes || echo "⚠️ GitHub release already exists or failed to upload."
 fi
+
+# 12. Update and Push to Homebrew Tap Repository
+TAP_DIR="$(brew --repository)/Library/Taps/punishedzoomer/homebrew-tap"
+if [[ -d "$TAP_DIR" ]]; then
+  echo "🍺 Syncing and pushing to punishedzoomer/homebrew-tap..."
+  cp "$ROOT_DIR/Casks/bling-bling.rb" "$TAP_DIR/Casks/bling-bling.rb"
+  cd "$TAP_DIR"
+  git add Casks/bling-bling.rb
+  git commit -m "chore(release): bump bling-bling cask to v${NEW_VERSION}" || true
+  git push origin main || true
+  cd "$ROOT_DIR"
+fi
+
+echo ""
+echo "=============================================================================="
+echo "🎉 Release v${NEW_VERSION} is published and Homebrew Tap is live!"
+echo "=============================================================================="
+echo "Users can now install/upgrade immediately via:"
+echo "  brew upgrade --cask bling-bling"
 echo "=============================================================================="

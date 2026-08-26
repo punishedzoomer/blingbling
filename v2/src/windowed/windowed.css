@@ -26,7 +26,7 @@ body[data-mode="windowed"] #root {
   height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
-  background: var(--windowed-bg) !important;
+  background: transparent !important;
   overflow: hidden !important;
   pointer-events: auto !important;
 }

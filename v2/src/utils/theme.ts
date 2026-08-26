@@ -1,7 +1,7 @@
 import { emit, listen } from "@tauri-apps/api/event";
 
 const OPACITY_STORAGE_KEY = "glassOpacity";
-const DEFAULT_OPACITY = 85; // 85% provides beautiful translucency while maintaining readability
+const DEFAULT_OPACITY = 80; // 80% provides unified translucency across widget & windowed modes
 
 export function getStoredGlassOpacity(): number {
   try {
@@ -22,7 +22,7 @@ export function applyThemeTokens(opacityPercent: number = DEFAULT_OPACITY) {
   const alpha = Math.max(0.2, Math.min(1.0, opacityPercent / 100));
   const docStyle = document.documentElement.style;
 
-  // Unified Alpha Token
+  // Unified Alpha Token (Exactly 0.80 for 80%)
   docStyle.setProperty("--glass-alpha", alpha.toFixed(3));
 
   // Surfaces (Translucent, zero-flicker, zero blur overhead)
@@ -31,12 +31,12 @@ export function applyThemeTokens(opacityPercent: number = DEFAULT_OPACITY) {
   docStyle.setProperty("--glass-border", `rgba(255, 255, 255, ${Math.min(0.25, 0.08 + (1 - alpha) * 0.1).toFixed(3)})`);
   docStyle.setProperty("--glass-shadow", `0 16px 40px rgba(0, 0, 0, ${(0.3 + alpha * 0.2).toFixed(2)}), inset 0 1px 0 rgba(255, 255, 255, 0.08)`);
 
-  // Windowed Mode Tokens
-  docStyle.setProperty("--windowed-bg", `rgba(16, 18, 24, ${alpha.toFixed(3)})`);
-  docStyle.setProperty("--windowed-titlebar-bg", `rgba(20, 22, 28, ${Math.min(1, alpha + 0.02).toFixed(3)})`);
-  docStyle.setProperty("--windowed-sidebar-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
-  docStyle.setProperty("--windowed-card-bg", `rgba(24, 26, 34, ${Math.min(1, alpha + 0.03).toFixed(3)})`);
-  docStyle.setProperty("--windowed-composer-bg", `rgba(20, 23, 30, ${Math.min(1, alpha + 0.04).toFixed(3)})`);
+  // Windowed Mode Tokens (100% unified with widget glass-bg)
+  docStyle.setProperty("--windowed-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
+  docStyle.setProperty("--windowed-titlebar-bg", "rgba(255, 255, 255, 0.02)");
+  docStyle.setProperty("--windowed-sidebar-bg", "rgba(0, 0, 0, 0.12)");
+  docStyle.setProperty("--windowed-card-bg", "rgba(255, 255, 255, 0.03)");
+  docStyle.setProperty("--windowed-composer-bg", "rgba(0, 0, 0, 0.15)");
 }
 
 export function setGlassOpacity(percent: number, broadcast: boolean = true) {

@@ -403,7 +403,7 @@ export function SettingsApp({
                   />
                   
                   <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
-                    {[60, 75, 85, 95, 100].map((preset) => (
+                    {[60, 70, 80, 90, 100].map((preset) => (
                       <button
                         key={preset}
                         onClick={() => handleOpacityChange(preset)}
@@ -419,7 +419,7 @@ export function SettingsApp({
                           fontWeight: glassOpacity === preset ? 600 : 400,
                         }}
                       >
-                        {preset === 85 ? "85% (Default)" : preset === 100 ? "Solid" : `${preset}%`}
+                        {preset === 80 ? "80% (Default)" : preset === 100 ? "Solid" : `${preset}%`}
                       </button>
                     ))}
                   </div>

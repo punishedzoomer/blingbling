@@ -1,11 +1,12 @@
 import { useLayoutEffect, useRef } from "react";
 import { Pencil, FileText, ChevronDown, FileCode, FileType } from "lucide-react";
 import { MessageRenderer } from "./MarkdownRenderer";
+import { resolveImageSrc } from "./media/ImageCard";
 import { Attachment, formatFileSize } from "../utils/fileProcessor";
 
 interface Message {
   role: "user" | "assistant" | "system";
-  content: string;
+  content: any;
   contextText?: string;
   contextImages?: string[];
   attachments?: Attachment[];
@@ -32,6 +33,25 @@ function getFileIcon(name: string, mimeType?: string) {
     return <FileCode size={14} color="var(--accent)" />;
   }
   return <FileText size={14} color="#10b981" />;
+}
+
+export function renderUserContent(content: any): string {
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    const textPart = content.find((c: any) => c.type === "text" || typeof c.text === "string");
+    if (textPart && textPart.text) return textPart.text;
+    const allTexts = content
+      .map((c: any) => (typeof c === "string" ? c : c.text || ""))
+      .filter(Boolean)
+      .join(" ");
+    return allTexts || "";
+  }
+  if (typeof content === "object") {
+    if (content.text) return String(content.text);
+    if (content.content) return renderUserContent(content.content);
+  }
+  return String(content);
 }
 
 export function MessageList({
@@ -98,6 +118,7 @@ export function MessageList({
         const fileCount = msg.attachments?.filter((a) => a.type === "file").length || 0;
         const totalItemsCount = fileCount + imageList.length;
         const hasContext = Boolean(msg.contextText || totalItemsCount > 0);
+        const userText = msg.role === "user" ? renderUserContent(msg.content) : "";
 
         return (
           <div
@@ -112,7 +133,7 @@ export function MessageList({
           >
             <div className={msg.role === "user" ? "user-bubble" : "ai-text small"}>
               {msg.role === "user" ? (
-                <div>{msg.content}</div>
+                <div>{userText || (totalItemsCount > 0 ? "(Attachment)" : "")}</div>
               ) : (
                 <MessageRenderer content={msg.content} />
               )}
@@ -131,7 +152,7 @@ export function MessageList({
                 <div style={{ display: "flex", gap: "6px", marginBottom: showContextState[idx] ? "8px" : "0" }}>
                   <button
                     onClick={() => {
-                      setInput(msg.content === "(Sent snip)" || msg.content === "(Sent attachment)" ? "" : msg.content);
+                      setInput(userText === "(Sent snip)" || userText === "(Sent attachment)" || userText === "(Attachment)" ? "" : userText);
                       setPendingContextText(msg.contextText || "");
                       setPendingSnips(msg.contextImages ? [...msg.contextImages] : []);
                       if (setAttachments && msg.attachments) {
@@ -257,11 +278,11 @@ export function MessageList({
                           <div
                             key={img.id}
                             style={{ flexShrink: 0, cursor: "zoom-in" }}
-                            onClick={() => setPreviewImage(img.url)}
+                            onClick={() => setPreviewImage(resolveImageSrc(img.url))}
                             title={img.name ? `${img.name} (click to enlarge)` : "Click to enlarge"}
                           >
                             <img
-                              src={img.url}
+                              src={resolveImageSrc(img.url)}
                               style={{
                                 height: "48px",
                                 borderRadius: "6px",

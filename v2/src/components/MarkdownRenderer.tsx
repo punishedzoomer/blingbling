@@ -215,16 +215,24 @@ export function parseReasoning(content: string): ParsedReasoning {
   };
 }
 
-export const MessageRenderer = memo(({ content }: { content: string }) => {
+export const MessageRenderer = memo(({ content }: { content: any }) => {
   if (!content) return null;
 
+  const rawContent: string = typeof content === "string"
+    ? content
+    : Array.isArray(content)
+    ? content.map(c => (typeof c === "string" ? c : c.text || "")).filter(Boolean).join("\n\n")
+    : typeof content === "object" && content.text
+    ? String(content.text)
+    : String(content);
+
   // 1. Direct image extraction to prevent heavy markdown/math regex backtracking on multi-megabyte base64 strings
-  const imgStart = content.indexOf("![");
+  const imgStart = rawContent.indexOf("![");
   if (imgStart !== -1) {
-    const parenStart = content.indexOf("](", imgStart);
-    const parenEnd = content.indexOf(")", parenStart);
+    const parenStart = rawContent.indexOf("](", imgStart);
+    const parenEnd = rawContent.indexOf(")", parenStart);
     if (parenStart !== -1 && parenEnd !== -1) {
-      const src = content.substring(parenStart + 2, parenEnd);
+      const src = rawContent.substring(parenStart + 2, parenEnd);
       if (
         src.startsWith("data:image/") ||
         src.startsWith("http") ||
@@ -232,9 +240,9 @@ export const MessageRenderer = memo(({ content }: { content: string }) => {
         src.startsWith("file:") ||
         src.startsWith("/")
       ) {
-        const textBefore = content.substring(0, imgStart).trim();
-        const alt = content.substring(imgStart + 2, parenStart);
-        const textAfter = content.substring(parenEnd + 1).trim();
+        const textBefore = rawContent.substring(0, imgStart).trim();
+        const alt = rawContent.substring(imgStart + 2, parenStart);
+        const textAfter = rawContent.substring(parenEnd + 1).trim();
 
         return (
           <div className="flex flex-col gap-1.5 w-full">
@@ -248,14 +256,14 @@ export const MessageRenderer = memo(({ content }: { content: string }) => {
   }
 
   // 2. Direct audio response extraction
-  const trimmed = content.trim();
+  const trimmed = rawContent.trim();
   if (trimmed.startsWith("[Audio Response](") && trimmed.endsWith(")")) {
     const src = trimmed.substring(17, trimmed.length - 1);
     return <AudioPlayerCard src={src} title="Audio Response" />;
   }
 
   // 3. Normal reasoning and Markdown rendering flow
-  const { hasReasoning, reasoningText, isStreamingReasoning, mainContent } = parseReasoning(content);
+  const { hasReasoning, reasoningText, isStreamingReasoning, mainContent } = parseReasoning(rawContent);
 
   if (hasReasoning) {
     return (
@@ -298,7 +306,7 @@ export const MessageRenderer = memo(({ content }: { content: string }) => {
       rehypePlugins={[rehypeKatex]}
       components={customMarkdownComponents}
     >
-      {content}
+      {rawContent}
     </ReactMarkdown>
   );
 });

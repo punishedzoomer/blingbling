@@ -291,18 +291,14 @@ export function NotebookApp({
       }}
     >
       <div
+        className={isWindowed ? "windowed-card" : "glass"}
         style={{
-          position: "absolute",
-          inset: 0,
+          position: isWindowed ? "relative" : "absolute",
+          inset: isWindowed ? undefined : 0,
           display: "flex",
           flexDirection: "column",
           borderRadius: "16px",
           overflow: "hidden",
-          background: "var(--glass-bg)",
-          WebkitBackdropFilter: "var(--glass-blur)",
-          backdropFilter: "var(--glass-blur)",
-          border: "1px solid var(--glass-border)",
-          boxShadow: "var(--glass-shadow)",
           pointerEvents: "auto",
         }}
       >

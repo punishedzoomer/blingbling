@@ -3,6 +3,7 @@
 
 mod commands;
 mod websocket;
+mod vibrancy;
 
 use tauri::Manager;
 use std::sync::atomic::AtomicBool;
@@ -75,6 +76,7 @@ pub fn run() {
                             let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
                         }
                     }
+
                     if initial_mode == "windowed" {
                         let _ = shell.show();
                         let _ = shell.set_focus();

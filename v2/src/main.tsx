@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import App from "./App";
 import { AppShell } from "./windowed/AppShell";
@@ -22,39 +21,10 @@ console.error = (...args) => {
   invoke("console_log", { msg: "ERROR: " + args.join(" ") }).catch(() => {});
 };
 
-function applyGlassOpacity(opacityPercent: number) {
-  const alpha = Math.max(0.1, Math.min(1.0, opacityPercent / 100));
-  const docStyle = document.documentElement.style;
-  
-  // Widget tokens
-  docStyle.setProperty("--glass-bg", `rgba(20, 22, 28, ${alpha})`);
-  
-  // Windowed mode tokens
-  docStyle.setProperty("--windowed-bg", `rgba(17, 18, 22, ${alpha})`);
-  docStyle.setProperty("--windowed-titlebar-bg", `rgba(21, 23, 30, ${alpha})`);
-  docStyle.setProperty("--windowed-sidebar-bg", `rgba(20, 22, 29, ${alpha})`);
-  docStyle.setProperty("--windowed-card-bg", `rgba(25, 27, 35, ${alpha})`);
-  docStyle.setProperty("--windowed-composer-bg", `rgba(22, 25, 33, ${Math.min(1, alpha + 0.02)})`);
-}
+import { initTheme } from "./utils/theme";
 
-// Initial opacity from localStorage
-const savedOpacity = localStorage.getItem("glassOpacity");
-if (savedOpacity) {
-  const val = parseFloat(savedOpacity);
-  if (!isNaN(val)) {
-    applyGlassOpacity(val);
-  }
-}
-
-// Listen for dynamic opacity changes across all windows
-listen("glass-opacity-changed", (event: any) => {
-  if (event.payload?.opacity !== undefined) {
-    const val = parseFloat(event.payload.opacity);
-    if (!isNaN(val)) {
-      applyGlassOpacity(val);
-    }
-  }
-});
+// Initialize unified glassmorphism theme across all windows
+initTheme();
 
 function Router() {
   const [label, setLabel] = useState<string | null>(null);

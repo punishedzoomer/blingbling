@@ -227,8 +227,7 @@ pub fn show_panel(label: String, app: AppHandle) {
                     let ns = ptr as cocoa::base::id;
                     unsafe {
                         use objc::{sel, sel_impl};
-                        let _: () = objc::msg_send![ns, setAlphaValue: 0.0f64];
-                        let _: () = objc::msg_send![ns, setIgnoresMouseEvents: cocoa::base::YES];
+                        let _: () = objc::msg_send![ns, orderOut: cocoa::base::nil];
                     }
                 });
             }
@@ -420,23 +419,13 @@ pub fn hide_panel(label: String, app: AppHandle) {
     if let Some(window) = app.get_webview_window(&label) {
         #[cfg(target_os = "macos")]
         {
-            let is_main = label == "main";
             let ns_window_ptr = window.ns_window().unwrap() as usize;
             
             let _ = app.run_on_main_thread(move || {
-                if is_main {
-                    let ns_window = ns_window_ptr as cocoa::base::id;
-                    unsafe {
-                        use objc::{sel, sel_impl};
-                        let _: () = objc::msg_send![ns_window, setAlphaValue: 0.0f64];
-                        let _: () = objc::msg_send![ns_window, setIgnoresMouseEvents: cocoa::base::YES];
-                    }
-                } else {
-                    let ns_window = ns_window_ptr as cocoa::base::id;
-                    unsafe {
-                        use objc::{sel, sel_impl};
-                        let _: () = objc::msg_send![ns_window, orderOut: cocoa::base::nil];
-                    }
+                let ns_window = ns_window_ptr as cocoa::base::id;
+                unsafe {
+                    use objc::{sel, sel_impl};
+                    let _: () = objc::msg_send![ns_window, orderOut: cocoa::base::nil];
                 }
             });
         }

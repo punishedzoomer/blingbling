@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Settings, Zap, Sparkles, Flame, ChevronDown, Search, MessageCircle, Terminal, Trash2, Layers } from "lucide-react";
-import "./App.css";
 
 interface OpenRouterModel {
   id: string;
@@ -146,24 +145,6 @@ export function SettingsApp({
   const [modelSmart, setModelSmart] = useState("");
   const [modelUltra, setModelUltra] = useState("");
   const [allowSystemScreenshots, setAllowSystemScreenshots] = useState(false);
-  const [glassOpacity, setGlassOpacity] = useState<number>(() => {
-    const saved = localStorage.getItem("glassOpacity");
-    return saved ? parseFloat(saved) : 95;
-  });
-
-  const handleOpacityChange = (val: number) => {
-    setGlassOpacity(val);
-    localStorage.setItem("glassOpacity", val.toString());
-    const alpha = Math.max(0.1, Math.min(1.0, val / 100));
-    const docStyle = document.documentElement.style;
-    docStyle.setProperty("--glass-bg", `rgba(20, 22, 28, ${alpha})`);
-    docStyle.setProperty("--windowed-bg", `rgba(17, 18, 22, ${alpha})`);
-    docStyle.setProperty("--windowed-titlebar-bg", `rgba(21, 23, 30, ${alpha})`);
-    docStyle.setProperty("--windowed-sidebar-bg", `rgba(20, 22, 29, ${alpha})`);
-    docStyle.setProperty("--windowed-card-bg", `rgba(25, 27, 35, ${alpha})`);
-    docStyle.setProperty("--windowed-composer-bg", `rgba(22, 25, 33, ${Math.min(1, alpha + 0.02)})`);
-    emit("glass-opacity-changed", { opacity: val }).catch(console.error);
-  };
 
   const [allModels, setAllModels] = useState<OpenRouterModel[]>([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -269,13 +250,15 @@ export function SettingsApp({
         width: "100%",
         maxWidth: isWindowed ? "720px" : undefined,
         margin: isWindowed ? "0 auto" : undefined,
-        height: isWindowed ? "100%" : "fit-content",
-        minHeight: "400px",
+        height: isWindowed ? "100%" : "100vh",
+        maxHeight: isWindowed ? undefined : "100vh",
         display: "flex",
         flexDirection: "column",
         padding: isWindowed ? "0" : "18px 20px 20px",
         boxSizing: "border-box",
         position: "relative",
+        borderRadius: isWindowed ? undefined : "16px",
+        overflow: "hidden",
       }}
     >
       {/* Drag handle for widget mode */}
@@ -292,7 +275,7 @@ export function SettingsApp({
       )}
       <div 
         id="settings" 
-        style={{ border: "none", boxShadow: "none", paddingTop: 0, margin: 0, padding: 0, display: "flex", flexDirection: "column", backgroundColor: "transparent", width: "100%", boxSizing: "border-box" }}
+        style={{ border: "none", boxShadow: "none", paddingTop: 0, margin: 0, padding: 0, display: "flex", flexDirection: "column", backgroundColor: "transparent", width: "100%", height: "100%", boxSizing: "border-box", overflow: "hidden", flex: 1, minHeight: 0 }}
         onMouseEnter={() => { 
           if (!isWindowed) {
             invoke("focus_panel", { label: "settings" }).catch(console.error);
@@ -323,7 +306,7 @@ export function SettingsApp({
             </button>
         </div>
 
-        <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "14px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101 }}>
+        <div className="s-body s-tab-pane" style={{ overflowY: "auto", paddingBottom: "10px", gap: "14px", display: "flex", flexDirection: "column", flex: 1, zIndex: 101, minHeight: 0 }}>
             
             {activeTab === 'general' && (
               <>
@@ -463,54 +446,6 @@ export function SettingsApp({
 
             {activeTab === 'dev' && (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "var(--r-8)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-1)", margin: 0 }}>
-                      App Glass Opacity (Widget & Windowed)
-                    </label>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent)" }}>
-                      {glassOpacity}%
-                    </span>
-                  </div>
-                  
-                  <input
-                    type="range"
-                    min="20"
-                    max="100"
-                    step="1"
-                    value={glassOpacity}
-                    onChange={(e) => handleOpacityChange(parseInt(e.target.value, 10))}
-                    style={{
-                      width: "100%",
-                      accentColor: "var(--accent)",
-                      cursor: "pointer",
-                      margin: "4px 0",
-                    }}
-                  />
-                  
-                  <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
-                    {[70, 85, 95, 100].map((preset) => (
-                      <button
-                        key={preset}
-                        onClick={() => handleOpacityChange(preset)}
-                        style={{
-                          flex: 1,
-                          padding: "4px 6px",
-                          fontSize: "11px",
-                          borderRadius: "6px",
-                          border: glassOpacity === preset ? "1px solid var(--accent)" : "1px solid rgba(255,255,255,0.1)",
-                          background: glassOpacity === preset ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "rgba(255,255,255,0.04)",
-                          color: glassOpacity === preset ? "var(--accent)" : "var(--tx-mut)",
-                          cursor: "pointer",
-                          fontWeight: glassOpacity === preset ? 600 : 400,
-                        }}
-                      >
-                        {preset === 95 ? "95% (Default)" : preset === 100 ? "100% (Solid)" : `${preset}%`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <label className="s-label" style={{ fontSize: "12px", color: "var(--tx-mut)" }}>Diagnostics</label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.05)", padding: "10px", borderRadius: "var(--r-8)" }}>
                   <input 

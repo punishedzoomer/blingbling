@@ -56,16 +56,44 @@ fn append_image(output: &mut String, url: &str) {
     }
 }
 
+/// Recursively extracts an image URL or data string from a nested JSON value
+fn extract_url_from_val(val: &Value) -> Option<String> {
+    if let Some(s) = val.as_str() {
+        return Some(s.to_string());
+    }
+    if let Some(url) = val.get("url").and_then(|u| u.as_str()) {
+        return Some(url.to_string());
+    }
+    if let Some(img_url) = val.get("image_url") {
+        if let Some(url) = img_url.as_str() {
+            return Some(url.to_string());
+        }
+        if let Some(url) = img_url.get("url").and_then(|u| u.as_str()) {
+            return Some(url.to_string());
+        }
+    }
+    if let Some(b64) = val.get("b64_json").and_then(|b| b.as_str()) {
+        return Some(format!("data:image/png;base64,{}", b64));
+    }
+    if let Some(img) = val.get("image") {
+        if let Some(url) = img.as_str() {
+            return Some(url.to_string());
+        }
+        if let Some(url) = img.get("url").and_then(|u| u.as_str()) {
+            return Some(url.to_string());
+        }
+    }
+    None
+}
+
 fn extract_output_markdown(json_res: &Value, model_kind: ModelKind) -> String {
     let mut output_markdown = String::new();
 
     // 1. Top-level OpenAI / DALL-E format: { "data": [ { "url": "..." }, { "b64_json": "..." } ] }
     if let Some(data_array) = json_res.get("data").and_then(|d| d.as_array()) {
         for item in data_array {
-            if let Some(url) = item.get("url").and_then(|u| u.as_str()) {
-                append_image(&mut output_markdown, url);
-            } else if let Some(b64) = item.get("b64_json").and_then(|b| b.as_str()) {
-                append_image(&mut output_markdown, &format!("data:image/png;base64,{}", b64));
+            if let Some(url) = extract_url_from_val(item) {
+                append_image(&mut output_markdown, &url);
             }
         }
     }
@@ -90,12 +118,8 @@ fn extract_output_markdown(json_res: &Value, model_kind: ModelKind) -> String {
                         }
                         output_markdown.push_str(text);
                     }
-                    if let Some(url) = item.get("image_url").and_then(|img| img.get("url")).and_then(|u| u.as_str()) {
-                        append_image(&mut output_markdown, url);
-                    } else if let Some(url) = item.get("url").and_then(|u| u.as_str()) {
-                        append_image(&mut output_markdown, url);
-                    } else if let Some(img) = item.get("image").and_then(|i| i.as_str()) {
-                        append_image(&mut output_markdown, img);
+                    if let Some(url) = extract_url_from_val(item) {
+                        append_image(&mut output_markdown, &url);
                     }
                 }
             }
@@ -107,28 +131,16 @@ fn extract_output_markdown(json_res: &Value, model_kind: ModelKind) -> String {
 
         if let Some(images_array) = images_opt.and_then(|img| img.as_array()) {
             for item in images_array {
-                if let Some(url_str) = item.as_str() {
-                    append_image(&mut output_markdown, url_str);
-                } else if let Some(obj) = item.as_object() {
-                    let url = obj.get("url")
-                        .or_else(|| obj.get("image_url"))
-                        .or_else(|| obj.get("b64_json"))
-                        .or_else(|| obj.get("image"))
-                        .and_then(|u| u.as_str());
-
-                    if let Some(u) = url {
-                        append_image(&mut output_markdown, u);
-                    }
+                if let Some(url) = extract_url_from_val(item) {
+                    append_image(&mut output_markdown, &url);
                 }
             }
         }
 
         // 4. Extract single image field choices[0].message.image
-        if let Some(single_img) = message_obj.get("image") {
-            if let Some(url_str) = single_img.as_str() {
-                append_image(&mut output_markdown, url_str);
-            } else if let Some(url_str) = single_img.get("url").and_then(|u| u.as_str()) {
-                append_image(&mut output_markdown, url_str);
+        if let Some(single_img) = message_obj.get("image").or_else(|| choice.get("image")) {
+            if let Some(url) = extract_url_from_val(single_img) {
+                append_image(&mut output_markdown, &url);
             }
         }
 
@@ -300,7 +312,7 @@ async fn execute_streaming(
                             // Streaming images / audio if present
                             if let Some(images) = delta.get("images").and_then(|img| img.as_array()) {
                                 for img in images {
-                                    if let Some(url) = img.get("url").and_then(|u| u.as_str()) {
+                                    if let Some(url) = extract_url_from_val(img) {
                                         let img_md = format!("\n\n![Generated Image]({})\n\n", url);
                                         app.emit("ai-response", img_md).unwrap_or_default();
                                     }

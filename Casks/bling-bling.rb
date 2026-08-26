@@ -12,6 +12,11 @@ cask "bling-bling" do
 
   app "Bling Bling.app"
 
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-cr", "#{appdir}/Bling Bling.app"]
+  end
+
   zap trash: [
     "~/Library/Application Support/BlingBling",
     "~/Library/Preferences/com.punishedzoomer.blingbling.plist",

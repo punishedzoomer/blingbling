@@ -461,7 +461,12 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
       attachments: payload.attachmentsSnapshot.length > 0 ? payload.attachmentsSnapshot : undefined,
     };
 
-    const updatedMessages = [...messages, userMessageRecord];
+    const assistantPlaceholder: Message = {
+      role: "assistant",
+      content: "",
+    };
+
+    const updatedMessages = [...messages, userMessageRecord, assistantPlaceholder];
     setMessages(updatedMessages);
     setInput("");
     clearAllAttachments();
@@ -470,7 +475,7 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
 
     invoke("save_session", {
       sessionId,
-      data: { history: updatedMessages, tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle || userMsg.slice(0, 60) },
+      data: { history: [...messages, userMessageRecord], tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle || userMsg.slice(0, 60) },
     }).catch(console.error);
 
     try {

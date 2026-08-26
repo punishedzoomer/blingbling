@@ -2,6 +2,7 @@ use futures_util::StreamExt;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::sync::atomic::Ordering;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, State};
 
 use super::sanitizer::sanitize_messages;
@@ -17,9 +18,15 @@ pub async fn execute_ai_request(
     messages: Vec<Value>,
 ) -> Result<(), String> {
     state.cancel_flag.store(false, Ordering::SeqCst);
-    let client = Client::new();
+
+    let client = Client::builder()
+        .timeout(Duration::from_secs(180))
+        .build()
+        .unwrap_or_else(|_| Client::new());
 
     let model_kind = ModelKind::from_model_id(&model);
+    println!("[AI] Executing request for model: {} (kind: {:?})", model, model_kind);
+
     let sanitized_messages = sanitize_messages(model_kind, messages);
 
     // 1. NON-STREAMING EXECUTION (for Image Generation and Audio Models)
@@ -186,6 +193,8 @@ async fn execute_non_streaming(
         "stream": false,
     });
 
+    println!("[AI] Sending non-streaming request to OpenRouter for {}...", model);
+
     let res = client
         .post("https://openrouter.ai/api/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
@@ -193,22 +202,31 @@ async fn execute_non_streaming(
         .json(&payload)
         .send()
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            println!("[AI Error] HTTP request failed: {}", e);
+            e.to_string()
+        })?;
 
     if !res.status().is_success() {
         let status = res.status();
         let error_body = res.text().await.unwrap_or_default();
+        println!("[AI Error] Non-success status {}: {}", status, error_body);
         return Err(format!("API Error {}: {}", status, error_body));
     }
 
-    let json_res: Value = res.json().await.map_err(|e| e.to_string())?;
+    let json_res: Value = res.json().await.map_err(|e| {
+        println!("[AI Error] JSON parsing failed: {}", e);
+        e.to_string()
+    })?;
 
     // Check for API errors returned inside JSON body
     if let Some(err) = json_res.get("error") {
+        println!("[AI Error] API error in body: {:?}", err);
         return Err(format!("OpenRouter Error: {}", err.to_string()));
     }
 
     let output_markdown = extract_output_markdown(&json_res, model_kind);
+    println!("[AI] Response markdown length: {} chars", output_markdown.len());
 
     // Emit the complete response to the frontend
     app.emit("ai-response", &output_markdown).unwrap_or_default();

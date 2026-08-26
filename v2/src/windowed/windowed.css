@@ -37,11 +37,6 @@ body[data-mode="windowed"] #root {
   width: 100vw;
   height: 100vh;
   background: var(--windowed-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
   color: rgba(255, 255, 255, 0.92);
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;

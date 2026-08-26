@@ -33,19 +33,15 @@ Most AI chat apps feel like web pages wrapped in Electron — heavy, slow, and l
 
 ## Screenshots
 
-> **Add your screenshots here!** Replace the placeholder paths below with actual images in a `docs/assets/` folder.
-
-| Main Chat (Glassmorphism Overlay) | Notebooks — Organize by Project |
+| Widget Mode (Floating Overlay) | Windowed Mode (Full Workspace) |
 |:---:|:---:|
-| ![Main Chat](docs/assets/main-chat.png) | ![Notebooks](docs/assets/notebooks.png) |
+| ![Widget Mode](Docs/assets/widgetmode.png) | ![Windowed Mode](Docs/assets/windowedmode.png) |
 
-| Settings — Model Selection & API Usage | Browser Extension — Capture Any Element |
+| Notebooks — Context & Asset Sharing | Settings — Model Selection & OpenRouter |
 |:---:|:---:|
-| ![Settings](docs/assets/settings.png) | ![Extension](docs/assets/extension.png) |
+| ![Notebooks](Docs/assets/notebooksection.png) | ![Settings](Docs/assets/settings.png) |
 
-| Command Palette (`/tag`) | Screen Snip (Native macOS) |
-|:---:|:---:|
-| ![Tags](docs/assets/tags.png) | ![Snip](docs/assets/snip.png) |
+> 📖 Read the full design philosophy and development story on [notosansdiary.com](https://notosansdiary.com/Portfolio/Bling-Bling).
 
 ---
 

@@ -17,17 +17,16 @@
   --fill-1: rgba(255,255,255,0.04);
   --fill-2: rgba(255,255,255,0.06);
 
-  --glass-alpha: 1.0;
-  --glass-bg: #14161d;
-  --glass-blur: none;
+  --glass-alpha: 0.45;
+  --glass-bg: rgba(18, 20, 26, 0.45);
   --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
-  --windowed-bg: #111216;
-  --windowed-titlebar-bg: #15171e;
-  --windowed-sidebar-bg: #14161d;
-  --windowed-card-bg: #191b23;
-  --windowed-composer-bg: #161921;
+  --windowed-bg: rgba(16, 18, 24, 0.60);
+  --windowed-titlebar-bg: rgba(20, 22, 28, 0.50);
+  --windowed-sidebar-bg: rgba(18, 20, 26, 0.50);
+  --windowed-card-bg: rgba(24, 26, 34, 0.60);
+  --windowed-composer-bg: rgba(20, 23, 30, 0.65);
 
   --r-panel: 24px;
   --r-16: 16px;

@@ -3,6 +3,7 @@
 
 mod commands;
 mod websocket;
+mod vibrancy;
 
 use tauri::Manager;
 use std::sync::atomic::AtomicBool;
@@ -75,6 +76,8 @@ pub fn run() {
                             let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
                         }
                     }
+                    vibrancy::apply_vibrancy(&shell, 14.0);
+
                     if initial_mode == "windowed" {
                         let _ = shell.show();
                         let _ = shell.set_focus();
@@ -114,6 +117,16 @@ pub fn run() {
                                 let _: () = objc::msg_send![ns_window, setBackgroundColor: clear_color];
                                 let _: () = objc::msg_send![ns_window, setOpaque: cocoa::base::NO];
                             }
+                        }
+
+                        // Apply native macOS NSVisualEffectView vibrancy
+                        if label != "snip" {
+                            let corner_radius = match label.as_str() {
+                                "main" => 22.0,
+                                "chat-panel" => 24.0,
+                                _ => 16.0,
+                            };
+                            vibrancy::apply_vibrancy(&window, corner_radius);
                         }
 
                         // Only show the main panel by default when in widget mode

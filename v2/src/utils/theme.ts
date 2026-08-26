@@ -18,24 +18,25 @@ export function getStoredGlassOpacity(): number {
   return DEFAULT_OPACITY;
 }
 
-export function applyThemeTokens(_opacityPercent?: number) {
+export function applyThemeTokens(opacityPercent: number = 85) {
+  // Map 20-100% to alpha 0.25-0.90 for dark tint overlay over native macOS vibrancy
+  const alpha = Math.max(0.25, Math.min(0.95, (opacityPercent / 100) * 0.65 + 0.25));
   const docStyle = document.documentElement.style;
 
-  // Unified Alpha Token (Solid)
-  docStyle.setProperty("--glass-alpha", "1.0");
+  // Unified Alpha Token
+  docStyle.setProperty("--glass-alpha", alpha.toFixed(3));
 
-  // Widget Mode Solid Tokens
-  docStyle.setProperty("--glass-bg", "#14161d");
+  // Widget Mode Native Vibrancy Tint Tokens
+  docStyle.setProperty("--glass-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
   docStyle.setProperty("--glass-border", "rgba(255, 255, 255, 0.12)");
-  docStyle.setProperty("--glass-blur", "none");
-  docStyle.setProperty("--glass-shadow", "0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)");
+  docStyle.setProperty("--glass-shadow", `0 16px 40px rgba(0, 0, 0, ${(0.3 + alpha * 0.2).toFixed(2)}), inset 0 1px 0 rgba(255, 255, 255, 0.08)`);
 
-  // Windowed Mode Solid Tokens
-  docStyle.setProperty("--windowed-bg", "#111216");
-  docStyle.setProperty("--windowed-titlebar-bg", "#15171e");
-  docStyle.setProperty("--windowed-sidebar-bg", "#14161d");
-  docStyle.setProperty("--windowed-card-bg", "#191b23");
-  docStyle.setProperty("--windowed-composer-bg", "#161921");
+  // Windowed Mode Native Vibrancy Tint Tokens
+  docStyle.setProperty("--windowed-bg", `rgba(16, 18, 24, ${Math.min(1, alpha + 0.15).toFixed(3)})`);
+  docStyle.setProperty("--windowed-titlebar-bg", `rgba(20, 22, 28, ${alpha.toFixed(3)})`);
+  docStyle.setProperty("--windowed-sidebar-bg", `rgba(18, 20, 26, ${alpha.toFixed(3)})`);
+  docStyle.setProperty("--windowed-card-bg", `rgba(24, 26, 34, ${Math.min(1, alpha + 0.1).toFixed(3)})`);
+  docStyle.setProperty("--windowed-composer-bg", `rgba(20, 23, 30, ${Math.min(1, alpha + 0.15).toFixed(3)})`);
 }
 
 export function setGlassOpacity(percent: number, broadcast: boolean = true) {

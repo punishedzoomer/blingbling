@@ -1,6 +1,7 @@
 <p align="center">
   <img src="assets/icon.png" width="128" alt="Bling Bling Logo">
   <h1 align="center">Bling Bling</h1>
+  <p align="center"><em>A unified desktop frontend for all AI models and agents.</em></p>
 </p>
 
 I decided to make my own AI agent. I was frustrated with the way there are so many agents, but currently no way to test them via one unified frontend unless you want to manually interact with each and every one of them via OpenRouter with API calls.

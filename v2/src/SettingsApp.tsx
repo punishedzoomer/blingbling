@@ -49,10 +49,30 @@ function ModelSelect({ value, onChange, models, disabled }: { value: string, onC
   }, []);
 
   const selectedModel = models.find(m => m.id === value);
-  const filteredModels = models.filter(m => 
-    m.name.toLowerCase().includes(search.toLowerCase()) || 
-    m.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalize = (str: string) => str.toLowerCase().replace(/[-_.\s]/g, "");
+  const searchTokens = search.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const normalizedSearch = normalize(search);
+
+  const filteredModels = models.filter(m => {
+    if (searchTokens.length === 0) return true;
+    const nameLower = (m.name || "").toLowerCase();
+    const idLower = (m.id || "").toLowerCase();
+    const normalizedName = normalize(nameLower);
+    const normalizedId = normalize(idLower);
+
+    // Direct or normalized full string match (e.g. "blackforest" -> "black-forest")
+    if (normalizedName.includes(normalizedSearch) || normalizedId.includes(normalizedSearch)) {
+      return true;
+    }
+
+    // Multi-word token match (e.g. "gemini image" or "bytedance seed")
+    return searchTokens.every(token => 
+      nameLower.includes(token) || 
+      idLower.includes(token) || 
+      normalizedName.includes(token) || 
+      normalizedId.includes(token)
+    );
+  });
 
   return (
     <div ref={dropdownRef} style={{ position: "relative", width: "100%" }}>

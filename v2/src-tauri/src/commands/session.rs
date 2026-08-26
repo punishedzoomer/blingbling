@@ -127,6 +127,14 @@ pub fn sanitize_and_cache_json_media(val: &mut Value) -> bool {
 
 #[tauri::command]
 pub fn save_session(session_id: String, mut data: Value) -> Result<(), String> {
+    // If history contains 0 user messages, don't write orphan session file
+    if let Some(history) = data.get("history").and_then(|h| h.as_array()) {
+        let has_user_msg = history.iter().any(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"));
+        if !has_user_msg {
+            return Ok(());
+        }
+    }
+
     // Automatically cache any base64 images to real binary files on disk
     sanitize_and_cache_json_media(&mut data);
 
@@ -150,6 +158,15 @@ pub fn load_sessions() -> Result<Vec<Value>, String> {
                     if let Ok(file) = fs::File::open(&path) {
                         let reader = std::io::BufReader::new(file);
                         if let Ok(mut json) = serde_json::from_reader::<_, Value>(reader) {
+                            // Filter out and remove any orphaned phantom session files with 0 user messages
+                            if let Some(history) = json.get("history").and_then(|h| h.as_array()) {
+                                let has_user_msg = history.iter().any(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"));
+                                if !has_user_msg {
+                                    let _ = fs::remove_file(&path);
+                                    continue;
+                                }
+                            }
+
                             // If this session has un-migrated base64 data, migrate it and save back
                             if sanitize_and_cache_json_media(&mut json) {
                                 if let Ok(save_file) = fs::File::create(&path) {

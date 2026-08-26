@@ -51,6 +51,7 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isSendingRef = useRef(false);
 
   // Unified attachments hook
   const {
@@ -329,8 +330,11 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
   // AI response streaming & extension snip listeners
   useEffect(() => {
     const unlistenAi = listen<string>("ai-response", (event) => {
+      if (!isSendingRef.current) return;
+
       const chunk = event.payload;
       if (chunk === "[DONE]") {
+        isSendingRef.current = false;
         setIsStreaming(false);
         setIsThinking(false);
         return;
@@ -474,6 +478,7 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
     clearAllAttachments();
     setIsThinking(true);
     setIsStreaming(true);
+    isSendingRef.current = true;
 
     invoke("save_session", {
       sessionId,
@@ -531,6 +536,7 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
       });
     } catch (e) {
       console.error(e);
+      isSendingRef.current = false;
       setMessages((prev) => [...prev, { role: "assistant", content: "**Error:** " + e }]);
       setIsThinking(false);
       setIsStreaming(false);

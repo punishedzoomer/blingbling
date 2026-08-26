@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/punishedzoomer/blingbling/main/Docs/assets/icon.png" width="128" alt="Bling Bling Logo">
+  <img src="Docs/assets/icon.png" width="128" alt="Bling Bling Logo">
   <h1 align="center">Bling Bling</h1>
 </p>
 
@@ -11,7 +11,7 @@ I am still in the beta phase, so currently it's mainly a widget like Cluely and 
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/punishedzoomer/blingbling/main/Docs/assets/widgetmode.png" alt="Widget Mode">
+<img src="Docs/assets/widgetmode.png" alt="Widget Mode">
 <div style="font-size: 0.85em; opacity: 0.75; margin-top: 6px; margin-bottom: 24px; text-align: center;"><em>Running Bling Bling in widget mode — no more tabs.</em></div>
 
 </div>
@@ -22,21 +22,21 @@ There is also windowed mode:
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/punishedzoomer/blingbling/main/Docs/assets/windowedmode.png" alt="Windowed Mode">
+<img src="Docs/assets/windowedmode.png" alt="Windowed Mode">
 <div style="font-size: 0.85em; opacity: 0.75; margin-top: 6px; margin-bottom: 24px; text-align: center;"><em>Bling Bling running in windowed mode.</em></div>
 
 </div>
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/punishedzoomer/blingbling/main/Docs/assets/notebooksection.png" alt="Notebook Section">
+<img src="Docs/assets/notebooksection.png" alt="Notebook Section">
 <div style="font-size: 0.85em; opacity: 0.75; margin-top: 6px; margin-bottom: 24px; text-align: center;"><em>The Notebook feature allows you to create notebooks just like NotebookLM on Google, where your conversations share context and assets. This is for power users who want to work on giant projects like research students, etc.</em></div>
 
 </div>
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/punishedzoomer/blingbling/main/Docs/assets/settings.png" alt="Settings">
+<img src="Docs/assets/settings.png" alt="Settings">
 <div style="font-size: 0.85em; opacity: 0.75; margin-top: 6px; margin-bottom: 24px; text-align: center;"><em>You can select your favorite models from the settings, and thanks to OpenRouter you have access to countless models. You can also see the amount of credits you have used.</em></div>
 
 </div>

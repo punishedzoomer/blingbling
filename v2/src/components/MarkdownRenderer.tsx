@@ -16,6 +16,8 @@ import sql from "react-syntax-highlighter/dist/esm/languages/prism/sql";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Sparkles, Copy, Check } from "lucide-react";
 import { useState, memo } from "react";
+import { ImageCard } from "./media/ImageCard";
+import { AudioPlayerCard } from "./media/AudioPlayerCard";
 
 SyntaxHighlighter.registerLanguage("tsx", tsx);
 SyntaxHighlighter.registerLanguage("typescript", typescript);
@@ -98,14 +100,18 @@ const CodeBlock = memo(({ node, className, children, ...props }: any) => {
               fontFamily: "var(--mono)",
               overflowX: "auto",
               maxWidth: "100%",
+              width: "100%",
+              boxSizing: "border-box",
             }}
             codeTagProps={{
               style: {
                 fontFamily: "var(--mono)",
                 background: "transparent",
+                whiteSpace: "pre",
+                wordBreak: "normal",
+                overflowWrap: "normal",
               },
             }}
-            {...props}
           >
             {code}
           </SyntaxHighlighter>
@@ -116,13 +122,36 @@ const CodeBlock = memo(({ node, className, children, ...props }: any) => {
 
   return (
     <code
-      className="bg-[rgba(255,255,255,0.08)] text-[#e6edf3] rounded px-1.5 py-0.5 text-[13px] font-mono border border-[rgba(255,255,255,0.08)]"
+      className="inline-code bg-[#232730] text-[#e6edf3] px-1.5 py-0.5 rounded text-[12px] font-mono border border-[rgba(255,255,255,0.12)] whitespace-pre-wrap break-words"
       {...props}
     >
       {children}
     </code>
   );
 });
+
+const customMarkdownComponents = {
+  pre: PreBlock,
+  code: CodeBlock,
+  img: ({ src, alt }: any) => <ImageCard src={src} alt={alt} />,
+  a: ({ href, children }: any) => {
+    if (
+      href &&
+      (href.startsWith("data:audio/") ||
+        href.endsWith(".wav") ||
+        href.endsWith(".mp3") ||
+        href.endsWith(".m4a") ||
+        href.endsWith(".ogg"))
+    ) {
+      return <AudioPlayerCard src={href} title={typeof children === "string" ? children : "Audio Response"} />;
+    }
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] underline hover:opacity-80">
+        {children}
+      </a>
+    );
+  },
+};
 
 export interface ParsedReasoning {
   hasReasoning: boolean;
@@ -215,7 +244,7 @@ export const MessageRenderer = memo(({ content }: { content: string }) => {
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex]}
-            components={{ pre: PreBlock, code: CodeBlock }}
+            components={customMarkdownComponents}
           >
             {mainContent}
           </ReactMarkdown>
@@ -228,7 +257,7 @@ export const MessageRenderer = memo(({ content }: { content: string }) => {
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[rehypeKatex]}
-      components={{ pre: PreBlock, code: CodeBlock }}
+      components={customMarkdownComponents}
     >
       {content}
     </ReactMarkdown>

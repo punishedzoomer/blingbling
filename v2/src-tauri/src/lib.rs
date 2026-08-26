@@ -49,7 +49,9 @@ pub fn run() {
             commands::window::log_debug,
             commands::window::get_app_mode,
             commands::window::set_app_mode,
-            commands::file::pick_files
+            commands::file::pick_files,
+            commands::media::save_image_dialog,
+            commands::media::copy_image_to_clipboard
         ])
         .setup(|app| {
             let ws_handle = app.handle().clone();

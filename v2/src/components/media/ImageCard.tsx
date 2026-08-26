@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Download, Copy, Check, Maximize2 } from "lucide-react";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 
 export function resolveImageSrc(src?: string): string {
   if (!src) return "";
@@ -42,71 +42,47 @@ export function ImageCard({ src, alt }: ImageCardProps) {
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const res = await fetch(displaySrc);
-      const blob = await res.blob();
-
-      // Universal clipboard copy as PNG image
-      if (blob.type === "image/png") {
-        await navigator.clipboard.write([
-          new ClipboardItem({ "image/png": blob }),
-        ]);
-      } else {
-        // Convert to PNG blob via canvas for universal OS paste compatibility
-        const img = new window.Image();
-        img.crossOrigin = "anonymous";
-        img.src = displaySrc;
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-        });
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0);
-        const pngBlob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob(resolve, "image/png")
-        );
-        if (pngBlob) {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": pngBlob }),
-          ]);
-        } else {
-          await navigator.clipboard.write([
-            new ClipboardItem({ [blob.type || "image/png"]: blob }),
-          ]);
-        }
-      }
+      // Native macOS pasteboard write via Rust backend
+      await invoke("copy_image_to_clipboard", { src });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Clipboard copy failed, fallback to raw source:", err);
+      console.warn("Native clipboard copy fallback to web clipboard:", err);
       try {
-        await navigator.clipboard.writeText(displaySrc);
+        const res = await fetch(displaySrc);
+        const blob = await res.blob();
+        if (blob.type === "image/png") {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        } else {
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type || "image/png"]: blob })]);
+        }
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      } catch (e2) {
-        console.error("Fallback clipboard write failed:", e2);
+      } catch (err2) {
+        console.error("Clipboard copy failed completely:", err2);
       }
     }
   };
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setDownloading(true);
     try {
-      const a = document.createElement("a");
-      a.href = displaySrc;
-      a.download = alt && alt !== "Generated Image"
+      const defaultFilename = alt && alt !== "Generated Image"
         ? `${alt.replace(/[^a-zA-Z0-9_-]/g, "_")}.png`
         : `generated-image-${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+
+      // Native macOS NSSavePanel dialog via Rust backend
+      const saved = await invoke<boolean>("save_image_dialog", {
+        src,
+        defaultFilename,
+      });
+
+      if (saved) {
+        setDownloading(true);
+        setTimeout(() => setDownloading(false), 2000);
+      }
     } catch (err) {
-      console.error("Download failed:", err);
-    } finally {
-      setTimeout(() => setDownloading(false), 1000);
+      console.error("Save image dialog failed:", err);
     }
   };
 
@@ -130,7 +106,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
             type="button"
             onClick={handleCopy}
             className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.12)] rounded transition-colors cursor-pointer"
-            title={copied ? "Image Copied to Clipboard!" : "Copy Image Only"}
+            title={copied ? "Image Copied to Clipboard!" : "Copy Image to Clipboard"}
           >
             {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
           </button>
@@ -139,7 +115,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
             type="button"
             onClick={handleDownload}
             className="p-1 text-gray-300 hover:text-white hover:bg-[rgba(255,255,255,0.12)] rounded transition-colors cursor-pointer"
-            title="Download Image"
+            title="Save Image As..."
           >
             {downloading ? <Check size={14} className="text-blue-400" /> : <Download size={14} />}
           </button>
@@ -182,7 +158,7 @@ export function ImageCard({ src, alt }: ImageCardProps) {
                 onClick={handleDownload}
                 className="flex items-center gap-1.5 text-xs text-gray-200 hover:text-white transition-colors cursor-pointer"
               >
-                <Download size={14} /> Download
+                {downloading ? <Check size={14} className="text-blue-400" /> : <Download size={14} />} Save Image As...
               </button>
               <span className="text-gray-600">|</span>
               <button

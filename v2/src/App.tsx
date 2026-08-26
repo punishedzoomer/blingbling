@@ -461,11 +461,17 @@ function App({ isWindowed = false, windowLabel = "main" }: { isWindowed?: boolea
       attachments: payload.attachmentsSnapshot.length > 0 ? payload.attachmentsSnapshot : undefined,
     };
 
-    setMessages((prev) => [...prev, userMessageRecord]);
+    const updatedMessages = [...messages, userMessageRecord];
+    setMessages(updatedMessages);
     setInput("");
     clearAllAttachments();
     setIsThinking(true);
     setIsStreaming(true);
+
+    invoke("save_session", {
+      sessionId,
+      data: { history: updatedMessages, tagId: activeTagId, notebookId: activeNotebookId, title: sessionTitle || userMsg.slice(0, 60) },
+    }).catch(console.error);
 
     try {
       const previousMessages = messages.map((m) => {

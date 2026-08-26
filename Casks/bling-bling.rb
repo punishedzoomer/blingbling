@@ -8,7 +8,7 @@ cask "bling-bling" do
   desc "Sleek AI-powered desktop assistant built with Tauri and React"
   homepage "https://notosansdiary.com/Portfolio/Bling-Bling"
 
-  depends_on macos: ">= :catalina"
+  depends_on macos: :catalina
 
   app "Bling Bling.app"
 

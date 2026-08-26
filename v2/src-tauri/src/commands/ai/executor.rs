@@ -31,6 +31,134 @@ pub async fn execute_ai_request(
     execute_streaming(&app, &state, &client, &api_key, &model, sanitized_messages).await
 }
 
+fn is_raw_image_url(url: &str) -> bool {
+    let lower = url.to_lowercase();
+    (lower.starts_with("http://") || lower.starts_with("https://"))
+        && (lower.ends_with(".png")
+            || lower.ends_with(".jpg")
+            || lower.ends_with(".jpeg")
+            || lower.ends_with(".webp")
+            || lower.ends_with(".gif")
+            || lower.contains("oaidalleapiprod")
+            || lower.contains("replicate.delivery")
+            || lower.contains("blob.core.windows.net"))
+        || lower.starts_with("data:image/")
+}
+
+fn append_image(output: &mut String, url: &str) {
+    if !output.is_empty() {
+        output.push_str("\n\n");
+    }
+    if url.starts_with("http") || url.starts_with("data:") {
+        output.push_str(&format!("![Generated Image]({})", url));
+    } else {
+        output.push_str(&format!("![Generated Image](data:image/png;base64,{})", url));
+    }
+}
+
+fn extract_output_markdown(json_res: &Value, model_kind: ModelKind) -> String {
+    let mut output_markdown = String::new();
+
+    // 1. Top-level OpenAI / DALL-E format: { "data": [ { "url": "..." }, { "b64_json": "..." } ] }
+    if let Some(data_array) = json_res.get("data").and_then(|d| d.as_array()) {
+        for item in data_array {
+            if let Some(url) = item.get("url").and_then(|u| u.as_str()) {
+                append_image(&mut output_markdown, url);
+            } else if let Some(b64) = item.get("b64_json").and_then(|b| b.as_str()) {
+                append_image(&mut output_markdown, &format!("data:image/png;base64,{}", b64));
+            }
+        }
+    }
+
+    if let Some(choice) = json_res.get("choices").and_then(|c| c.get(0)) {
+        let message_obj = choice.get("message").unwrap_or(choice);
+
+        // 2. Extract content (String or Array)
+        if let Some(content_val) = message_obj.get("content") {
+            if let Some(text) = content_val.as_str() {
+                let trimmed = text.trim();
+                if is_raw_image_url(trimmed) {
+                    append_image(&mut output_markdown, trimmed);
+                } else {
+                    output_markdown.push_str(trimmed);
+                }
+            } else if let Some(content_array) = content_val.as_array() {
+                for item in content_array {
+                    if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
+                        if !output_markdown.is_empty() {
+                            output_markdown.push(' ');
+                        }
+                        output_markdown.push_str(text);
+                    }
+                    if let Some(url) = item.get("image_url").and_then(|img| img.get("url")).and_then(|u| u.as_str()) {
+                        append_image(&mut output_markdown, url);
+                    } else if let Some(url) = item.get("url").and_then(|u| u.as_str()) {
+                        append_image(&mut output_markdown, url);
+                    } else if let Some(img) = item.get("image").and_then(|i| i.as_str()) {
+                        append_image(&mut output_markdown, img);
+                    }
+                }
+            }
+        }
+
+        // 3. Extract choices[0].message.images (Array of Strings or Array of Objects)
+        let images_opt = message_obj.get("images")
+            .or_else(|| choice.get("images"));
+
+        if let Some(images_array) = images_opt.and_then(|img| img.as_array()) {
+            for item in images_array {
+                if let Some(url_str) = item.as_str() {
+                    append_image(&mut output_markdown, url_str);
+                } else if let Some(obj) = item.as_object() {
+                    let url = obj.get("url")
+                        .or_else(|| obj.get("image_url"))
+                        .or_else(|| obj.get("b64_json"))
+                        .or_else(|| obj.get("image"))
+                        .and_then(|u| u.as_str());
+
+                    if let Some(u) = url {
+                        append_image(&mut output_markdown, u);
+                    }
+                }
+            }
+        }
+
+        // 4. Extract single image field choices[0].message.image
+        if let Some(single_img) = message_obj.get("image") {
+            if let Some(url_str) = single_img.as_str() {
+                append_image(&mut output_markdown, url_str);
+            } else if let Some(url_str) = single_img.get("url").and_then(|u| u.as_str()) {
+                append_image(&mut output_markdown, url_str);
+            }
+        }
+
+        // 5. Extract Audio Output (choices[0].message.audio)
+        if let Some(audio) = message_obj.get("audio") {
+            if let Some(transcript) = audio.get("transcript").and_then(|t| t.as_str()) {
+                if !output_markdown.is_empty() {
+                    output_markdown.push_str("\n\n");
+                }
+                output_markdown.push_str(transcript);
+            }
+
+            if let Some(b64_data) = audio.get("data").and_then(|d| d.as_str()) {
+                if !output_markdown.is_empty() {
+                    output_markdown.push_str("\n\n");
+                }
+                output_markdown.push_str(&format!("[Audio Response](data:audio/wav;base64,{})", b64_data));
+            }
+        }
+    }
+
+    if output_markdown.is_empty() {
+        if model_kind == ModelKind::ImageGeneration {
+            output_markdown = format!("*(No image data returned from model)*\n\n```json\n{}\n```", serde_json::to_string_pretty(json_res).unwrap_or_default());
+        }
+    }
+
+    output_markdown
+}
+
 /// Handles non-streaming responses (Image models, Audio generation)
 async fn execute_non_streaming(
     app: &AppHandle,
@@ -68,57 +196,7 @@ async fn execute_non_streaming(
         return Err(format!("OpenRouter Error: {}", err.to_string()));
     }
 
-    let message_obj = &json_res["choices"][0]["message"];
-
-    let mut output_markdown = String::new();
-
-    // 1. Text Content
-    if let Some(content) = message_obj.get("content").and_then(|c| c.as_str()) {
-        output_markdown.push_str(content.trim());
-    }
-
-    // 2. Multimodal Images (OpenRouter choices[0].message.images array)
-    if let Some(images) = message_obj.get("images").and_then(|img| img.as_array()) {
-        for img in images {
-            let img_url = img.get("url")
-                .or_else(|| img.get("image_url"))
-                .or_else(|| img.get("b64_json"))
-                .and_then(|u| u.as_str());
-
-            if let Some(url) = img_url {
-                if !output_markdown.is_empty() {
-                    output_markdown.push_str("\n\n");
-                }
-                if url.starts_with("http") || url.starts_with("data:") {
-                    output_markdown.push_str(&format!("![Generated Image]({})", url));
-                } else {
-                    output_markdown.push_str(&format!("![Generated Image](data:image/png;base64,{})", url));
-                }
-            }
-        }
-    }
-
-    // 3. Audio Output (choices[0].message.audio)
-    if let Some(audio) = message_obj.get("audio") {
-        if let Some(transcript) = audio.get("transcript").and_then(|t| t.as_str()) {
-            if !output_markdown.is_empty() {
-                output_markdown.push_str("\n\n");
-            }
-            output_markdown.push_str(transcript);
-        }
-
-        if let Some(b64_data) = audio.get("data").and_then(|d| d.as_str()) {
-            if !output_markdown.is_empty() {
-                output_markdown.push_str("\n\n");
-            }
-            output_markdown.push_str(&format!("[Audio Response](data:audio/wav;base64,{})", b64_data));
-        }
-    }
-
-    // If output is still empty for an image model, check raw choice object
-    if output_markdown.is_empty() && model_kind == ModelKind::ImageGeneration {
-        output_markdown.push_str("*(Image generation completed with no text return)*");
-    }
+    let output_markdown = extract_output_markdown(&json_res, model_kind);
 
     // Emit the complete response to the frontend
     app.emit("ai-response", &output_markdown).unwrap_or_default();

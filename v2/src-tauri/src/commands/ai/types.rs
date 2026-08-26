@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum ModelKind {
     /// Standard text and reasoning LLMs (supports SSE streaming)
     TextLlm,
-    /// Image generation models (e.g. FLUX, SDXL, Imagen, DALL-E, Recraft)
+    /// Image generation models (e.g. FLUX, SDXL, Imagen, DALL-E, Recraft, Banana/Gemini Image)
     ImageGeneration,
     /// Audio generation and speech models (e.g. GPT-4o Audio, ElevenLabs, Whisper)
     AudioModel,
@@ -33,6 +33,9 @@ impl ModelKind {
             || lower.contains("black-forest-labs")
             || lower.contains("stabilityai/stable-diffusion")
             || lower.contains("stabilityai/sd")
+            || lower.contains("-image")
+            || lower.ends_with("image")
+            || lower.contains("banana")
         {
             return ModelKind::ImageGeneration;
         }
